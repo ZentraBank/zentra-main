@@ -1,25 +1,35 @@
-// src/middleware/tenant.middleware.js
-
 const db = require("../config/db");
 
 async function tenantMiddleware(req, res, next) {
   try {
-    const host = req.headers.host?.split(":")[0];
+    let host = req.headers.host;
 
     if (!host) {
-      return res.status(400).json({ message: "Missing host header" });
+      return res.status(400).json({
+        success: false,
+        message: "Missing host header",
+      });
     }
 
-    const [rows] = await db.query(
-      "SELECT * FROM tenants WHERE domain = ? AND status = 'active'",
+    host = host.split(":")[0];
+
+    const [tenants] = await db.query(
+      `SELECT * FROM tenants 
+       WHERE domain = ? 
+       AND status = 'active'
+       LIMIT 1`,
       [host]
     );
 
-    if (rows.length === 0) {
-      return res.status(404).json({ message: "Tenant not found" });
+    if (tenants.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Tenant not found",
+      });
     }
 
-    req.tenant = rows[0];
+    req.tenant = tenants[0];
+
     next();
   } catch (error) {
     next(error);
