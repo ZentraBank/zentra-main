@@ -1,22 +1,12 @@
 const express = require("express");
-const {
-  getCurrentTenant,
-  createTenant,
-} = require("./tenant.controller");
-
-const authMiddleware = require("../../middleware/auth.middleware");
-const allowRoles = require("../../middleware/role.middleware");
-
 const router = express.Router();
 
-router.get("/current", getCurrentTenant);
+const tenantController = require("./tenant.controller");
 
-// Only super_admin should create new tenants later
-router.post(
-  "/",
-  authMiddleware,
-  allowRoles("super_admin"),
-  createTenant
-);
+// public
+router.get("/current", tenantController.getCurrentTenant);
+
+// later: protect this with super_admin
+router.post("/", tenantController.createTenant);
 
 module.exports = router;
