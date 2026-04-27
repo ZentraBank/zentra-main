@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const db = require("../config/db");
+const authRepo = require("../modules/auth/auth.repository");
 
 async function authMiddleware(req, res, next) {
   try {
@@ -14,22 +14,19 @@ async function authMiddleware(req, res, next) {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const [users] = await db.query(
-      `SELECT id, tenant_id, full_name, email, phone, role, kyc_status, created_at 
-       FROM users 
-       WHERE id = ? AND tenant_id = ? 
-       LIMIT 1`,
-      [decoded.userId, decoded.tenantId]
+    const user = await authRepo.findUserByIdAndTenant(
+      decoded.userId,
+      decoded.tenantId
     );
 
-    if (users.length === 0) {
+    if (!user) {
       return res.status(401).json({
         success: false,
         message: "User not found",
       });
     }
 
-    req.user = users[0];
+    req.user = user;
 
     next();
   } catch (error) {

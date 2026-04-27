@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+const authRoutes = require("./modules/auth/auth.routes");
+
 // INIT APP (this is what you're missing)
 const app = express();
 
@@ -9,6 +11,9 @@ const app = express();
 const tenantMiddleware = require("./middleware/tenant.middleware");
 const tenantRoutes = require("./modules/tenants/tenant.routes");
 const errorMiddleware = require("./middleware/error.middleware");
+
+const accountRoutes = require("./modules/accounts/account.routes");
+const transactionRoutes = require("./modules/transactions/transaction.routes");
 
 // Middlewares
 app.use(cors({
@@ -32,8 +37,21 @@ app.use(tenantMiddleware);
 
 // Routes
 app.use("/api/tenants", tenantRoutes);
+app.use("/api/auth", authRoutes);
 
 // Error handler (MUST be last)
+app.use(errorMiddleware);
+
+app.use("/api/accounts", accountRoutes);
+app.use("/api/transactions", transactionRoutes);
+
+app.use(tenantMiddleware);
+
+app.use("/api/tenants", tenantRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/accounts", accountRoutes);
+app.use("/api/transactions", transactionRoutes);
+
 app.use(errorMiddleware);
 
 // EXPORT APP

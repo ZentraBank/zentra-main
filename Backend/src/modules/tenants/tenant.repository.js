@@ -3,7 +3,7 @@ const db = require("../../config/db");
 async function findByDomain(domain) {
   const [rows] = await db.query(
     `SELECT * FROM tenants 
-     WHERE domain = ? AND status = 'active' 
+     WHERE domain = ? AND status = 'active'
      LIMIT 1`,
     [domain]
   );
