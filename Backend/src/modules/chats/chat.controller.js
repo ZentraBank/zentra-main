@@ -1,16 +1,79 @@
-const chatService = require("./chat.service");
+const transactionService = require("./transaction.service");
+const { getPagination, cleanFilters } = require("../../utils/query");
+const { emitToUser } = require("../../utils/socket");
 
-async function startConversation(req, res, next) {
+function emitTransactionNotifications(req, result) {
+  if (!result || !result.notifications) return;
+
+  result.notifications.forEach((notification) => {
+    emitToUser(
+      req,
+      notification.tenant_id,
+      notification.user_id,
+      "notification:new",
+      notification
+    );
+  });
+}
+
+async function getAccountTransactions(req, res, next) {
   try {
-    const result = await chatService.startConversation({
+    const { limit, page, offset } = getPagination(req.query);
+    const filters = cleanFilters(req.query, ["type", "status"]);
+
+    const transactions = await transactionService.getAccountTransactions({
+      accountId: req.query.account_id,
+      tenantId: req.tenant.id,
+      user: req.user,
+      limit,
+      offset,
+      filters,
+    });
+
+    return res.json({
+      success: true,
+      meta: {
+        page,
+        limit,
+        filters,
+      },
+      data: { transactions },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getTransactionDetails(req, res, next) {
+  try {
+    const transaction = await transactionService.getTransactionDetails({
+      transactionId: req.params.id,
+      tenantId: req.tenant.id,
+      user: req.user,
+    });
+
+    return res.json({
+      success: true,
+      data: { transaction },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function transfer(req, res, next) {
+  try {
+    const result = await transactionService.transfer({
       tenantId: req.tenant.id,
       user: req.user,
       ...req.body,
     });
 
+    emitTransactionNotifications(req, result);
+
     return res.status(201).json({
       success: true,
-      message: "Conversation started",
+      message: "Transfer successful",
       data: result,
     });
   } catch (error) {
@@ -18,51 +81,19 @@ async function startConversation(req, res, next) {
   }
 }
 
-async function getConversations(req, res, next) {
+async function adminCredit(req, res, next) {
   try {
-    const conversations = await chatService.getConversations({
+    const result = await transactionService.adminCredit({
       tenantId: req.tenant.id,
       user: req.user,
+      ...req.body,
     });
 
-    return res.json({
-      success: true,
-      data: { conversations },
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function getConversationMessages(req, res, next) {
-  try {
-    const messages = await chatService.getConversationMessages({
-      tenantId: req.tenant.id,
-      user: req.user,
-      conversationId: req.params.id,
-    });
-
-    return res.json({
-      success: true,
-      data: { messages },
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function sendMessage(req, res, next) {
-  try {
-    const result = await chatService.sendMessage({
-      tenantId: req.tenant.id,
-      user: req.user,
-      conversationId: req.params.id,
-      message: req.body.message,
-    });
+    emitTransactionNotifications(req, result);
 
     return res.status(201).json({
       success: true,
-      message: "Message sent",
+      message: "Account credited successfully",
       data: result,
     });
   } catch (error) {
@@ -70,17 +101,20 @@ async function sendMessage(req, res, next) {
   }
 }
 
-async function closeConversation(req, res, next) {
+async function adminDebit(req, res, next) {
   try {
-    await chatService.closeConversation({
+    const result = await transactionService.adminDebit({
       tenantId: req.tenant.id,
       user: req.user,
-      conversationId: req.params.id,
+      ...req.body,
     });
 
-    return res.json({
+    emitTransactionNotifications(req, result);
+
+    return res.status(201).json({
       success: true,
-      message: "Conversation closed",
+      message: "Account debited successfully",
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -88,9 +122,9 @@ async function closeConversation(req, res, next) {
 }
 
 module.exports = {
-  startConversation,
-  getConversations,
-  getConversationMessages,
-  sendMessage,
-  closeConversation,
+  getAccountTransactions,
+  getTransactionDetails,
+  transfer,
+  adminCredit,
+  adminDebit,
 };

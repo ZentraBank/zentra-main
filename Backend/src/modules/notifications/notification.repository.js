@@ -25,15 +25,36 @@ async function createNotification({
   return result.insertId;
 }
 
-async function getUserNotifications({ tenantId, userId, limit = 50, offset = 0 }) {
-  const [rows] = await db.query(
-    `SELECT *
-     FROM notifications
-     WHERE tenant_id = ? AND user_id = ?
-     ORDER BY created_at DESC
-     LIMIT ? OFFSET ?`,
-    [tenantId, userId, Number(limit), Number(offset)]
-  );
+async function getUserNotifications({
+  tenantId,
+  userId,
+  limit = 20,
+  offset = 0,
+  isRead,
+  type,
+}) {
+  let sql = `
+    SELECT *
+    FROM notifications
+    WHERE tenant_id = ? AND user_id = ?
+  `;
+
+  const params = [tenantId, userId];
+
+  if (isRead !== undefined) {
+    sql += ` AND is_read = ?`;
+    params.push(isRead === "true" || isRead === true);
+  }
+
+  if (type) {
+    sql += ` AND type = ?`;
+    params.push(type);
+  }
+
+  sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  params.push(Number(limit), Number(offset));
+
+  const [rows] = await db.query(sql, params);
 
   return rows;
 }

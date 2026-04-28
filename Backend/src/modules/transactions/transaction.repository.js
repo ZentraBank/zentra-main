@@ -2,14 +2,36 @@ const db = require("../../config/db");
 const auditService = require("../auditLogs/audit.service");
 const notificationService = require("../notifications/notification.service");
 
-async function findTransactionsByAccount(accountId, tenantId) {
-  const [rows] = await db.query(
-    `SELECT *
-     FROM transactions
-     WHERE account_id = ? AND tenant_id = ?
-     ORDER BY created_at DESC`,
-    [accountId, tenantId]
-  );
+async function findTransactionsByAccount({
+  accountId,
+  tenantId,
+  limit,
+  offset,
+  type,
+  status,
+}) {
+  let sql = `
+    SELECT *
+    FROM transactions
+    WHERE account_id = ? AND tenant_id = ?
+  `;
+
+  const params = [accountId, tenantId];
+
+  if (type) {
+    sql += ` AND type = ?`;
+    params.push(type);
+  }
+
+  if (status) {
+    sql += ` AND status = ?`;
+    params.push(status);
+  }
+
+  sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  params.push(Number(limit), Number(offset));
+
+  const [rows] = await db.query(sql, params);
 
   return rows;
 }

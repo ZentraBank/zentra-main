@@ -1,13 +1,10 @@
 const express = require("express");
 const chatController = require("./chat.controller");
 const authMiddleware = require("../../middleware/auth.middleware");
-
+const validate = require("../../middleware/validate.middleware");
 const router = express.Router();
 
 router.use(authMiddleware);
-
-
-const validate = require("../../middleware/validate.middleware");
 
 const {
   startConversationSchema,

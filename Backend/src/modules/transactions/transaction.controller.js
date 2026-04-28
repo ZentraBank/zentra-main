@@ -1,15 +1,28 @@
 const transactionService = require("./transaction.service");
+const { getPagination, cleanFilters } = require("../../utils/query");
+const { emitToUser } = require("../../utils/socket");
 
 async function getAccountTransactions(req, res, next) {
   try {
+    const { limit, page, offset } = getPagination(req.query);
+    const filters = cleanFilters(req.query, ["type", "status"]);
+
     const transactions = await transactionService.getAccountTransactions({
       accountId: req.query.account_id,
       tenantId: req.tenant.id,
       user: req.user,
+      limit,
+      offset,
+      filters,
     });
 
     return res.json({
       success: true,
+      meta: {
+        page,
+        limit,
+        filters,
+      },
       data: { transactions },
     });
   } catch (error) {

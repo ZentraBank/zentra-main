@@ -1,16 +1,27 @@
 const notificationService = require("./notification.service");
+const { getPagination, cleanFilters } = require("../../utils/query");
+const { emitToUser } = require("../../utils/socket");
 
 async function getMyNotifications(req, res, next) {
   try {
+    const { limit, page, offset } = getPagination(req.query);
+    const filters = cleanFilters(req.query, ["is_read", "type"]);
+
     const notifications = await notificationService.getMyNotifications({
       tenantId: req.tenant.id,
       userId: req.user.id,
-      limit: req.query.limit,
-      offset: req.query.offset,
+      limit,
+      offset,
+      filters,
     });
 
     return res.json({
       success: true,
+      meta: {
+        page,
+        limit,
+        filters,
+      },
       data: { notifications },
     });
   } catch (error) {

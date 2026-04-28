@@ -27,12 +27,14 @@ async function notifyUser({
   }
 }
 
-async function getMyNotifications({ tenantId, userId, limit, offset }) {
+async function getMyNotifications({ tenantId, userId, limit, offset, filters }) {
   return notificationRepo.getUserNotifications({
     tenantId,
     userId,
     limit,
     offset,
+    isRead: filters.is_read,
+    type: filters.type,
   });
 }
 
@@ -56,6 +58,45 @@ async function readNotification({ tenantId, userId, notificationId }) {
 
 async function readAllNotifications({ tenantId, userId }) {
   return notificationRepo.markAllAsRead({ tenantId, userId });
+}
+
+async function notifyUser({
+  tenantId,
+  userId,
+  title,
+  message,
+  type = "info",
+  metadata,
+}) {
+  if (!tenantId || !userId || !title || !message) {
+    return null;
+  }
+
+  try {
+    const notificationId = await notificationRepo.createNotification({
+      tenantId,
+      userId,
+      title,
+      message,
+      type,
+      metadata,
+    });
+
+    return {
+      id: notificationId,
+      tenant_id: tenantId,
+      user_id: userId,
+      title,
+      message,
+      type,
+      is_read: false,
+      metadata,
+      created_at: new Date(),
+    };
+  } catch (error) {
+    console.error("Notification failed:", error);
+    return null;
+  }
 }
 
 module.exports = {

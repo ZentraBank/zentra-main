@@ -26,14 +26,20 @@ async function logAction({
   }
 }
 
-async function getAuditLogs({ tenantId, user }) {
+async function getAuditLogs({ tenantId, user, limit, offset, filters }) {
   const isAdmin = ["tenant_admin", "super_admin"].includes(user.role);
 
   if (!isAdmin) {
     throw new Error("Only admins can view audit logs");
   }
 
-  return auditRepo.getLogs({ tenantId });
+  return auditRepo.getLogs({
+    tenantId,
+    limit,
+    offset,
+    action: filters.action,
+    entityType: filters.entity_type,
+  });
 }
 
 module.exports = {

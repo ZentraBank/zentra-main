@@ -1,6 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const adminRoutes = require("./modules/admin/admin.routes");
 
 const authRoutes = require("./modules/auth/auth.routes");
 
@@ -20,6 +23,25 @@ const accountRoutes = require("./modules/accounts/account.routes");
 const transactionRoutes = require("./modules/transactions/transaction.routes");
 
 // Middlewares
+app.use(helmet());
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit per IP
+  message: {
+    success: false,
+    message: "Too many requests, please try again later",
+  },
+});
+
+app.use("/api", limiter);
+
+class AppError extends Error {
+  constructor(message, statusCode = 400) {
+    super(message);
+    this.statusCode = statusCode;
+  }
+}
+
 app.use(cors({
   origin: process.env.CLIENT_URL || "http://localhost:3000",
   credentials: true,
@@ -39,7 +61,7 @@ app.get("/", (req, res) => {
 // Apply tenant middleware AFTER health check
 app.use(tenantMiddleware);
 app.use(subscriptionMiddleware);
-
+app.use("/api/admin", adminRoutes);
 // Routes
 app.use("/api/tenants", tenantRoutes);
 app.use("/api/auth", authRoutes);

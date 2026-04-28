@@ -23,15 +23,35 @@ async function createLog({
   );
 }
 
-async function getLogs({ tenantId, limit = 50, offset = 0 }) {
-  const [rows] = await db.query(
-    `SELECT *
-     FROM audit_logs
-     WHERE tenant_id = ?
-     ORDER BY created_at DESC
-     LIMIT ? OFFSET ?`,
-    [tenantId, Number(limit), Number(offset)]
-  );
+async function getLogs({
+  tenantId,
+  limit = 20,
+  offset = 0,
+  action,
+  entityType,
+}) {
+  let sql = `
+    SELECT *
+    FROM audit_logs
+    WHERE tenant_id = ?
+  `;
+
+  const params = [tenantId];
+
+  if (action) {
+    sql += ` AND action = ?`;
+    params.push(action);
+  }
+
+  if (entityType) {
+    sql += ` AND entity_type = ?`;
+    params.push(entityType);
+  }
+
+  sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+  params.push(Number(limit), Number(offset));
+
+  const [rows] = await db.query(sql, params);
 
   return rows;
 }

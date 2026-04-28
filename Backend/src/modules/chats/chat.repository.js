@@ -21,26 +21,47 @@ async function findConversationById({ tenantId, conversationId }) {
   return rows[0];
 }
 
-async function getUserConversations({ tenantId, userId }) {
-  const [rows] = await db.query(
-    `SELECT * FROM conversations
-     WHERE tenant_id = ? AND user_id = ?
-     ORDER BY updated_at DESC`,
-    [tenantId, userId]
-  );
+async function getUserConversations({ tenantId, userId, limit = 20, offset = 0, status }) {
+  let sql = `
+    SELECT *
+    FROM conversations
+    WHERE tenant_id = ? AND user_id = ?
+  `;
+
+  const params = [tenantId, userId];
+
+  if (status) {
+    sql += ` AND status = ?`;
+    params.push(status);
+  }
+
+  sql += ` ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
+  params.push(Number(limit), Number(offset));
+
+  const [rows] = await db.query(sql, params);
 
   return rows;
 }
 
-async function getTenantConversations({ tenantId }) {
-  const [rows] = await db.query(
-    `SELECT c.*, u.full_name, u.email
-     FROM conversations c
-     JOIN users u ON u.id = c.user_id
-     WHERE c.tenant_id = ?
-     ORDER BY c.updated_at DESC`,
-    [tenantId]
-  );
+async function getTenantConversations({ tenantId, limit = 20, offset = 0, status }) {
+  let sql = `
+    SELECT c.*, u.full_name, u.email
+    FROM conversations c
+    JOIN users u ON u.id = c.user_id
+    WHERE c.tenant_id = ?
+  `;
+
+  const params = [tenantId];
+
+  if (status) {
+    sql += ` AND c.status = ?`;
+    params.push(status);
+  }
+
+  sql += ` ORDER BY c.updated_at DESC LIMIT ? OFFSET ?`;
+  params.push(Number(limit), Number(offset));
+
+  const [rows] = await db.query(sql, params);
 
   return rows;
 }
@@ -63,14 +84,15 @@ async function createMessage({ tenantId, conversationId, senderId, message }) {
   return result.insertId;
 }
 
-async function getMessages({ tenantId, conversationId }) {
+async function getMessages({ tenantId, conversationId, limit = 50, offset = 0 }) {
   const [rows] = await db.query(
     `SELECT m.*, u.full_name, u.role
      FROM messages m
      JOIN users u ON u.id = m.sender_id
      WHERE m.tenant_id = ? AND m.conversation_id = ?
-     ORDER BY m.created_at ASC`,
-    [tenantId, conversationId]
+     ORDER BY m.created_at ASC
+     LIMIT ? OFFSET ?`,
+    [tenantId, conversationId, Number(limit), Number(offset)]
   );
 
   return rows;

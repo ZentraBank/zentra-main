@@ -27,18 +27,32 @@ async function startConversation({ tenantId, user, subject, message }) {
   };
 }
 
-async function getConversations({ tenantId, user }) {
+async function getConversations({ tenantId, user, limit, offset, filters }) {
   if (isAdmin(user)) {
-    return chatRepo.getTenantConversations({ tenantId });
+    return chatRepo.getTenantConversations({
+      tenantId,
+      limit,
+      offset,
+      status: filters.status,
+    });
   }
 
   return chatRepo.getUserConversations({
     tenantId,
     userId: user.id,
+    limit,
+    offset,
+    status: filters.status,
   });
 }
 
-async function getConversationMessages({ tenantId, user, conversationId }) {
+async function getConversationMessages({
+  tenantId,
+  user,
+  conversationId,
+  limit,
+  offset,
+}) {
   const conversation = await chatRepo.findConversationById({
     tenantId,
     conversationId,
@@ -52,7 +66,12 @@ async function getConversationMessages({ tenantId, user, conversationId }) {
     throw new Error("You do not have permission to view this conversation");
   }
 
-  return chatRepo.getMessages({ tenantId, conversationId });
+  return chatRepo.getMessages({
+    tenantId,
+    conversationId,
+    limit,
+    offset,
+  });
 }
 
 async function sendMessage({ tenantId, user, conversationId, message }) {

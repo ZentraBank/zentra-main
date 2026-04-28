@@ -11,7 +11,14 @@ function isAdmin(user) {
   return ["tenant_admin", "super_admin"].includes(user.role);
 }
 
-async function getAccountTransactions({ accountId, tenantId, user }) {
+async function getAccountTransactions({
+  accountId,
+  tenantId,
+  user,
+  limit,
+  offset,
+  filters,
+}) {
   const account = await accountRepo.findAccountByIdAndTenant(accountId, tenantId);
 
   if (!account) {
@@ -24,7 +31,14 @@ async function getAccountTransactions({ accountId, tenantId, user }) {
     throw new Error("You do not have permission to view these transactions");
   }
 
-  return transactionRepo.findTransactionsByAccount(accountId, tenantId);
+  return transactionRepo.findTransactionsByAccount({
+    accountId,
+    tenantId,
+    limit,
+    offset,
+    type: filters.type,
+    status: filters.status,
+  });
 }
 
 async function getTransactionDetails({ transactionId, tenantId, user }) {
