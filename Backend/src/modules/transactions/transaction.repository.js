@@ -1,4 +1,6 @@
 const db = require("../../config/db");
+const auditService = require("../auditLogs/audit.service");
+const notificationService = require("../notifications/notification.service");
 
 async function findTransactionsByAccount(accountId, tenantId) {
   const [rows] = await db.query(
@@ -136,6 +138,48 @@ async function createInternalTransfer({
   } finally {
     connection.release();
   }
+
+  await auditService.logAction({
+  tenantId,
+  userId: createdBy,
+  action: "TRANSFER",
+  entityType: "transaction",
+  entityId: null,
+  metadata: {
+    amount,
+    reference,
+    fromAccountId,
+    toAccountId,
+  },
+});
+
+    await notificationService.notifyUser({
+  tenantId,
+  userId: fromAccount.user_id,
+  title: "Transfer sent",
+  message: `You sent ₦${amount}.`,
+  type: "transaction",
+  metadata: {
+    amount,
+    reference,
+    fromAccountId,
+    toAccountId,
+  },
+});
+
+    await notificationService.notifyUser({
+    tenantId,
+    userId: toAccount.user_id,
+    title: "Transfer received",
+    message: `You received ₦${amount}.`,
+    type: "transaction",
+    metadata: {
+        amount,
+        reference,
+        fromAccountId,
+        toAccountId,
+    },
+    });
 }
 
 async function createAdminCredit({
@@ -189,7 +233,18 @@ async function createAdminCredit({
     );
 
     await connection.commit();
-
+        await notificationService.notifyUser({
+    tenantId,
+    userId: accounts[0].user_id,
+    title: "Account credited",
+    message: `Your account has been credited with ₦${amount}.`,
+    type: "transaction",
+    metadata: {
+        amount,
+        reference,
+        accountId,
+    },
+    });
     return {
       reference,
       account_id: accountId,
@@ -203,6 +258,17 @@ async function createAdminCredit({
   } finally {
     connection.release();
   }
+  await auditService.logAction({
+  tenantId,
+  userId: createdBy,
+  action: "ADMIN_CREDIT",
+  entityType: "account",
+  entityId: accountId,
+  metadata: {
+    amount,
+    reference,
+  },
+});
 }
 
 async function createAdminDebit({
@@ -276,6 +342,19 @@ async function createAdminDebit({
     );
     await connection.commit();
 
+    await notificationService.notifyUser({
+  tenantId,
+  userId: account.user_id,
+  title: "Account debited",
+  message: `Your account has been debited with ₦${amount}.`,
+  type: "transaction",
+  metadata: {
+    amount,
+    reference,
+    accountId,
+  },
+});
+
     return {
       reference,
       account_id: accountId,
@@ -289,6 +368,19 @@ async function createAdminDebit({
   } finally {
     connection.release();
   }
+
+  await auditService.logAction({
+    tenantId,
+    userId: createdBy,
+    action: "ADMIN_DEBIT",
+    entityType: "account",
+    entityId: accountId,
+    metadata: {
+        amount,
+        reference,
+    },
+    });
+
 }
 
 

@@ -4,13 +4,17 @@ const cookieParser = require("cookie-parser");
 
 const authRoutes = require("./modules/auth/auth.routes");
 
-// INIT APP (this is what you're missing)
+
 const app = express();
 
 // Imports
+const auditRoutes = require("./modules/auditLogs/audit.routes");
 const tenantMiddleware = require("./middleware/tenant.middleware");
 const tenantRoutes = require("./modules/tenants/tenant.routes");
 const errorMiddleware = require("./middleware/error.middleware");
+const notificationRoutes = require("./modules/notifications/notification.routes");
+const chatRoutes = require("./modules/chats/chat.routes");
+const subscriptionRoutes = require("./modules/subscriptions/subscription.routes");
 
 const accountRoutes = require("./modules/accounts/account.routes");
 const transactionRoutes = require("./modules/transactions/transaction.routes");
@@ -38,8 +42,6 @@ app.use(tenantMiddleware);
 // Routes
 app.use("/api/tenants", tenantRoutes);
 app.use("/api/auth", authRoutes);
-
-// Error handler (MUST be last)
 app.use(errorMiddleware);
 
 app.use("/api/accounts", accountRoutes);
@@ -51,6 +53,12 @@ app.use("/api/tenants", tenantRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/accounts", accountRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/chats", chatRoutes);
+app.use("/api/subscriptions", subscriptionRoutes);
+
+
+app.use("/api/audit-logs", auditRoutes);
 
 app.use(errorMiddleware);
 
