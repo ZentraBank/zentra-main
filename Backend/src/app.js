@@ -15,7 +15,7 @@ const errorMiddleware = require("./middleware/error.middleware");
 const notificationRoutes = require("./modules/notifications/notification.routes");
 const chatRoutes = require("./modules/chats/chat.routes");
 const subscriptionRoutes = require("./modules/subscriptions/subscription.routes");
-
+const subscriptionMiddleware = require("./middleware/subscription.middleware");
 const accountRoutes = require("./modules/accounts/account.routes");
 const transactionRoutes = require("./modules/transactions/transaction.routes");
 
@@ -38,6 +38,7 @@ app.get("/", (req, res) => {
 
 // Apply tenant middleware AFTER health check
 app.use(tenantMiddleware);
+app.use(subscriptionMiddleware);
 
 // Routes
 app.use("/api/tenants", tenantRoutes);
@@ -56,6 +57,9 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+
+
+
 
 
 app.use("/api/audit-logs", auditRoutes);
