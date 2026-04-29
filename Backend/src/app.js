@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const adminRoutes = require("./modules/admin/admin.routes");
 
+
 const authRoutes = require("./modules/auth/auth.routes");
 
 
@@ -21,6 +22,8 @@ const subscriptionRoutes = require("./modules/subscriptions/subscription.routes"
 const subscriptionMiddleware = require("./middleware/subscription.middleware");
 const accountRoutes = require("./modules/accounts/account.routes");
 const transactionRoutes = require("./modules/transactions/transaction.routes");
+const platformRoutes = require("./modules/platform/platform.routes");
+
 
 // Middlewares
 app.use(helmet());
@@ -79,6 +82,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/chats", chatRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/platform", platformRoutes);
 
 
 

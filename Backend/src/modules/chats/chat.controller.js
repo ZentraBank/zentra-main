@@ -1,28 +1,44 @@
-const transactionService = require("./transaction.service");
-const { getPagination, cleanFilters } = require("../../utils/query");
-const { emitToUser } = require("../../utils/socket");
+const chatService = require("./chat.service");
 
-function emitTransactionNotifications(req, result) {
-  if (!result || !result.notifications) return;
+const {
+  emitToConversation,
+  emitToTenantAdmins,
+} = require("../../utils/socket");
 
-  result.notifications.forEach((notification) => {
-    emitToUser(
-      req,
-      notification.tenant_id,
-      notification.user_id,
-      "notification:new",
-      notification
-    );
-  });
+async function startConversation(req, res, next) {
+  try {
+    const result = await chatService.startConversation({
+      tenantId: req.tenant.id,
+      user: req.user,
+      ...req.body,
+    });
+
+    emitToTenantAdmins(req, req.tenant.id, "chat:conversation:new", {
+      conversation_id: result.conversation_id,
+      tenant_id: req.tenant.id,
+      user_id: req.user.id,
+      subject: req.body.subject || "Support request",
+      message: req.body.message,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Conversation started",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
-async function getAccountTransactions(req, res, next) {
+async function getConversations(req, res, next) {
   try {
-    const { limit, page, offset } = getPagination(req.query);
-    const filters = cleanFilters(req.query, ["type", "status"]);
+    const { getPagination, cleanFilters } = require("../../utils/query");
 
-    const transactions = await transactionService.getAccountTransactions({
-      accountId: req.query.account_id,
+    const { limit, page, offset } = getPagination(req.query);
+    const filters = cleanFilters(req.query, ["status"]);
+
+    const conversations = await chatService.getConversations({
       tenantId: req.tenant.id,
       user: req.user,
       limit,
@@ -37,43 +53,61 @@ async function getAccountTransactions(req, res, next) {
         limit,
         filters,
       },
-      data: { transactions },
+      data: { conversations },
     });
   } catch (error) {
     next(error);
   }
 }
 
-async function getTransactionDetails(req, res, next) {
+async function getConversationMessages(req, res, next) {
   try {
-    const transaction = await transactionService.getTransactionDetails({
-      transactionId: req.params.id,
+    const { getPagination } = require("../../utils/query");
+
+    const { limit, page, offset } = getPagination(req.query);
+
+    const messages = await chatService.getConversationMessages({
       tenantId: req.tenant.id,
       user: req.user,
+      conversationId: req.params.id,
+      limit,
+      offset,
     });
 
     return res.json({
       success: true,
-      data: { transaction },
+      meta: {
+        page,
+        limit,
+      },
+      data: { messages },
     });
   } catch (error) {
     next(error);
   }
 }
 
-async function transfer(req, res, next) {
+async function sendMessage(req, res, next) {
   try {
-    const result = await transactionService.transfer({
+    const result = await chatService.sendMessage({
       tenantId: req.tenant.id,
       user: req.user,
-      ...req.body,
+      conversationId: req.params.id,
+      message: req.body.message,
     });
 
-    emitTransactionNotifications(req, result);
+    emitToConversation(req, req.params.id, "chat:message:new", {
+      message_id: result.message_id,
+      conversation_id: Number(req.params.id),
+      sender_id: req.user.id,
+      sender_role: req.user.role,
+      message: req.body.message,
+      created_at: new Date(),
+    });
 
     return res.status(201).json({
       success: true,
-      message: "Transfer successful",
+      message: "Message sent",
       data: result,
     });
   } catch (error) {
@@ -81,40 +115,17 @@ async function transfer(req, res, next) {
   }
 }
 
-async function adminCredit(req, res, next) {
+async function closeConversation(req, res, next) {
   try {
-    const result = await transactionService.adminCredit({
+    await chatService.closeConversation({
       tenantId: req.tenant.id,
       user: req.user,
-      ...req.body,
+      conversationId: req.params.id,
     });
 
-    emitTransactionNotifications(req, result);
-
-    return res.status(201).json({
+    return res.json({
       success: true,
-      message: "Account credited successfully",
-      data: result,
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function adminDebit(req, res, next) {
-  try {
-    const result = await transactionService.adminDebit({
-      tenantId: req.tenant.id,
-      user: req.user,
-      ...req.body,
-    });
-
-    emitTransactionNotifications(req, result);
-
-    return res.status(201).json({
-      success: true,
-      message: "Account debited successfully",
-      data: result,
+      message: "Conversation closed",
     });
   } catch (error) {
     next(error);
@@ -122,9 +133,9 @@ async function adminDebit(req, res, next) {
 }
 
 module.exports = {
-  getAccountTransactions,
-  getTransactionDetails,
-  transfer,
-  adminCredit,
-  adminDebit,
+  startConversation,
+  getConversations,
+  getConversationMessages,
+  sendMessage,
+  closeConversation,
 };

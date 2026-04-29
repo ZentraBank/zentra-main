@@ -1,120 +1,131 @@
 const db = require("../../config/db");
+const chatService = require("./chat.service");
+const { getPagination, cleanFilters } = require("../../utils/query");
+const { emitToUser } = require("../../utils/socket");
 
-async function createConversation({ tenantId, userId, subject }) {
-  const [result] = await db.query(
-    `INSERT INTO conversations (tenant_id, user_id, subject)
-     VALUES (?, ?, ?)`,
-    [tenantId, userId, subject || "Support request"]
-  );
+function emitTransactionNotifications(req, result) {
+  if (!result || !result.notifications) return;
 
-  return result.insertId;
+  result.notifications.forEach((notification) => {
+    emitToUser(
+      req,
+      notification.tenant_id,
+      notification.user_id,
+      "notification:new",
+      notification
+    );
+  });
 }
 
-async function findConversationById({ tenantId, conversationId }) {
-  const [rows] = await db.query(
-    `SELECT * FROM conversations
-     WHERE id = ? AND tenant_id = ?
-     LIMIT 1`,
-    [conversationId, tenantId]
-  );
+async function getAccountTransactions(req, res, next) {
+  try {
+    const { limit, page, offset } = getPagination(req.query);
+    const filters = cleanFilters(req.query, ["type", "status"]);
 
-  return rows[0];
-}
+    const transactions = await transactionService.getAccountTransactions({
+      accountId: req.query.account_id,
+      tenantId: req.tenant.id,
+      user: req.user,
+      limit,
+      offset,
+      filters,
+    });
 
-async function getUserConversations({ tenantId, userId, limit = 20, offset = 0, status }) {
-  let sql = `
-    SELECT *
-    FROM conversations
-    WHERE tenant_id = ? AND user_id = ?
-  `;
-
-  const params = [tenantId, userId];
-
-  if (status) {
-    sql += ` AND status = ?`;
-    params.push(status);
+    return res.json({
+      success: true,
+      meta: {
+        page,
+        limit,
+        filters,
+      },
+      data: { transactions },
+    });
+  } catch (error) {
+    next(error);
   }
-
-  sql += ` ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
-  params.push(Number(limit), Number(offset));
-
-  const [rows] = await db.query(sql, params);
-
-  return rows;
 }
 
-async function getTenantConversations({ tenantId, limit = 20, offset = 0, status }) {
-  let sql = `
-    SELECT c.*, u.full_name, u.email
-    FROM conversations c
-    JOIN users u ON u.id = c.user_id
-    WHERE c.tenant_id = ?
-  `;
+async function getTransactionDetails(req, res, next) {
+  try {
+    const transaction = await transactionService.getTransactionDetails({
+      transactionId: req.params.id,
+      tenantId: req.tenant.id,
+      user: req.user,
+    });
 
-  const params = [tenantId];
-
-  if (status) {
-    sql += ` AND c.status = ?`;
-    params.push(status);
+    return res.json({
+      success: true,
+      data: { transaction },
+    });
+  } catch (error) {
+    next(error);
   }
-
-  sql += ` ORDER BY c.updated_at DESC LIMIT ? OFFSET ?`;
-  params.push(Number(limit), Number(offset));
-
-  const [rows] = await db.query(sql, params);
-
-  return rows;
 }
 
-async function createMessage({ tenantId, conversationId, senderId, message }) {
-  const [result] = await db.query(
-    `INSERT INTO messages
-     (tenant_id, conversation_id, sender_id, message)
-     VALUES (?, ?, ?, ?)`,
-    [tenantId, conversationId, senderId, message]
-  );
+async function transfer(req, res, next) {
+  try {
+    const result = await transactionService.transfer({
+      tenantId: req.tenant.id,
+      user: req.user,
+      ...req.body,
+    });
 
-  await db.query(
-    `UPDATE conversations
-     SET updated_at = CURRENT_TIMESTAMP
-     WHERE id = ? AND tenant_id = ?`,
-    [conversationId, tenantId]
-  );
+    emitTransactionNotifications(req, result);
 
-  return result.insertId;
+    return res.status(201).json({
+      success: true,
+      message: "Transfer successful",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
-async function getMessages({ tenantId, conversationId, limit = 50, offset = 0 }) {
-  const [rows] = await db.query(
-    `SELECT m.*, u.full_name, u.role
-     FROM messages m
-     JOIN users u ON u.id = m.sender_id
-     WHERE m.tenant_id = ? AND m.conversation_id = ?
-     ORDER BY m.created_at ASC
-     LIMIT ? OFFSET ?`,
-    [tenantId, conversationId, Number(limit), Number(offset)]
-  );
+async function adminCredit(req, res, next) {
+  try {
+    const result = await transactionService.adminCredit({
+      tenantId: req.tenant.id,
+      user: req.user,
+      ...req.body,
+    });
 
-  return rows;
+    emitTransactionNotifications(req, result);
+
+    return res.status(201).json({
+      success: true,
+      message: "Account credited successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
-async function closeConversation({ tenantId, conversationId }) {
-  const [result] = await db.query(
-    `UPDATE conversations
-     SET status = 'closed'
-     WHERE id = ? AND tenant_id = ?`,
-    [conversationId, tenantId]
-  );
+async function adminDebit(req, res, next) {
+  try {
+    const result = await transactionService.adminDebit({
+      tenantId: req.tenant.id,
+      user: req.user,
+      ...req.body,
+    });
 
-  return result.affectedRows > 0;
+    emitTransactionNotifications(req, result);
+
+    return res.status(201).json({
+      success: true,
+      message: "Account debited successfully",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
 }
 
 module.exports = {
-  createConversation,
-  findConversationById,
-  getUserConversations,
-  getTenantConversations,
-  createMessage,
-  getMessages,
-  closeConversation,
+  getAccountTransactions,
+  getTransactionDetails,
+  transfer,
+  adminCredit,
+  adminDebit,
 };
