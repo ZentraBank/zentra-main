@@ -24,3 +24,7 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.bg-tenant\/10 {
+  background-color: color-mix(in srgb, var(--tenant-primary) 10%, white);
+}

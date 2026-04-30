@@ -1,0 +1,15 @@
+:root {
+  --tenant-primary: #2563eb;
+}
+
+.bg-tenant {
+  background-color: var(--tenant-primary);
+}
+
+.text-tenant {
+  color: var(--tenant-primary);
+}
+
+.border-tenant {
+  border-color: var(--tenant-primary);
+}
