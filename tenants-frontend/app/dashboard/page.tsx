@@ -1,12 +1,8 @@
-import AppShell from "@/components/layout/AppShell";
-import { ArrowDownLeft, ArrowUpRight, Wallet, MessageCircle } from "lucide-react";
+// app/dashboard/page.tsx
 
-const stats = [
-  { label: "Available Balance", value: "₦250,000", icon: Wallet },
-  { label: "Money In", value: "₦120,000", icon: ArrowDownLeft },
-  { label: "Money Out", value: "₦35,000", icon: ArrowUpRight },
-  { label: "Open Chats", value: "2", icon: MessageCircle },
-];
+import AppShell from "@/components/layout/AppShell";
+import { ArrowDownLeft, ArrowUpRight, Wallet, Plus } from "lucide-react";
+import Link from "next/link";
 
 export default function DashboardPage() {
   return (
@@ -14,59 +10,105 @@ export default function DashboardPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-sm text-gray-500">
-          Overview of your account activity.
+          Overview of your financial activity.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
+      {/* Balance Card */}
+<div
+  className="rounded-3xl p-6 text-white shadow-lg"
+  style={{
+    background:
+      "linear-gradient(135deg, var(--tenant-primary), #111827)",
+  }}
+>
+  <p className="text-sm font-medium text-white/80">Available Balance</p>
 
-          return (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
-            >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-tenant/10 text-tenant">
-                <Icon size={20} />
-              </div>
+  <h2 className="mt-3 text-4xl font-extrabold tracking-tight text-white">
+    ₦250,000
+  </h2>
 
-              <p className="text-sm text-gray-500">{stat.label}</p>
-              <h2 className="mt-1 text-2xl font-bold">{stat.value}</h2>
-            </div>
-          );
-        })}
+  <p className="mt-2 text-sm text-white/70">Wallet Account • 3022222222</p>
+
+  <div className="mt-6 flex flex-wrap gap-3">
+    <Link
+      href="/transactions"
+      className="flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-900"
+    >
+      <ArrowDownLeft size={16} />
+      Deposit
+    </Link>
+
+    <Link
+      href="/transactions"
+      className="flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white"
+    >
+      <ArrowUpRight size={16} />
+      Transfer
+    </Link>
+  </div>
+</div>
+
+      {/* Quick Actions */}
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <QuickCard
+          title="Add Client"
+          href="/clients/add"
+        />
+        <QuickCard
+          title="View Transactions"
+          href="/transactions"
+        />
+        <QuickCard
+          title="Open Chat"
+          href="/chat"
+        />
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm lg:col-span-2">
-          <h2 className="mb-4 font-bold">Recent Transactions</h2>
+      {/* Recent Transactions */}
+      <div className="mt-6 rounded-2xl border bg-white p-5 shadow-sm">
+        <h2 className="mb-4 font-bold">Recent Transactions</h2>
 
-          <div className="space-y-3">
-            {["Account credited", "Transfer sent", "Account debited"].map((item, index) => (
-              <div key={item} className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div>
-                  <p className="text-sm font-medium">{item}</p>
-                  <p className="text-xs text-gray-500">Today</p>
-                </div>
-                <p className={index === 1 ? "text-sm font-bold text-red-600" : "text-sm font-bold text-green-600"}>
-                  {index === 1 ? "-₦5,000" : "+₦50,000"}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <div className="space-y-4">
+          {[
+            { title: "Account credited", amount: "+₦50,000", type: "in" },
+            { title: "Transfer sent", amount: "-₦5,000", type: "out" },
+          ].map((tx) => (
+            <div
+              key={tx.title}
+              className="flex items-center justify-between border-b pb-3"
+            >
+              <p className="text-sm">{tx.title}</p>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 font-bold">Notifications</h2>
-
-          <div className="space-y-3 text-sm text-gray-600">
-            <p>Your account was credited.</p>
-            <p>New message from support.</p>
-            <p>Profile setup pending.</p>
-          </div>
+              <p
+                className={`font-bold ${
+                  tx.type === "in" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {tx.amount}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
     </AppShell>
+  );
+}
+
+function QuickCard({
+  title,
+  href,
+}: {
+  title: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center justify-between rounded-2xl border bg-white p-5 shadow-sm hover:shadow-md"
+    >
+      <span className="font-semibold">{title}</span>
+      <Plus size={18} />
+    </Link>
   );
 }

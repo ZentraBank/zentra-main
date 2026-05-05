@@ -1,30 +1,15 @@
-"use client";
+import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
 
-import { Bell, Menu } from "lucide-react";
-import { useTenantStore } from "@/store/tenant.store";
-
-export default function Topbar() {
-  const tenant = useTenantStore((state) => state.tenant);
-
+export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-5">
-      <div className="flex items-center gap-3">
-        <button className="lg:hidden">
-          <Menu size={22} />
-        </button>
+    <div className="min-h-screen bg-gray-50 text-gray-900">
+      <Sidebar />
 
-        <div>
-          <h2 className="text-sm font-bold text-gray-900">
-            {tenant?.app_name || "ZentraBank"}
-          </h2>
-          <p className="text-xs text-gray-500">Welcome back</p>
-        </div>
+      <div className="md:pl-64">
+        <Topbar />
+        <main className="p-5">{children}</main>
       </div>
-
-      <button className="relative rounded-full bg-gray-100 p-2 text-gray-700">
-        <Bell size={18} />
-        <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-tenant" />
-      </button>
-    </header>
+    </div>
   );
 }

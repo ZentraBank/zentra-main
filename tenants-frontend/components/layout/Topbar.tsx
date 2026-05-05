@@ -11,7 +11,10 @@ export default function Topbar() {
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-5">
       <div className="flex items-center gap-3">
-        <button onClick={openSidebar} className="lg:hidden">
+        <button
+          onClick={openSidebar}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-700 md:hidden"
+        >
           <Menu size={22} />
         </button>
 

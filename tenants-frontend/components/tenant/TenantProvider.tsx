@@ -23,10 +23,10 @@ export default function TenantProvider({
 
         document.documentElement.style.setProperty(
           "--tenant-primary",
-          tenant.primary_color || "#2563EB"
+          tenant.primary_color || "#DC2626"
         );
 
-        document.title = tenant.name || "ZentraBank";
+        document.title = tenant.app_name || "ZentraBank";
       } catch (error) {
         console.error("Failed to load tenant:", error);
       } finally {
