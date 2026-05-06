@@ -1,80 +1,59 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function HomeHero() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black">
-      <Image
-        src="/images/hero-bg.png"
-        alt=""
-        fill
-        priority
-        className="object-cover"
-      />
+    <main className="relative min-h-screen overflow-hidden bg-white">
+      {/* Background composition */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/images/hero-bg.png"
+          alt=""
+          fill
+          priority
+          className="object-cover object-center"
+        />
+      </div>
 
-      <div className="absolute inset-0 bg-black/35" />
-
-      <section className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:px-16">
-        <div className="max-w-2xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur">
-            <ShieldCheck size={16} />
-            Secure white-label banking platform
-          </div>
-
-          <h1 className="font-heading text-5xl font-bold leading-tight tracking-tight text-white lg:text-7xl">
+      {/* Content */}
+      <section className="relative z-20 mx-auto min-h-screen max-w-7xl px-6 pt-20 lg:grid lg:grid-cols-2 lg:items-center lg:px-16 lg:pt-0">
+        {/* Text */}
+        <div className="mx-auto max-w-sm text-center lg:mx-0 lg:max-w-xl lg:text-left">
+          <h1 className="font-heading text-[40px] font-bold leading-[0.95] text-[var(--primary)] lg:text-[72px]">
             ZentraBank
-            <span className="block text-[var(--primary)]">
-              Online Banking
-            </span>
+            <br />
+            Online Banking
           </h1>
 
-          <p className="mt-6 max-w-xl font-body text-lg leading-8 text-white/75">
-            Manage accounts, customers, transactions, subscriptions and support
-            from one simple digital banking dashboard.
+          <p className="mx-auto mt-5 max-w-[330px] font-body text-[17px] leading-[1.15] text-black lg:mx-0 lg:mt-8 lg:max-w-lg lg:text-xl lg:leading-8">
+            Welcome to the one-stop app that can help make your work easier on
+            the street - this is the only app where you find so many billing
+            format and lots more loading, even as a newbie...
           </p>
-
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-4 text-sm font-semibold text-white shadow-lg transition hover:bg-[var(--primary-dark)]"
-            >
-              Get started
-              <ArrowRight size={18} />
-            </Link>
-
-            <Link
-              href="/register"
-              className="rounded-xl border border-white/20 bg-white/10 px-6 py-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
-            >
-              Create account
-            </Link>
-          </div>
         </div>
 
-        <div className="rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-2xl backdrop-blur-xl">
-          <div className="rounded-[1.5rem] bg-white p-6">
-            <p className="text-sm font-medium text-gray-500">Total Balance</p>
-            <h2 className="mt-2 text-4xl font-bold text-gray-950">
-              ₦24,500,000
-            </h2>
-
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <MiniStat label="Active users" value="2,430" />
-              <MiniStat label="Transactions" value="18.7k" />
-            </div>
+        {/* Building image */}
+        <div className="pointer-events-none absolute bottom-0 left-1/2 z-30 w-[112%] max-w-[500px] -translate-x-1/2 lg:pointer-events-auto lg:relative lg:left-auto lg:bottom-auto lg:mx-auto lg:w-full lg:max-w-[620px] lg:translate-x-0">
+          <div className="relative aspect-square overflow-hidden rounded-full">
+            <Image
+              src="/images/banking-building.png"
+              alt="ZentraBank building"
+              fill
+              priority
+              className="object-cover"
+            />
           </div>
+
+          <Link
+            href="/login"
+            className="pointer-events-auto absolute bottom-[16%] left-1/2 flex w-[240px] -translate-x-1/2 items-center justify-center gap-3 rounded-lg bg-[var(--primary)] px-6 py-3 font-body text-sm font-semibold text-white shadow-xl transition hover:bg-[var(--primary-dark)]"
+          >
+            See more
+            <ArrowRight size={18} />
+          </Link>
         </div>
       </section>
     </main>
-  );
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl bg-gray-50 p-4">
-      <p className="text-xs font-medium text-gray-500">{label}</p>
-      <p className="mt-1 text-lg font-bold text-gray-950">{value}</p>
-    </div>
   );
 }
