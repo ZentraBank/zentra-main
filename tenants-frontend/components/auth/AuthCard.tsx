@@ -1,35 +1,30 @@
 // components/auth/AuthCard.tsx
 
-export default function AuthCard({
-  children,
-}: {
+type AuthCardProps = {
   children: React.ReactNode;
-}) {
-  return (
-    <main className="min-h-screen flex">
-      
-      {/* LEFT SIDE (Desktop Only) */}
+  bordered?: boolean;
+};
 
-      <div className="hidden md:flex w-1/2 items-center justify-center bg-gradient-to-br from-black via-gray-900 to-red-700 text-white p-10">
-            {/* <div
-    className="hidden md:flex w-1/2 items-center justify-center text-white p-10"
-    style={{
-        background: `linear-gradient(to bottom right, black, var(--tenant-primary))`,
-    }}
-    > */}
+export default function AuthCard({ children, bordered = false }: AuthCardProps) {
+  return (
+    <main className="flex min-h-screen">
+      {/* LEFT SIDE (Desktop Only) */}
+      <div className="hidden w-1/2 items-center justify-center bg-gradient-to-br from-black via-gray-900 to-red-700 p-10 text-white md:flex">
         <div>
-          <h1 className="text-4xl font-bold mb-4">
-            Welcome to ZentraBank
-          </h1>
-          <p className="text-sm text-white/70 max-w-sm">
+          <h1 className="mb-4 text-4xl font-bold">Welcome to ZentraBank</h1>
+          <p className="max-w-sm text-sm text-white/70">
             A white-label financial platform powering modern businesses.
           </p>
         </div>
       </div>
 
       {/* RIGHT SIDE (Auth Form) */}
-      <div className="flex w-full md:w-1/2 items-center justify-center bg-black p-5">
-        <div className="w-full max-w-md rounded-xl bg-black p-6 shadow-xl border border-white/10">
+      <div className="flex w-full items-center justify-center bg-black p-5 md:w-1/2">
+        <div
+          className={`w-full max-w-md rounded-xl bg-black p-6 shadow-xl ${
+            bordered ? "border border-white/10" : ""
+          }`}
+        >
           {children}
         </div>
       </div>
