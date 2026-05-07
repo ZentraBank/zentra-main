@@ -35,26 +35,25 @@ export default function HomeHero() {
 
         {/* BUILDING IMAGE */}
         <div className="relative z-20 mt-auto flex justify-center pb-0">
-          <div className="relative w-full max-w-[420px]">
-            <Image
-              src="/images/HeroImage1.png"
-              alt="ZentraBank Building"
-              width={420}
-              height={420}
-              priority
-              className="w-full object-contain"
-            />
+        <div className="relative w-full max-w-[340px]">
+          <Image
+            src="/images/banking-building.png"
+            alt="ZentraBank Building"
+            width={340}
+            height={340}
+            priority
+            className="w-full object-contain"
+          />
 
-            {/* BUTTON */}
-            <Link
-              href="/login"
-              className="absolute bottom-[18%] left-1/2 flex h-[52px] w-[240px] -translate-x-1/2 items-center justify-center gap-3 rounded-xl bg-[var(--primary)] text-sm font-semibold text-white shadow-2xl"
-            >
-              See more
-              <ArrowRight size={18} />
-            </Link>
-          </div>
+          <Link
+            href="/login"
+            className="absolute bottom-[16%] left-1/2 flex h-[48px] w-[220px] -translate-x-1/2 items-center justify-center gap-3 rounded-xl bg-[var(--primary)] text-sm font-semibold text-white shadow-2xl"
+          >
+            See more
+            <ArrowRight size={18} />
+          </Link>
         </div>
+      </div>
       </section>
 
       {/* ================= DESKTOP ================= */}
@@ -62,7 +61,7 @@ export default function HomeHero() {
         {/* BACKGROUND */}
         <div className="absolute inset-0">
           <Image
-            src="/images/hero-bg.png"
+            src="/images/HeroImage1.png"
             alt=""
             fill
             priority
@@ -110,23 +109,23 @@ export default function HomeHero() {
 
         {/* RIGHT IMAGE */}
         <div className="relative z-20 flex w-1/2 items-center justify-center">
-          <div className="relative">
-            {/* GLOW */}
-            <div className="absolute inset-0 scale-110 rounded-full bg-red-600/20 blur-3xl" />
+        <div className="relative">
+          {/* Glow */}
+          <div className="absolute inset-0 scale-110 rounded-full bg-red-600/20 blur-3xl" />
 
-            {/* IMAGE */}
-            <div className="relative overflow-hidden rounded-full border border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
-              <Image
-                src="/images/banking-building.png"
-                alt="Building"
-                width={700}
-                height={700}
-                priority
-                className="object-cover"
-              />
-            </div>
+          {/* Image */}
+          <div className="relative overflow-hidden rounded-full border border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
+            <Image
+              src="/images/banking-building.png"
+              alt="Building"
+              width={520}
+              height={520}
+              priority
+              className="object-cover"
+            />
           </div>
         </div>
+      </div>
       </section>
     </main>
   );
