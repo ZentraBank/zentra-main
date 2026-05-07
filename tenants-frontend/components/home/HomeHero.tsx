@@ -37,7 +37,7 @@ export default function HomeHero() {
         <div className="relative z-20 mt-auto flex justify-center pb-0">
           <div className="relative w-full max-w-[420px]">
             <Image
-              src="/images/HeroImage_1.png"
+              src="/images/HeroImage1.png"
               alt="ZentraBank Building"
               width={420}
               height={420}
