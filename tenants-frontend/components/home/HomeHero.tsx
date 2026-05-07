@@ -34,7 +34,7 @@ export default function HomeHero() {
               width={340}
               height={400}
               priority
-              className="w-full object-contain" // ✅ object-contain prevents stretching
+              className="w-full object-contain" 
             />
             <Link
               href="/login"
