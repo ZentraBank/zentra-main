@@ -4,54 +4,128 @@ import { ArrowRight } from "lucide-react";
 
 export default function HomeHero() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-white">
-      {/* Background composition */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/images/hero-bg.png"
-          alt=""
-          fill
-          priority
-          className="object-cover object-center"
-        />
-      </div>
-
-      {/* Content */}
-      <section className="relative z-20 mx-auto min-h-screen max-w-7xl px-6 pt-20 lg:grid lg:grid-cols-2 lg:items-center lg:px-16 lg:pt-0">
-        {/* Text */}
-        <div className="mx-auto max-w-sm text-center lg:mx-0 lg:max-w-xl lg:text-left">
-          <h1 className="font-heading text-[40px] font-bold leading-[0.95] text-[var(--primary)] lg:text-[72px]">
+    <main className="relative overflow-hidden">
+      {/* ================= MOBILE ================= */}
+      <section className="relative flex min-h-screen flex-col overflow-hidden bg-[#F5F5F5] lg:hidden">
+        {/* TOP CONTENT */}
+        <div className="relative z-20 px-6 pt-20 text-center">
+          <h1 className="font-heading text-[42px] font-bold leading-[0.92] text-[var(--primary)]">
             ZentraBank
             <br />
             Online Banking
           </h1>
 
-          <p className="mx-auto mt-5 max-w-[330px] font-body text-[17px] leading-[1.15] text-black lg:mx-0 lg:mt-8 lg:max-w-lg lg:text-xl lg:leading-8">
+          <p className="mx-auto mt-5 max-w-[320px] font-body text-[17px] leading-[1.15] text-black">
             Welcome to the one-stop app that can help make your work easier on
             the street - this is the only app where you find so many billing
             format and lots more loading, even as a newbie...
           </p>
         </div>
 
-        {/* Building image */}
-        <div className="pointer-events-none absolute bottom-0 left-1/2 z-30 w-[112%] max-w-[500px] -translate-x-1/2 lg:pointer-events-auto lg:relative lg:left-auto lg:bottom-auto lg:mx-auto lg:w-full lg:max-w-[620px] lg:translate-x-0">
-          <div className="relative aspect-square overflow-hidden rounded-full">
+        {/* BACKGROUND SHAPE */}
+        <div className="absolute bottom-0 left-0 right-0 top-[270px] z-10">
+          <Image
+            src="/images/HeroImage.png"
+            alt=""
+            fill
+            priority
+            className="object-cover"
+          />
+        </div>
+
+        {/* BUILDING IMAGE */}
+        <div className="relative z-20 mt-auto flex justify-center pb-0">
+          <div className="relative w-full max-w-[420px]">
             <Image
               src="/images/banking-building.png"
-              alt="ZentraBank building"
-              fill
+              alt="ZentraBank Building"
+              width={420}
+              height={420}
               priority
-              className="object-cover"
+              className="w-full object-contain"
             />
-          </div>
 
-          <Link
-            href="/login"
-            className="pointer-events-auto absolute bottom-[16%] left-1/2 flex w-[240px] -translate-x-1/2 items-center justify-center gap-3 rounded-lg bg-[var(--primary)] px-6 py-3 font-body text-sm font-semibold text-white shadow-xl transition hover:bg-[var(--primary-dark)]"
-          >
-            See more
-            <ArrowRight size={18} />
-          </Link>
+            {/* BUTTON */}
+            <Link
+              href="/login"
+              className="absolute bottom-[18%] left-1/2 flex h-[52px] w-[240px] -translate-x-1/2 items-center justify-center gap-3 rounded-xl bg-[var(--primary)] text-sm font-semibold text-white shadow-2xl"
+            >
+              See more
+              <ArrowRight size={18} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ================= DESKTOP ================= */}
+      <section className="relative hidden min-h-screen overflow-hidden bg-black lg:flex">
+        {/* BACKGROUND */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/hero-bg.png"
+            alt=""
+            fill
+            priority
+            className="object-cover"
+          />
+        </div>
+
+        {/* LEFT CONTENT */}
+        <div className="relative z-20 flex w-1/2 items-center px-20">
+          <div className="max-w-2xl">
+            <div className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur">
+              Modern Digital Banking
+            </div>
+
+            <h1 className="font-heading text-7xl font-bold leading-[0.95] text-white">
+              ZentraBank
+              <span className="mt-2 block text-[var(--primary)]">
+                Online Banking
+              </span>
+            </h1>
+
+            <p className="mt-8 max-w-xl text-lg leading-8 text-white/75">
+              Manage customers, accounts, transfers and subscriptions from one
+              modern banking platform designed for growth.
+            </p>
+
+            <div className="mt-10 flex gap-4">
+              <Link
+                href="/login"
+                className="flex items-center gap-3 rounded-2xl bg-[var(--primary)] px-8 py-4 text-sm font-semibold text-white shadow-2xl transition hover:bg-[var(--primary-dark)]"
+              >
+                Get Started
+                <ArrowRight size={18} />
+              </Link>
+
+              <Link
+                href="/register"
+                className="rounded-2xl border border-white/10 bg-white/10 px-8 py-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
+              >
+                Create Account
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT IMAGE */}
+        <div className="relative z-20 flex w-1/2 items-center justify-center">
+          <div className="relative">
+            {/* GLOW */}
+            <div className="absolute inset-0 scale-110 rounded-full bg-red-600/20 blur-3xl" />
+
+            {/* IMAGE */}
+            <div className="relative overflow-hidden rounded-full border border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
+              <Image
+                src="/images/banking-building.png"
+                alt="Building"
+                width={700}
+                height={700}
+                priority
+                className="object-cover"
+              />
+            </div>
+          </div>
         </div>
       </section>
     </main>
