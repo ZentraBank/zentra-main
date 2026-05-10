@@ -1,119 +1,53 @@
-import Image from "next/image";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import React from "react";
 
-export default function HomeHero() {
+export default function ZentraBankIntro() {
   return (
-    <main className="relative overflow-hidden">
+    <div className="relative h-[852px] w-96 overflow-hidden bg-white">
+      <div className="absolute left-[-12px] top-[377px] h-[489px] w-96 bg-gradient-to-br from-red-600 via-black/90 to-black/90 shadow-[0px_-4px_0px_0px_rgba(0,0,0,0.24)]" />
 
-      {/* ================= MOBILE ================= */}
-      <section className="relative flex min-h-screen flex-col overflow-hidden bg-[#F5F5F5] lg:hidden">
+      <div className="absolute left-0 top-[377px] h-96 w-96 bg-gradient-to-l from-white via-neutral-500 to-black" />
 
-        {/* TOP CONTENT */}
-        <div className="relative z-20 px-6 pt-20 text-center">
-          <h1 className="font-heading text-[42px] font-bold leading-[0.92] text-[var(--primary)]">
-            ZentraBank
-            <br />
-            Online Banking
-          </h1>
-          <p className="mx-auto mt-5 max-w-[320px] font-body text-[17px] leading-[1.5] text-black">
-            Welcome to the one-stop app that can help make your work easier —
-            manage billing, transfers and lots more from one place.
-          </p>
+      <h1 className="absolute left-0 top-[84px] w-96 text-center font-['SF_Pro'] text-5xl leading-10 tracking-widest text-blue-700 [text-shadow:_0px_1px_0px_rgb(255_255_255_/_1.00)]">
+        ZentraBank <br />
+        Online Banking
+      </h1>
+
+      <p className="absolute left-[43px] top-[180px] w-80 text-center font-['Lato'] text-lg font-normal leading-5 tracking-tight text-black/95">
+        Welcome to the one-stop app that can help make your work easier on the
+        street - this is the only app where you find so many billing format and
+        lots more loading, even as a newbie...
+      </p>
+
+      <button className="absolute left-[71px] top-[676px] inline-flex w-64 items-center justify-center gap-2.5 rounded-xl bg-blue-800 px-4 py-2 shadow-[inset_0px_0px_4px_0px_rgba(0,0,0,0.10)]">
+        <span className="font-['Roboto'] text-base font-medium text-white">
+          See more
+        </span>
+
+        <span className="relative h-5 w-5 overflow-hidden">
+          <span className="absolute left-[2px] top-[3px] h-3 w-4 border border-white bg-stone-900/30" />
+        </span>
+      </button>
+
+      <div className="absolute left-0 top-0 inline-flex w-96 items-center justify-between rounded-b-lg bg-white px-6 py-2">
+        <div className="flex-1 font-['Lato'] text-sm font-bold leading-4 tracking-tight text-stone-900/80">
+          19:04
         </div>
 
-        {/* BACKGROUND SHAPE — replaced broken /images/.png with CSS gradient */}
-        <div className="absolute bottom-0 left-0 right-0 top-[270px] z-10 bg-[radial-gradient(ellipse_at_50%_100%,rgba(192,57,43,0.12)_0%,transparent_70%)]" />
+        <div className="flex max-w-20 flex-1 items-center justify-center gap-1 self-stretch">
+          <div className="relative w-4 self-stretch overflow-hidden">
+            <div className="absolute left-[6.80px] top-[10.40px] h-[3.20px] w-[3.40px] bg-stone-900/80" />
+            <div className="absolute left-[0.85px] top-[2.40px] h-2 w-4 bg-stone-900/80" />
+          </div>
 
-        {/* BUILDING IMAGE — FIX: removed mt-auto from outer div, kept on wrapper */}
-        <div className="relative z-20 mt-auto flex justify-center">
-          <div className="relative w-full max-w-[340px]">
-            <Image
-              src="/images/HeroImage1.png"
-              alt="ZentraBank Building"
-              width={340}
-              height={400}
-              priority
-              className="w-full object-contain" 
-            />
-            <Link
-              href="/login"
-              className="absolute bottom-[16%] left-1/2 flex h-[48px] w-[220px] -translate-x-1/2 items-center justify-center gap-3 rounded-xl bg-[var(--primary)] text-sm font-semibold text-white shadow-2xl"
-            >
-              See more
-              <ArrowRight size={18} />
-            </Link>
+          <div className="relative w-4 self-stretch overflow-hidden">
+            <div className="absolute left-[0.75px] top-[0.87px] h-3.5 w-4 bg-stone-900/80" />
+          </div>
+
+          <div className="relative w-5 self-stretch overflow-hidden">
+            <div className="absolute left-[1.60px] top-[4px] h-3 w-5 bg-stone-900/80" />
           </div>
         </div>
-      </section>
-
-      {/* ================= DESKTOP ================= */}
-      <section className="relative hidden min-h-screen overflow-hidden bg-black lg:flex">
-
-        {/* BACKGROUND */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src="/images/hero-bg.png"
-            alt=""
-            fill
-            priority
-            className="object-cover"
-          />
-        </div>
-
-        {/* LEFT CONTENT */}
-        <div className="relative z-20 flex w-1/2 items-center px-20">
-          <div className="max-w-2xl">
-            <div className="mb-6 inline-flex items-center rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur">
-              Modern Digital Banking
-            </div>
-            <h1 className="font-heading text-7xl font-bold leading-[0.95] text-white">
-              ZentraBank
-              <span className="mt-2 block text-[var(--primary)]">
-                Online Banking
-              </span>
-            </h1>
-            <p className="mt-8 max-w-xl text-lg leading-8 text-white/75">
-              Manage customers, accounts, transfers and subscriptions from one
-              modern banking platform designed for growth.
-            </p>
-            <div className="mt-10 flex gap-4">
-              <Link
-                href="/login"
-                className="flex items-center gap-3 rounded-2xl bg-[var(--primary)] px-8 py-4 text-sm font-semibold text-white shadow-2xl transition hover:bg-[var(--primary-dark)]"
-              >
-                Get Started
-                <ArrowRight size={18} />
-              </Link>
-              <Link
-                href="/register"
-                className="rounded-2xl border border-white/10 bg-white/10 px-8 py-4 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/20"
-              >
-                Create Account
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT IMAGE — FIX: explicit h-[520px] w-[520px] on circle, object-cover inside */}
-        <div className="relative z-20 flex w-1/2 items-center justify-center">
-          <div className="relative">
-            {/* Glow */}
-            <div className="absolute inset-0 scale-110 rounded-full bg-red-600/20 blur-3xl" />
-
-            {/* Circle: explicit width AND height so it never stretches */}
-            <div className="relative h-[520px] w-[520px] overflow-hidden rounded-full border border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.6)]">
-              <Image
-                src="/images/banking-building.png"
-                alt="Building"
-                fill                      // ✅ fill + object-cover inside fixed container
-                priority
-                className="object-cover"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
+      </div>
+    </div>
   );
 }
