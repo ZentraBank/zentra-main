@@ -51,7 +51,7 @@ export default function BillingFormatsSection() {
           )}
         </div>
 
-        <h1 className="mx-auto mt-4 max-w-[340px] text-center font-heading text-[29px] font-semibold leading-[36px] tracking-[0.4px] text-blue-700 [text-shadow:_0px_1px_0px_rgb(255_255_255_/_1)]">
+        <h1 className="mx-auto mt-4 max-w-[340px] text-center font-heading text-[36px] font-semibold leading-[36px] tracking-[0.4px] text-blue-700 [text-shadow:_0px_1px_0px_rgb(255_255_255_/_1)]">
           Complete Billing formats - Very Simple to use
         </h1>
 
