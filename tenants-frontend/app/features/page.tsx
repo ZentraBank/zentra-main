@@ -10,8 +10,8 @@ export default function BillingFormatsSection() {
   const menuItems = ["Home", "About", "Services", "Contact"];
 
   return (
-    <section
-        className="relative min-h-[100svh] overflow-hidden px-6 pt-[92px] text-center"
+   <section
+        className="relative h-[100svh] overflow-hidden px-6 pt-[92px] text-center"
         style={{
             background:
             "radial-gradient(ellipse 131.15% 204.96% at 0% 100%, #BBBBBB 11%, rgba(255, 0, 0, 0.60) 66%, rgba(0, 0, 0, 0.10) 100%)",
