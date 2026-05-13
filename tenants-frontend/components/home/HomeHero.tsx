@@ -7,30 +7,26 @@ export default function HomeHero() {
     <main className="relative overflow-hidden">
 
       {/* ================= MOBILE ================= */}
-      <section className="relative h-screen overflow-hidden bg-white lg:hidden">
-    <Image
-      src="/images/HomePage.png"
-      alt="ZentraBank Online Banking"
-      fill
-      priority
-      sizes="100vw"
-      className="object-cover object-center"
-    />
+    <section className="relative min-h-screen overflow-hidden bg-white lg:hidden">
+      <Image
+        src="/images/HomePage.png"
+        alt="ZentraBank Online Banking"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-top"
+      />
 
-    {/* Overlay gradient (optional but improves contrast) */}
-    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20 z-10" />
-
-    {/* Button */}
-    <div className="absolute bottom-8 left-1/2 z-20 -translate-x-1/2">
-      <Link
-        href="/login"
-        className="flex h-[52px] w-[240px] items-center justify-center gap-3 rounded-2xl bg-[var(--primary)] text-sm font-semibold text-white shadow-2xl"
-      >
-        See more
-        <ArrowRight size={18} />
-      </Link>
-    </div>
-  </section>
+      <div className="absolute inset-x-0 bottom-10 z-20 flex justify-center px-6">
+        <Link
+          href="/features"
+          className="flex h-[52px] w-[240px] items-center justify-center gap-3 rounded-2xl bg-[var(--primary)] text-sm font-semibold text-white shadow-2xl"
+        >
+          See more
+          <ArrowRight size={18} />
+        </Link>
+      </div>
+    </section>
 
       {/* ================= DESKTOP ================= */}
       <section className="relative hidden min-h-screen overflow-hidden bg-black lg:flex">
