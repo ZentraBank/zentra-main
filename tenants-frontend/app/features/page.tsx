@@ -11,12 +11,12 @@ export default function BillingFormatsSection() {
 
   return (
     <section
-    className="relative min-h-screen overflow-hidden px-6 pt-[92px] text-center"
-    style={{
-        background:
-        "radial-gradient(ellipse 131.15% 204.96% at 0% 100%, #BBBBBB 11%, rgba(255, 0, 0, 0.60) 66%, rgba(0, 0, 0, 0.10) 100%)",
-    }}
-    >
+        className="relative min-h-[100svh] overflow-hidden px-6 pt-[92px] text-center"
+        style={{
+            background:
+            "radial-gradient(ellipse 131.15% 204.96% at 0% 100%, #BBBBBB 11%, rgba(255, 0, 0, 0.60) 66%, rgba(0, 0, 0, 0.10) 100%)",
+        }}
+        >
       {/* Navbar */}
       <div className="absolute left-0 top-0 z-30 w-full rounded-b-lg bg-white px-6 py-3">
         <div className="flex items-center justify-between">
@@ -49,31 +49,28 @@ export default function BillingFormatsSection() {
         )}
       </div>
       {/* Heading */}
-        <h1 className="mx-auto max-w-[345px] font-heading text-[34px] font-semibold leading-[40px] tracking-[0.5px] text-blue-700 [text-shadow:_0px_1px_0px_rgb(255_255_255_/_1)]">
+        <h1 className="mx-auto max-w-[345px] font-heading text-[32px] font-semibold leading-[38px] tracking-[0.5px] text-blue-700 [text-shadow:_0px_1px_0px_rgb(255_255_255_/_1)]">
         Complete Billing formats - Very Simple to use
         </h1>
 
-        {/* Text */}
-        <p className="mx-auto mt-7 max-w-[320px] font-body text-[18px] font-semibold leading-[25px] text-white">
+        <p className="mx-auto mt-5 max-w-[320px] font-body text-[17px] font-semibold leading-[24px] text-white">
         Next-of-kin, donation, Card, Investment, Account Upgrade, Bill payment,
         Subscriptions and many more...
         </p>
 
-        {/* Middle Image */}
-        <div className="mt-16 flex justify-center">
-        <div className="h-[220px] w-[220px] rounded-full bg-red-600 p-4">
+        <div className="mt-10 flex justify-center">
+        <div className="h-[200px] w-[200px] rounded-full bg-red-600 p-4">
             <Image
             src="/images/billing-formats.png"
             alt="Billing formats"
-            width={190}
-            height={190}
+            width={180}
+            height={180}
             className="h-full w-full rounded-full object-cover"
             />
         </div>
         </div>
 
-        {/* Button */}
-        <div className="mt-8 flex justify-center pb-10">
+        <div className="mt-7 flex justify-center pb-8">
         <button className="flex w-[250px] items-center justify-center gap-2.5 rounded-xl bg-blue-800 px-4 py-3 text-white">
             <span className="font-roboto text-base font-medium">See more</span>
             <ArrowRight size={18} />
