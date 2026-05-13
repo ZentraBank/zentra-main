@@ -7,46 +7,26 @@ export default function HomeHero() {
     <main className="relative overflow-hidden">
 
       {/* ================= MOBILE ================= */}
-      <section className="relative flex min-h-screen flex-col overflow-hidden bg-[#F5F5F5] lg:hidden">
+    <section className="relative min-h-screen overflow-hidden bg-white lg:hidden">
+      <Image
+        src="/images/HomePage.png"
+        alt="ZentraBank Online Banking"
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-top"
+      />
 
-        {/* TOP CONTENT */}
-        <div className="relative z-20 px-6 pt-20 text-center">
-          <h1 className="font-heading text-[42px] font-bold leading-[0.92] text-[var(--primary)]">
-            ZentraBank
-            <br />
-            Online Banking
-          </h1>
-          <p className="mx-auto mt-5 max-w-[320px] font-body text-[17px] leading-[1.5] text-black">
-            Welcome to the one-stop app that can help make your work easier —
-            manage billing, transfers and lots more from one place.
-          </p>
-        </div>
-
-        {/* BACKGROUND SHAPE — replaced broken /images/.png with CSS gradient */}
-        <div className="absolute bottom-0 left-0 right-0 top-[270px] z-10 bg-[radial- gradient(ellipse_at_50%_100%,rgba(192,57,43,0.12)_0%,transparent_70%)]" />
-
-              {/* BUILDING IMAGE */}
-      <div className="relative z-20 mt-auto flex justify-center px-4 pb-6">
-        <div className="relative w-full max-w-[420px]">
-          <Image
-            src="/images/HeroImage1.png"
-            alt="ZentraBank Building"
-            width={420}
-            height={520}
-            priority
-            className="h-auto w-full object-cover"
-          />
-
-          <Link
-            href="/login"
-            className="absolute bottom-[14%] left-1/2 flex h-[52px] w-[240px] -translate-x-1/2 items-center justify-center gap-3 rounded-2xl bg-[var(--primary)] text-sm font-semibold text-white shadow-2xl"
-          >
-            See more
-            <ArrowRight size={18} />
-          </Link>
-        </div>
+      <div className="absolute inset-x-0 bottom-10 z-20 flex justify-center px-6">
+        <Link
+          href="/login"
+          className="flex h-[52px] w-[240px] items-center justify-center gap-3 rounded-2xl bg-[var(--primary)] text-sm font-semibold text-white shadow-2xl"
+        >
+          See more
+          <ArrowRight size={18} />
+        </Link>
       </div>
-      </section>
+    </section>
 
       {/* ================= DESKTOP ================= */}
       <section className="relative hidden min-h-screen overflow-hidden bg-black lg:flex">
