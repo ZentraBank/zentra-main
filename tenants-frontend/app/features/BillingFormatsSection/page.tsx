@@ -19,7 +19,7 @@ export default function BillingFormatsSection() {
             "radial-gradient(ellipse 131.15% 204.96% at 0% 100%, #BBBBBB 11%, rgba(255, 0, 0, 0.60) 66%, rgba(0, 0, 0, 0.10) 100%)",
         }}
       >
-        {/* Navbar */}
+        {/* Navbar
         <div className="absolute left-0 top-0 z-30 w-full rounded-b-lg bg-white px-6 py-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-bold text-black/80">
@@ -49,7 +49,7 @@ export default function BillingFormatsSection() {
               ))}
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Heading */}
         <h1 className="mx-auto mt-4 max-w-[340px] text-[36px] font-semibold leading-[1.1] tracking-[-0.02em] text-blue-700 [text-shadow:_0px_1px_0px_rgb(255_255_255_/_1)]">
