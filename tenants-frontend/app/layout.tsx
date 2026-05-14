@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import TenantProvider from "@/components/tenant/TenantProvider";
+import { sfPro } from "./fonts";
 
 export const metadata: Metadata = {
   title: "ZentraBank",
@@ -9,13 +10,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="en">
-      <body>
-        <TenantProvider>{children}</TenantProvider>
+    <html lang="en" className={sfPro.variable}>
+      <body className="font-sf antialiased">
+        <TenantProvider>
+          {children}
+        </TenantProvider>
       </body>
     </html>
   );
