@@ -44,7 +44,7 @@ export default function HomeHero() {
 
           <div className="absolute left-1/2 top-[255px] z-20 -translate-x-1/2">
             <Link
-              href="/features"
+              href="/features/billingformats"
               className="flex w-[230px] items-center justify-center gap-2.5 rounded-xl bg-blue-800 px-4 py-3 text-white shadow-[0_16px_35px_rgba(0,0,0,0.35)]"
             >
               <span className="text-[15px] font-medium">See more</span>
@@ -55,11 +55,11 @@ export default function HomeHero() {
       </section>
 
       {/* ================= IPAD + DESKTOP ================= */}
-      <section className="relative hidden min-h-screen overflow-hidden bg-white px-8 py-8 md:block">
+      <section className="relative hidden min-h-screen overflow-hidden bg-white px-8 py-30 md:block">
         <div className="absolute -left-32 bottom-0 h-[520px] w-[520px] rounded-full bg-red-700/25 blur-[100px]" />
         <div className="absolute -right-40 top-20 h-[560px] w-[560px] rounded-full bg-blue-700/20 blur-[120px]" />
 
-        <nav className="relative z-30 mx-auto flex max-w-7xl items-center justify-between rounded-3xl border border-black/10 bg-white/80 px-6 py-4 shadow-[0_20px_70px_rgba(0,0,0,0.08)] backdrop-blur-xl">
+        {/* <nav className="relative z-30 mx-auto flex max-w-7xl items-center justify-between rounded-3xl border border-black/10 bg-white/80 px-6 py-4 shadow-[0_20px_70px_rgba(0,0,0,0.08)] backdrop-blur-xl">
           <span className="text-lg font-semibold text-black">ZentraBank</span>
 
           <div className="flex items-center gap-8">
@@ -75,12 +75,12 @@ export default function HomeHero() {
           </div>
 
           <Link
-            href="/features"
+            href="/features/billingformats"
             className="rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5"
           >
             Get Started
           </Link>
-        </nav>
+        </nav> */}
 
         <div className="relative z-20 mx-auto grid min-h-[calc(100vh-120px)] max-w-7xl items-center gap-14 md:grid-cols-2">
           <div className="max-w-2xl">
@@ -101,7 +101,7 @@ export default function HomeHero() {
 
             <div className="mt-9 flex items-center gap-4">
               <Link
-                href="/features"
+                href="/features/billingformats"
                 className="flex items-center gap-3 rounded-2xl bg-blue-700 px-7 py-4 text-[16px] font-semibold text-white shadow-[0_20px_50px_rgba(29,78,216,0.25)] transition hover:-translate-y-1 hover:bg-blue-600"
               >
                 See more

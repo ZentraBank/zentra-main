@@ -6,7 +6,7 @@ export default function SubscribeSection() {
   return (
     <>
       {/* ================= MOBILE ================= */}
-      <section className="relative h-[100svh] overflow-hidden bg-black px-6 pt-[92px] text-center md:hidden">
+      <section className="relative h-[100svh] overflow-hidden bg-black px-6 py-35 pt-[92px] text-center md:hidden">
         <h1 className="mx-auto max-w-[340px] text-[38px] font-semibold leading-[0.92] tracking-[-0.04em] text-blue-700 [text-shadow:_0px_1px_0px_rgb(255_255_255_/_0.55)]">
           Subscribe and
           <br />
@@ -38,11 +38,11 @@ export default function SubscribeSection() {
       </section>
 
       {/* ================= IPAD + DESKTOP ================= */}
-      <section className="relative hidden min-h-screen overflow-hidden bg-black px-8 py-8 md:block">
+      <section className="relative hidden min-h-screen overflow-hidden bg-black px-8 py-25 md:block">
         <div className="absolute -left-32 top-20 h-[520px] w-[520px] rounded-full bg-blue-700/20 blur-[120px]" />
         <div className="absolute -right-32 bottom-0 h-[520px] w-[520px] rounded-full bg-red-700/20 blur-[120px]" />
 
-        <nav className="relative z-30 mx-auto flex max-w-7xl items-center justify-between rounded-3xl border border-white/10 bg-white/10 px-6 py-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        {/* <nav className="relative z-30 mx-auto flex max-w-7xl items-center justify-between rounded-3xl border border-white/10 bg-white/10 px-6 py-4 shadow-[0_20px_70px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           <Link href="/" className="text-lg font-semibold text-white">
             ZentraBank
           </Link>
@@ -65,7 +65,7 @@ export default function SubscribeSection() {
           >
             Subscribe
           </Link>
-        </nav>
+        </nav> */}
 
         <div className="relative z-20 mx-auto grid min-h-[calc(100vh-120px)] max-w-7xl items-center gap-14 md:grid-cols-2">
           <div className="max-w-2xl">
