@@ -5,7 +5,8 @@ import { ArrowLeft, Share2, FileText, ShieldCheck } from "lucide-react";
 export default function ClientProfilePage() {
   return (
     <AppShell>
-      <div className="mb-6">
+       <div className="min-h-screen bg-[#2458E8] px-2 py-4">
+      <div className="mb-6" >
         <Link
           href="/clients"
           className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-tenant"
@@ -14,8 +15,8 @@ export default function ClientProfilePage() {
           Back to clients
         </Link>
 
-        <h1 className="text-2xl font-bold">Client Profile</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-3xl font-bold">Client Profile</h1>
+        <p className="text-sm text-white-500">
           View client identity, contact details, and account information.
         </p>
       </div>
@@ -98,6 +99,7 @@ export default function ClientProfilePage() {
           </section>
         </div>
       </div>
+      </div>
     </AppShell>
   );
 }
@@ -113,14 +115,15 @@ function Info({
 }) {
   return (
     <div>
-      <p className="text-xs font-medium text-gray-500">{label}</p>
+      <p className="text-xs font-medium text-white-500">{label}</p>
       <p
         className={`mt-1 text-sm font-semibold ${
-          warning ? "text-yellow-600" : "text-gray-900"
+          warning ? "text-yellow-600" : "text-white-900"
         }`}
       >
         {value}
       </p>
     </div>
+    
   );
 }
