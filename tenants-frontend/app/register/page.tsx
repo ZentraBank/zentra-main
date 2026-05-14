@@ -2,73 +2,128 @@
 
 import AuthCard from "@/components/auth/AuthCard";
 import Link from "next/link";
+import Image from "next/image";
+import { LogIn } from "lucide-react";
 
 export default function RegisterPage() {
   return (
     <AuthCard>
-      <h1 className="mb-6 text-center text-2xl font-bold">Sign up</h1>
+      {/* <h1 className="mt-10 mb-3 text-center text-[28px] font-extrabold leading-none text-amber-50">
+        Sign up
+      </h1> */}
 
-      <p className="mb-5 text-xs text-white/80">
+      <div className="mb-10 overflow-hidden rounded-br-none rounded-tr-[58px] bg-gradient-to-r from-[#246BFF] via-[#2F73FF] to-[#A9A9A9]">
+        <div className="flex h-[84px] items-center justify-center">
+          <Image
+            src="/images/register.png"
+            alt="Signup illustration"
+            width={98}
+            height={98}
+            className="object-contain"
+            priority
+          />
+        </div>
+      </div>
+
+      <p className="mb-3 text-[12px] leading-[15px] text-white">
         Signup to use this tool in making clients pay without anything from A-Z.
       </p>
 
-      <form className="space-y-4">
-        <div className="grid grid-cols-2 gap-2">
+      <form className="space-y-3">
+        <div className="grid h-[25px] grid-cols-2 overflow-hidden rounded-t-[10px] border border-[#1647BD]">
           <input
             type="email"
-            placeholder="Email"
-            className="rounded-md border border-white/20 bg-white px-3 py-2 text-sm text-black outline-none"
+            placeholder="Email:"
+            className="bg-white px-1.5 text-[11px] font-bold text-black outline-none placeholder:text-black"
           />
-
           <input
             type="tel"
-            placeholder="Phone"
-            className="rounded-md border border-white/20 bg-black px-3 py-2 text-sm text-white outline-none"
+            placeholder="Phone:"
+            className="bg-black px-1.5 text-[11px] font-bold text-white outline-none placeholder:text-white"
           />
         </div>
 
         <input
-          type="password"
-          placeholder="Create Password"
-          className="w-full border-b border-white/40 bg-transparent px-1 py-2 text-sm text-white outline-none"
+          type="text"
+          placeholder="+1-383-383-XXX"
+          className="h-[25px] w-full border-b border-white/70 bg-transparent px-1 text-[13px] text-white outline-none placeholder:text-white"
         />
 
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          className="w-full border-b border-white/40 bg-transparent px-1 py-2 text-sm text-white outline-none"
-        />
+        <div>
+          <label className="text-[11px] font-semibold text-white">
+            Create Password:
+          </label>
+
+          <div className="mt-1.5 flex justify-center gap-4">
+            {[...Array(5)].map((_, i) => (
+              <input
+                key={i}
+                type="password"
+                maxLength={1}
+                className="h-6 w-7 border-b border-white/70 bg-transparent text-center text-[13px] text-white outline-none"
+              />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[11px] font-semibold text-white">
+            Confirm Password:
+          </label>
+
+          <div className="mt-1.5 flex justify-center gap-4">
+            {[...Array(5)].map((_, i) => (
+              <input
+                key={i}
+                type="password"
+                maxLength={1}
+                className="h-6 w-7 border-b border-white/70 bg-transparent text-center text-[13px] text-white outline-none"
+              />
+            ))}
+          </div>
+        </div>
 
         <Link
           href="/register/otp"
-          className="block w-full rounded-lg bg-tenant py-3 text-center text-sm font-semibold"
+          className="mt-7 block w-full rounded-[8px] bg-[#2458E8] py-3 text-center text-[13px] font-semibold text-white"
         >
           Sign up
         </Link>
       </form>
 
-      <div className="my-4 text-center text-xs text-white/60">
-        Or Signup with:
-      </div>
+      <div className="mx-auto mt-1.5 h-[2px] w-[130px] bg-white/60" />
 
-      <div className="flex justify-center gap-4">
-        <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black">
+      <p className="mt-2 text-center text-[11px] text-white">
+        Or Signup with:
+      </p>
+
+      <div className="mt-3 flex justify-center gap-4">
+        <button className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black text-lg">
           f
         </button>
-        <button className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white">
+
+        <button className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 text-white">
           ◎
         </button>
-        <button className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-black">
+
+        <button className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black text-lg">
           G
         </button>
       </div>
 
-      <p className="mt-5 text-center text-xs text-white/70">
-        Have an Account?{" "}
-        <Link href="/login" className="font-semibold text-white">
+      <div className="mt-5 flex items-center justify-center gap-9 text-[11px] text-white">
+        <span>Have an Account?</span>
+
+        <Link href="/login" className="flex items-center gap-3">
           Login
+          <LogIn size={14} className="text-green-500" />
         </Link>
-      </p>
+      </div>
+
+      <div className="mt-7 flex justify-center gap-8 text-[11px] text-white">
+        <Link href="/privacy-policy">Privacy Policy</Link>
+        <Link href="/terms">Terms and Conditions</Link>
+      </div>
     </AuthCard>
   );
 }

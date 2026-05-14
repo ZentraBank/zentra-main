@@ -1,31 +1,56 @@
 // app/register/biometric/page.tsx
 
-import AuthCard from "@/components/auth/AuthCard";
-import BackButton from "@/components/auth/BackButton";
-import FingerprintIcon from "@/components/auth/FingerprintIcon";
-import LegalLinks from "@/components/auth/LegalLinks";
 import Link from "next/link";
+import { ArrowLeft, LogIn } from "lucide-react";
+import FingerprintIcon from "@/components/auth/FingerprintIcon";
 
 export default function RegisterBiometricPage() {
   return (
-    <AuthCard>
-      <BackButton />
+    <main
+      className="relative min-h-screen px-3 py-35 text-white"
+      style={{
+        background:
+          "radial-gradient(ellipse 95% 85% at 0% 100%, #d9d9d9 0%, #c91515 42%, #171717 100%)",
+      }}
+    >
+      {/* <Link href="/register/otp" className="absolute left-4 top-4 text-white">
+        <ArrowLeft size={16} />
+      </Link> */}
 
-      <h1 className="text-2xl font-bold">Set up Thumbprint</h1>
-      <p className="mt-2 text-sm text-white/80">
-        Place your thumb on your phone to activate thumbprint login.
-      </p>
+      <section className="mx-auto mt-20 max-w-[390px] rounded-[9px] bg-black px-4 pb-7 pt-6">
+        <div className="mb-4 flex items-center gap-5">
+          <Link href="/register/otp" className="text-white">
+            <ArrowLeft size={18} />
+          </Link>
 
-      <FingerprintIcon />
+          <h1 className="text-[25px] font-extrabold leading-none">
+            Set up Thumbprint
+          </h1>
+        </div>
 
-      <Link
-        href="/register/success"
-        className="block w-full rounded-lg bg-tenant py-3 text-center text-sm font-semibold"
-      >
-        Skip
-      </Link>
+        <p className="max-w-[280px] text-[12px] leading-[15px] text-white">
+          Place your thumb on your phone to activate thumbprint login...
+        </p>
 
-      <LegalLinks />
-    </AuthCard>
+        <div className="my-14 flex justify-center">
+          <div className="flex h-[54px] w-[54px] items-center justify-center rounded-[8px] bg-[#5f6168]">
+            <FingerprintIcon />
+          </div>
+        </div>
+
+        <Link
+          href="/register/success"
+          className="mx-auto flex h-[42px] w-[88%] items-center justify-center gap-3 rounded-[8px] bg-[#2458E8] text-[13px] font-semibold text-white"
+        >
+          Skip
+          <LogIn size={14} />
+        </Link>
+
+        <div className="mt-7 flex justify-center gap-9 text-[11px] text-white">
+          <Link href="/privacy-policy">Privacy Policy</Link>
+          <Link href="/terms">Terms and Conditions</Link>
+        </div>
+      </section>
+    </main>
   );
 }
