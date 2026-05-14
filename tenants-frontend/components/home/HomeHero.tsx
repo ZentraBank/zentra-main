@@ -44,7 +44,7 @@ export default function HomeHero() {
 
           <div className="absolute left-1/2 top-[255px] z-20 -translate-x-1/2">
             <Link
-              href="/features/billingformats"
+              href="/billingformats"
               className="flex w-[230px] items-center justify-center gap-2.5 rounded-xl bg-blue-800 px-4 py-3 text-white shadow-[0_16px_35px_rgba(0,0,0,0.35)]"
             >
               <span className="text-[15px] font-medium">See more</span>
@@ -101,7 +101,7 @@ export default function HomeHero() {
 
             <div className="mt-9 flex items-center gap-4">
               <Link
-                href="/features/billingformats"
+                href="/billingformats"
                 className="flex items-center gap-3 rounded-2xl bg-blue-700 px-7 py-4 text-[16px] font-semibold text-white shadow-[0_20px_50px_rgba(29,78,216,0.25)] transition hover:-translate-y-1 hover:bg-blue-600"
               >
                 See more
