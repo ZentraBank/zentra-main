@@ -40,7 +40,7 @@ export default function BillingFormatsSection() {
 
         <div className="mt-7 flex justify-center">
           <Link
-            href="/features/subscribesection"
+            href="/subscribesection"
             className="flex w-[230px] items-center justify-center gap-2.5 rounded-xl bg-blue-800 px-4 py-3 text-white transition hover:bg-blue-700"
           >
             <span className="text-[15px] font-medium">See more</span>
@@ -103,7 +103,7 @@ export default function BillingFormatsSection() {
 
             <div className="mt-9 flex items-center gap-4">
               <Link
-                href="/features/subscribesection"
+                href="/subscribesection"
                 className="flex items-center gap-3 rounded-2xl bg-blue-800 px-7 py-4 text-[16px] font-semibold text-white shadow-[0_20px_50px_rgba(30,64,175,0.35)] transition hover:-translate-y-1 hover:bg-blue-700"
               >
                 See more
