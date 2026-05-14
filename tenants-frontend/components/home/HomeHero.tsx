@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { ArrowRight, Link } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 export default function OnlineBankingSection() {
   return (
