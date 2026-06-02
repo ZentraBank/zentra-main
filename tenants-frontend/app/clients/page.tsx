@@ -1,16 +1,14 @@
 import Link from "next/link";
 import Image from "next/image";
-// import { useState } from "react";
 import {
   ArrowLeft,
+  ArrowRight,
   ChevronRight,
   Menu,
   Search,
   SlidersHorizontal,
   MessageCircle,
 } from "lucide-react";
-
-
 
 function getInitials(name: string) {
   return name
@@ -20,33 +18,32 @@ function getInitials(name: string) {
     .slice(0, 2)
     .toUpperCase();
 }
+
 const clients = [
   {
     id: 1,
     name: "Gregory Winter",
-    desc: "An up coming Philanthropist",
-    badge: 4,
+    desc: "An upcoming Philanthropist",
   },
   {
     id: 2,
     name: "Client’s name here",
-    desc: "An over-view of first few words of the client...",
-    badge: 2,
+    desc: "An overview of first few words of the client...",
   },
   {
     id: 3,
     name: "Client’s name here",
-    desc: "An over-view of first few words of the client...",
+    desc: "An overview of first few words of the client...",
   },
   {
     id: 4,
     name: "Client’s name here",
-    desc: "An over-view of first few words of the client...",
+    desc: "An overview of first few words of the client...",
   },
   {
     id: 5,
     name: "Client’s name here",
-    desc: "An over-view of first few words of the client...",
+    desc: "An overview of first few words of the client...",
   },
 ];
 
@@ -56,7 +53,12 @@ const adverts = [
   "/images/advert-3.png",
 ];
 
-
+const helpItems = [
+  "How to use this website",
+  "Chat an admin",
+  "Make complains",
+  "How your subscription works",
+];
 
 export default function ClientsPage() {
   return (
@@ -197,25 +199,64 @@ export default function ClientsPage() {
               </div>
             </div>
 
-              
+            {/* Get Help mobile */}
+            <div className="mt-4">
+              <h2 className="mb-3 text-[16px] font-extrabold text-white">
+                Get Help
+              </h2>
+
+              <div className="space-y-3">
+                {helpItems.map((item) => (
+                  <Link
+                    key={item}
+                    href="#"
+                    className="flex h-[40px] items-center justify-between rounded-xl bg-white px-4 text-[12px] font-medium text-black"
+                  >
+                    <span>{item}</span>
+                    <ArrowRight size={16} className="text-black/50" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Share website mobile */}
+            <div className="mt-6 border-t border-white/15 pt-3">
+              <div className="flex items-center justify-between rounded-full bg-black px-2 py-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white/20 text-xs font-bold">
+                    ZB
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] font-semibold text-blue-500">
+                      Get subscription discount!
+                    </p>
+                    <p className="text-[12px] text-white">
+                      Share this website with friends
+                    </p>
+                  </div>
+                </div>
+
+                <Link
+                  href="#"
+                  className="flex h-9 items-center gap-1 rounded-xl bg-blue-700 px-3 text-[12px] font-semibold text-white"
+                >
+                  Go
+                  <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+
             {/* client list */}
             <div className="mt-4 space-y-4 lg:mt-6 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-                {clients.map((client) => (
-                  <div
-                    key={client.id}
-                    className="flex items-center gap-2 lg:rounded-3xl lg:border lg:border-white/10 lg:bg-white/[0.04] lg:p-4 lg:transition lg:hover:-translate-y-1 lg:hover:bg-white/[0.07]"
-                  >
-                   {client.image ? (
-                  <Image
-                    src={client.image}
-                    alt={client.name}
-                    width={56}
-                    height={56}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span>{getInitials(client.name)}</span>
-                )}
+              {clients.map((client) => (
+                <div
+                  key={client.id}
+                  className="flex items-center gap-2 lg:rounded-3xl lg:border lg:border-white/10 lg:bg-white/[0.04] lg:p-4 lg:transition lg:hover:-translate-y-1 lg:hover:bg-white/[0.07]"
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-sm font-bold text-white">
+                    {getInitials(client.name)}
+                  </div>
 
                   <div className="min-w-0 flex-1">
                     <h2 className="truncate text-[17px] font-extrabold leading-[19px]">
