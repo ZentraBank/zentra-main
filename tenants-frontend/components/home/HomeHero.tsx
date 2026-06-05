@@ -8,46 +8,71 @@ export default function HomeHero() {
   return (
     <>
       {/* ================= MOBILE ================= */}
-      <section className="relative h-[100svh] overflow-hidden bg-white text-center md:hidden">
-        <div className="relative z-20 mx-auto max-w-[340px] px-5 pt-[66px]">
-          <h1 className="text-[36px] font-semibold leading-[0.92] tracking-[-0.04em] text-blue-700">
-            ZentraBank
-            <br />
-            Online Banking
-          </h1>
+      <section className="relative h-screen overflow-hidden bg-white md:hidden">
 
-          <p className="mx-auto mt-4 max-w-[305px] text-[15px] font-medium leading-[17px] text-black">
-            Welcome to the one-stop app that can help make your work easier on
-            the street - this is the only app where you find so many billing
-            format and lots more loading, even as a newbie...
-          </p>
-        </div>
+  {/* Text */}
+  <div className="pt-14 px-6 text-center">
+    <h1 className="text-[46px] font-medium leading-[40px] tracking-[0.04em] text-blue-700">
+      ZentraBank
+      <br />
+      Online Banking
+    </h1>
 
-        <div className="absolute bottom-0 left-0 h-[64vh] w-full">
-          <Image
-            src="/images/HeroImage1.png"
-            alt="ZentraBank building"
-            fill
-            priority
-            className="object-cover object-top"
-          />
-        </div>
+    <p className="mx-auto mt-4 w-[308px] text-[18px] leading-[20px] tracking-[0.02em] text-black">
+      Welcome to the one-stop app that can help make your work easier on the
+      street - this is the only app where you find so many billing format and
+      lots more loading, even as a newbie...
+    </p>
+  </div>
 
-        <Link
-          href="/billingformats"
-          className="absolute left-1/2 bottom-[105px] z-30 flex h-[48px] w-[230px] -translate-x-1/2 items-center justify-center gap-2 rounded-xl bg-blue-700 text-[15px] font-medium text-white shadow-[0_16px_35px_rgba(0,0,0,0.35)]"
-        >
-          See more
-          <ArrowRight size={17} />
-        </Link>
-      </section>
+  {/* Hero Artwork */}
+  <div className="relative mt-6 h-[534px] w-full">
+    <Image
+      src="/images/HeroFrame.png"
+      alt="Hero Artwork"
+      fill
+      priority
+      className="object-contain object-top"
+    />
+
+    {/* Button */}
+    <Link
+      href="/billingformats"
+      className="
+        absolute
+        left-1/2
+        bottom-[160px]
+        -translate-x-1/2
+        flex
+        h-12
+        w-[250px]
+        items-center
+        justify-center
+        gap-2
+        rounded-xl
+        bg-blue-800
+        text-white
+      "
+    >
+      See more
+      <ArrowRight size={18} />
+    </Link>
+  </div>
+
+</section>
 
       {/* ================= DESKTOP ================= */}
       <section className="relative hidden min-h-screen overflow-hidden bg-white md:block">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_left_bottom,rgba(220,38,38,0.22),transparent_34%),radial-gradient(circle_at_right_top,rgba(29,78,216,0.18),transparent_34%)]" />
+        <div className="absolute -right-[260px] -top-[180px] h-[780px] w-[780px] rounded-full bg-blue-700/10 blur-[120px]" />
+        <div className="absolute -left-[220px] bottom-[-220px] h-[720px] w-[720px] rounded-full bg-red-700/15 blur-[120px]" />
 
         <div className="relative z-20 mx-auto grid min-h-screen max-w-7xl grid-cols-2 items-center gap-14 px-10">
+          {/* Left */}
           <div>
+            <div className="mb-6 inline-flex rounded-full border border-black/10 bg-black/[0.04] px-4 py-2 text-sm font-medium text-black/70">
+              Mobile-first online banking
+            </div>
+
             <h1 className="text-[72px] font-semibold leading-[0.95] tracking-[-0.05em] text-blue-700 lg:text-[84px]">
               ZentraBank
               <span className="block">Online Banking</span>
@@ -68,16 +93,25 @@ export default function HomeHero() {
             </Link>
           </div>
 
-          <div className="relative flex justify-center">
-            <div className="relative h-[640px] w-[470px] overflow-hidden rounded-[90px] shadow-[0_40px_100px_rgba(0,0,0,0.35)]">
-              <Image
-                src="/images/HeroImage1.png"
-                alt="ZentraBank building"
-                fill
-                priority
-                className="object-cover object-top"
-              />
-            </div>
+          {/* Right */}
+          <div className="relative flex h-[720px] items-center justify-center">
+            <Image
+              src="/images/HeroWave.png"
+              alt=""
+              width={620}
+              height={760}
+              priority
+              className="absolute right-[-80px] top-[40px] z-10 h-[650px] w-[620px] rounded-[60px] object-cover object-top shadow-[0_40px_100px_rgba(0,0,0,0.16)]"
+            />
+
+            <Image
+              src="/images/HeroBlob.png"
+              alt="ZentraBank building"
+              width={520}
+              height={520}
+              priority
+              className="relative z-20 h-[520px] w-[520px] object-contain drop-shadow-[0_40px_70px_rgba(0,0,0,0.35)]"
+            />
           </div>
         </div>
       </section>

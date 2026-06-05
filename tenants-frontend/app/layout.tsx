@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import TenantProvider from "@/components/tenant/TenantProvider";
-import NavbarWrapper from "@/components/layout/NavbarWrapper";
+// import NavbarWrapper from "@/components/layout/NavbarWrapper";
 
 export const metadata: Metadata = {
   title: "ZentraBank",
@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="font-sf antialiased">
         <TenantProvider>
-          <NavbarWrapper />
+          {/* <NavbarWrapper /> */}
           {children}
         </TenantProvider>
       </body>
