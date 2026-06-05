@@ -32,7 +32,7 @@ export default function HomeHero() {
       alt="Hero Artwork"
       fill
       priority
-      className="object-contain object-top"
+      className="object-cover object-top"
     />
 
     {/* Button */}
