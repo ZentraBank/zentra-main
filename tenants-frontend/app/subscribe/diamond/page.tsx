@@ -4,15 +4,15 @@ import {
   ArrowLeft,
   ArrowRight,
   Video,
+  Gem,
   BellRing,
   ShieldCheck,
   WalletCards,
-  BadgeCheck,
 } from "lucide-react";
 
 const plans = ["Read", "Gold", "Diamond"];
 
-export default function BronzeSubscribePage() {
+export default function DiamondSubscribePage() {
   return (
     <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
       <Image
@@ -48,7 +48,7 @@ export default function BronzeSubscribePage() {
                 <button
                   key={plan}
                   className={`h-6 rounded-md text-[11px] font-medium ${
-                    index === 0
+                    index === 2
                       ? "bg-blue-700 text-white"
                       : "bg-gray-400 text-black"
                   }`}
@@ -71,20 +71,20 @@ export default function BronzeSubscribePage() {
           </div>
 
           <div className="mx-2 mt-5 flex items-center justify-between text-[10px] font-bold">
-            <span>Bronze</span>
-            <span>$40</span>
+            <span>Diamond</span>
+            <span>$60</span>
           </div>
 
           <section className="mx-2 rounded-xl bg-white px-3 py-2 text-left text-black shadow-[0_0_8px_rgba(37,99,235,0.85)]">
             <h2 className="font-heading text-[28px] font-extrabold leading-[36px] tracking-[0.4px]">
-              Bronze Plan: Send in-app notifications to front-end users
+              Diamond Plan: Send in-app notifications to front-end users
               regarding account updates or upgrades.
             </h2>
           </section>
 
           <div className="mt-3 flex justify-center">
             <Link
-              href="/subscribe/features"
+              href="/subscribe/features/diamond"
               className="inline-flex h-7 items-center justify-center rounded-full bg-white px-5 shadow-md"
             >
               <span className="text-[11px] font-semibold !text-black">
@@ -103,6 +103,8 @@ export default function BronzeSubscribePage() {
             </Link>
           </div>
 
+          <div className="flex-1" />
+
           <div className="mt-10 flex justify-center pb-3">
             <Link
               href="/subscribe/checkout"
@@ -118,18 +120,18 @@ export default function BronzeSubscribePage() {
         <div className="hidden min-h-[calc(100svh-90px)] items-center lg:grid lg:grid-cols-[1fr_420px] lg:gap-12">
           {/* Left */}
           <section className="text-left">
-            <div className="inline-flex items-center gap-2 rounded-full border border-orange-300/30 bg-orange-400/10 px-4 py-2 text-sm font-semibold text-orange-200 backdrop-blur">
-              <BadgeCheck size={16} />
-              Bronze Plan
+            <div className="inline-flex items-center gap-2 rounded-full border border-yellow-400/30 bg-yellow-400/10 px-4 py-2 text-sm font-semibold text-emerald-200 backdrop-blur">
+              <Gem size={16} />
+              Diamond Plan
             </div>
 
             <h1 className="mt-6 max-w-[650px] font-heading text-[70px] font-extrabold leading-[76px] tracking-[-1.8px] text-blue-500 [text-shadow:_0px_1px_0px_rgb(255_255_255_/_0.8)]">
-              Start with Bronze access
+              Upgrade to Diamond access
             </h1>
 
             <p className="mt-6 max-w-[580px] text-[18px] font-medium leading-[30px] text-white/75">
-              Activate the essential subscription tools for managing client
-              updates, account notifications, and basic front-end actions.
+              Get full subscription access and unlock advanced client-facing
+              controls for updates, account messages, and premium actions.
             </p>
 
             <div className="mt-8 grid max-w-[620px] grid-cols-3 gap-4">
@@ -141,8 +143,8 @@ export default function BronzeSubscribePage() {
                 },
                 {
                   icon: ShieldCheck,
-                  title: "Secure",
-                  desc: "Controlled access",
+                  title: "Control",
+                  desc: "Manage access",
                 },
                 {
                   icon: WalletCards,
@@ -171,7 +173,7 @@ export default function BronzeSubscribePage() {
               </Link>
 
               <Link
-                href="/subscribe/features"
+                href="/subscribe/features/diamond"
                 className="inline-flex h-14 items-center justify-center rounded-2xl border border-white/15 bg-white/10 px-6 text-[15px] font-bold text-white backdrop-blur transition hover:bg-white/15"
               >
                 See all features
@@ -190,7 +192,7 @@ export default function BronzeSubscribePage() {
                 <button
                   key={plan}
                   className={`h-12 rounded-xl text-[15px] font-bold ${
-                    index === 0
+                    index === 2
                       ? "bg-blue-700 text-white"
                       : "bg-gray-300 text-black"
                   }`}
@@ -211,10 +213,10 @@ export default function BronzeSubscribePage() {
               />
             </div>
 
-            <div className="mt-8 overflow-hidden rounded-2xl border border-orange-300/30 bg-black/35 text-left">
-              <div className="flex items-center justify-between bg-gray-400 px-5 py-3 text-black">
-                <span className="font-extrabold">Bronze</span>
-                <span className="font-extrabold">$40</span>
+            <div className="mt-8 overflow-hidden rounded-2xl border border-yellow-300/30 bg-black/35 text-left">
+              <div className="flex items-center justify-between bg-emerald-700 px-5 py-3 text-black">
+                <span className="font-extrabold">Diamond</span>
+                <span className="font-extrabold">$60</span>
               </div>
 
               <div className="p-5">
