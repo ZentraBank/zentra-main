@@ -37,7 +37,7 @@ export default function HomeHero() {
 
     {/* Button */}
     <Link
-      href="/billingformats"
+      href="/billingformats "
       className="
         absolute
         left-1/2
