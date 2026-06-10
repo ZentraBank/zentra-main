@@ -71,11 +71,18 @@ h6 {
 
 a {
   text-decoration: none;
-  color: inherit;
+  color: white;
 }
 
 button {
   cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: var(--font-sf);
+  font-weight: 500;
+  color: white;
 }
 
 .dark-section {
