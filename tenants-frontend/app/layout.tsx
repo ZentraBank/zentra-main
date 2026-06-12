@@ -3,8 +3,6 @@ import "./globals.css";
 import TenantProvider from "@/components/tenant/TenantProvider";
 import PageTransition from "@/components/PageTransition";
 
-// import NavbarWrapper from "@/components/layout/NavbarWrapper";
-
 export const metadata: Metadata = {
   title: "ZentraBank",
   description: "White-label configurable banking platform",
@@ -17,13 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sf antialiased">
-        <PageTransition>
+      <body className="font-sf antialiased overflow-x-hidden">
         <TenantProvider>
-          {/* <NavbarWrapper /> */}
-          {children}
+          <PageTransition>{children}</PageTransition>
         </TenantProvider>
-        </PageTransition>
       </body>
     </html>
   );
