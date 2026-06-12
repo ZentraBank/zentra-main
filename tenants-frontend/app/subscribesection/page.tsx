@@ -19,7 +19,7 @@ export default function SubscribeSection() {
           <Image
             src="/images/Laptop.png"
             alt="Subscribe and enjoy client billing"
-            width={600}
+            width={2400}
             height={700}
             className="h-full w-full object-cover"
             priority
@@ -28,12 +28,31 @@ export default function SubscribeSection() {
 
         <div className="mt-9 flex justify-center">
           <Link
-            href="/subscribe"
-            className="flex w-[230px] items-center justify-center gap-2.5 rounded-xl bg-blue-700 px-4 py-3 text-white shadow-[0_16px_35px_rgba(37,99,235,0.35)]"
-          >
-            <span className="text-[15px] font-semibold">Subscribe now</span>
-            <ArrowRight size={17} />
-          </Link>
+    href="/subscribesection"
+    className="
+      absolute
+      left-1/2
+      top-[655px]
+      flex
+      h-[35px]
+      w-[250px]
+      -translate-x-1/2
+      items-center
+      justify-center
+      gap-[10px]
+      rounded-[12px]
+      bg-[#1E40AF]
+      px-[16px]
+      py-[8px]
+      text-[16px]
+      font-medium
+      !text-white
+      shadow-[inset_0px_0px_4px_rgba(0,0,0,0.1)]
+    "
+  >
+    <span className="!text-white">See more</span>
+    <ArrowRight size={18} className="!text-white" />
+  </Link>
         </div>
       </section>
 

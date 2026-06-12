@@ -20,11 +20,11 @@ export default function BillingFormatsSection() {
     className="
       absolute
       left-1/2
-      top-[82px]
+      top-[62px]
       w-[345px]
       -translate-x-1/2
       text-center
-      text-[45.5652px]
+      text-[40.5652px]
       font-medium
       leading-[40px]
       tracking-[0.04em]
@@ -44,7 +44,7 @@ export default function BillingFormatsSection() {
     className="
       absolute
       left-1/2
-      top-[214px]
+      top-[230px]
       w-[308px]
       -translate-x-1/2
       text-center
@@ -190,7 +190,7 @@ export default function BillingFormatsSection() {
             <div className="relative h-[470px] w-[470px]">
               <div className="absolute left-1/2 top-1/2 z-10 h-[405px] w-[405px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-full">
                 <Image
-                  src="/images/gold-circle.png"
+                  src="/images/card.png"
                   alt="Gold Circle"
                   fill
                   priority
@@ -198,7 +198,7 @@ export default function BillingFormatsSection() {
                 />
 
                 <Image
-                  src="/images/billing-formats-photo.png"
+                  src="/images/ring_color.png"
                   alt="Billing Formats"
                   fill
                   priority
@@ -206,13 +206,13 @@ export default function BillingFormatsSection() {
                 />
               </div>
 
-              <Image
+              {/* <Image
                 src="/images/pink-ring.png"
                 alt="Pink Ring"
                 fill
                 priority
                 className="relative z-20 object-contain"
-              />
+              /> */}
             </div>
           </div>
         </div>

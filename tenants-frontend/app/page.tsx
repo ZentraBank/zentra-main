@@ -36,27 +36,33 @@ export default function HomeHero() {
     />
 
     {/* Button */}
-    <Link
-      href="./billingformats"
-      className="
-        absolute
-        left-1/2
-        bottom-[160px]
-        -translate-x-1/2
-        flex
-        h-12
-        w-[250px]
-        items-center
-        justify-center
-        gap-2
-        rounded-xl
-        bg-blue-800
-        text-white
-      "
-    >
-      See more
-      <ArrowRight size={18} />
-    </Link>
+   <Link
+  href="/billingformats"
+  className="
+    absolute
+    left-1/2
+    bottom-[120px]
+    -translate-x-1/2
+    flex
+    h-[35px]
+    w-[250px]
+    items-center
+    justify-center
+    gap-[10px]
+    rounded-[12px]
+    bg-[#1E40AF]
+    px-[16px]
+    py-[8px]
+    text-[16px]
+    font-medium
+    !text-white
+    shadow-[inset_0px_0px_4px_rgba(0,0,0,0.1)]
+    z-50
+  "
+>
+  <span className="!text-white">See more</span>
+  <ArrowRight size={18} className="!text-white" />
+</Link>
   </div>
 
 </section>
