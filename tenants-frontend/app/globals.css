@@ -19,14 +19,19 @@
   --dark-muted: rgba(255, 255, 255, 0.75);
 
   --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-  "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --font-lato: "Lato", sans-serif;
 
   --font-heading: var(--font-sf);
-  --font-body: var(--font-sf);
+  --font-body: var(--font-lato);
 }
 
 @theme {
   --font-sf: var(--font-sf);
+  --font-lato: var(--font-lato);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
 }
 
 *,
@@ -42,7 +47,7 @@ body {
   min-height: 100%;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-sf);
+  font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
@@ -53,11 +58,18 @@ h3,
 h4,
 h5,
 h6,
-p,
 button,
-a,
-span {
-  font-family: var(--font-sf);
+a {
+  font-family: var(--font-heading);
+}
+
+p,
+span,
+label,
+input,
+textarea,
+select {
+  font-family: var(--font-body);
 }
 
 h1,
@@ -80,14 +92,27 @@ button {
   border: none;
   padding: 0;
   margin: 0;
-  font-family: var(--font-sf);
+  font-family: var(--font-heading);
   font-weight: 500;
   color: white;
+}
+
+button:disabled {
+  cursor: not-allowed;
 }
 
 .dark-section {
   background: var(--dark-bg);
   color: var(--dark-text);
+}
+
+.auth-bg {
+  background: radial-gradient(
+    132.61% 156.28% at 0% 100%,
+    #bbbbbb 10.88%,
+    rgba(255, 0, 0, 0.6) 66.35%,
+    rgba(0, 0, 0, 0.1) 100%
+  );
 }
 
 .glass {

@@ -28,7 +28,7 @@ export default function SubscribeSection() {
 
         <div className="mt-9 flex justify-center">
           <Link
-    href="/subscribesection"
+    href="/register"
     className="
       absolute
       left-1/2
@@ -104,7 +104,7 @@ export default function SubscribeSection() {
 
             <div className="mt-9 flex items-center gap-4">
               <Link
-                href="/subscribe"
+                href="/register"
                 className="flex items-center gap-3 rounded-2xl bg-blue-700 px-7 py-4 text-[16px] font-semibold text-white shadow-[0_20px_50px_rgba(29,78,216,0.3)] transition hover:-translate-y-1 hover:bg-blue-600"
               >
                 Subscribe now

@@ -2,86 +2,104 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function RegisterOtpPage() {
+
+  const [countdown, setCountdown] = useState(30);
+
+useEffect(() => {
+  if (countdown <= 0) return;
+
+  const timer = setInterval(() => {
+    setCountdown((prev) => prev - 1);
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [countdown]);
   return (
     <main
-      className="relative min-h-screen overflow-hidden px-5 pb-10 pt-28 text-white"
-      style={{
+      className=" relative min-h-screen overflow-hidden px-5 pb-10 pt-[126px] text-white"
+style={{
         background:
-          "radial-gradient(ellipse 100% 85% at 0% 100%, #d8d8d8 0%, #c91515 38%, #141414 100%)",
+          "radial-gradient(ellipse 100% 85% at 0% 100%, #d8d8d8 0%, #c91515 42%, #151515 100%)",
       }}
     >
-      {/* OTP CARD WRAPPER */}
-      <div className="relative mx-auto max-w-[420px]">
-        {/* BACK ARROW - attached to card */}
-        <Link
-          href="/register"
-          className="absolute -left-9 top-2 z-30 text-white transition hover:text-white/70 max-sm:left-0 max-sm:-top-9"
+      <Link href="/register" className="absolute left-4 top-12 z-30 text-white">
+        <ArrowLeft size={22} />
+      </Link>
+
+      <section className="relative mx-auto max-w-[340px] rounded-[10px] border-[4px] border-[#d6c51f] bg-black px-3 pb-8 pt-5 shadow-2xl">
+        <button
+          type="button"
+          className="absolute left-3 top-6 text-black/40"
+          aria-label="close"
         >
-          <ArrowLeft size={24} />
-        </Link>
+          <X size={16} />
+        </button>
 
-        {/* CARD */}
-        <section className="rounded-[10px] border-[4px] border-[#d6c51f] bg-black px-4 pb-7 pt-7 shadow-2xl">
-          <h1 className="mb-3 text-center text-[24px] font-extrabold leading-none text-white">
-            tier-1 OTP
-          </h1>
+        <h1 className="mb-6 text-center text-[22px] font-extrabold leading-none">
+          tier-1 OTP
+        </h1>
 
-          {/* SMALL BUTTON BAR */}
-          <div className="mb-9 grid h-[24px] grid-cols-2 overflow-hidden rounded-[3px] bg-[#8d8d93] text-center text-[12px] text-black">
-            <button className="border-r border-black/20">Button</button>
-            <button>Button</button>
-          </div>
+        <div className="flex justify-center">
+          <Image
+            src="/images/otp.png"
+            alt="OTP verification"
+            width={242}
+            height={143}
+            className="h-[143px] w-[242px] object-cover"
+            priority
+          />
+        </div>
 
-          {/* IMAGE */}
-          <div className="flex justify-center">
-            <Image
-              src="/images/otp.png"
-              alt="OTP verification"
-              width={255}
-              height={170}
-              className="object-contain"
-              priority
+        <div className=" font-lato mt-6 text-center text-[14px] font-medium leading-[17px]">
+          <p>Here’s the chance to finally get that long awaited funds</p>
+
+          <p className="mt-3">
+            Reach out to our customer care agent for account upgrade, genuity
+            check, and OTP!
+          </p>
+        </div>
+
+        <div className="mx-auto my-5 w-[86%] border-b border-white/70" />
+
+        <label className="pl-1 text-[13px] font-bold">Input OTP</label>
+
+        <div className="mt-2 grid grid-cols-6 gap-2 px-4">
+          {[...Array(6)].map((_, i) => (
+            <input
+              key={i}
+              title={`OTP digit ${i + 1}`}
+              type="password"
+              inputMode="numeric"
+              maxLength={1}
+              className="h-[38px] rounded-[4px] bg-white text-center text-lg font-bold text-[#b7d8c9] outline-none"
             />
-          </div>
+          ))}
+        </div>
 
-          {/* TEXT */}
-          <div className="mt-8 text-center text-[14px] font-bold leading-[17px] text-white">
-            <p>Here’s the chance to finally get that long awaited funds</p>
+        <button
+  type="button"
+  disabled={countdown > 0}
+  onClick={() => setCountdown(30)}
+  className={`font-roboto mt-3 ml-auto flex h-[36px] w-[500px] items-center justify-center rounded-full text-[13px] font-bold transition-all duration-300 ${
+    countdown > 0
+      ? "cursor-not-allowed border border-white/20 bg-[#6f6f6f] text-white/45 opacity-60 shadow-inner"
+      : "cursor-pointer"
+  }`}
+>
+  {countdown > 0 ? `Get OTP (${countdown}s)` : "Get OTP"}
+</button>
 
-            <p className="mt-3">
-              Reach out to our customer care agent for account upgrade,
-              genuity check, and OTP!
-            </p>
-          </div>
-
-          <div className="my-5 border-b border-white/50" />
-
-          {/* OTP INPUT */}
-          <label className="text-[14px] font-bold text-white">Input OTP</label>
-
-          <div className="mt-3 grid grid-cols-6 gap-4 max-sm:gap-3">
-            {[...Array(6)].map((_, i) => (
-              <input title="input"
-                key={i}
-                type="password"
-                maxLength={1}
-                className="h-[48px] rounded-[4px] bg-white text-center text-lg font-bold text-black outline-none"
-              />
-            ))}
-          </div>
-
-          {/* CTA */}
-          <Link
-            href="/dashboard"
-            className="mt-9 block w-full rounded-[8px] bg-[#2458e8] py-4 text-center text-[15px] font-bold text-white transition hover:bg-[#1f4fd3]"
-          >
-            Get OTP
-          </Link>
-        </section>
-      </div>
+        <Link
+          href="/dashboard"
+          className="mt-10 block w-[86%] mx-auto rounded-[10px] bg-[#2458e8] py-3 text-center text-[15px] font-bold text-white"
+        >
+          Finish Signup
+        </Link>
+      </section>
     </main>
   );
 }

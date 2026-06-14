@@ -2,59 +2,68 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogIn } from "lucide-react";
+import { ArrowLeft, LogIn } from "lucide-react";
 
 export default function RegisterSuccessPage() {
   return (
     <main
-      className="relative min-h-screen px-4 py-10 text-white"
+      className="relative min-h-screen overflow-hidden px-5 pb-10 pt-[168px] text-white"
       style={{
         background:
-          "radial-gradient(ellipse 95% 85% at 0% 100%, #d9d9d9 0%, #c91515 42%, #171717 100%)",
+          "radial-gradient(ellipse 100% 85% at 0% 100%, #d8d8d8 0%, #c91515 42%, #151515 100%)",
       }}
     >
-      <section className="mx-auto mt-24 max-w-[360px] rounded-[10px] border-[4px] border-[#d6c51f] bg-black px-5 pb-7 pt-5 shadow-2xl">
-        <h1 className="text-center text-[20px] font-extrabold">
+      <Link
+        href="/register/otp"
+        className="absolute left-4 top-12 z-30 text-white transition hover:text-white/70"
+      >
+        <ArrowLeft size={22} />
+      </Link>
+
+      <section className="relative mx-auto max-w-[340px] rounded-[10px] border-[4px] border-[#d6c51f] bg-black px-3 pb-5 pt-5 shadow-2xl">
+        <h1 className="font-heading text-center text-[22px] font-black leading-none text-white">
           Congratulations!
         </h1>
 
-        <div className="mt-5 flex justify-center">
+        <div className="mt-6 flex justify-center">
           <Image
             src="/images/success.png"
             alt="Account upgraded"
-            width={260}
-            height={150}
-            className="object-contain"
+            width={242}
+            height={143}
+            className="h-[143px] w-[242px] object-cover"
             priority
           />
         </div>
 
-        <p className="mt-5 text-center text-[12px] font-semibold leading-[15px]">
-          Your account has just been upgraded from Basic to tier-1 and $2,500 has
-          been released from your received donation of $10,000
-        </p>
+        <div className="font-body mt-6 text-center text-[14px] font-bold leading-[17px] text-white">
+          <p>
+            Your account has just been upgraded from Basic to tier-1 and $2,500
+            has been released from your received donation of $10,000
+          </p>
 
-        <p className="mt-2 text-center text-[12px] font-semibold leading-[15px]">
-          Proceed to tier-2 to redeem the next part...
-        </p>
+          <p className="mt-3">
+            Proceed to tier-2 to redeem the next part....
+          </p>
+        </div>
 
-        <div className="my-5 border-b border-white/60" />
+        <div className="mx-auto my-5 w-[86%] border-b border-white/70" />
 
-        <div className="space-y-3">
+        <div className="mx-auto w-[86%] space-y-2">
           <Link
             href="/dashboard"
-            className="block w-full rounded-[8px] bg-[#2458E8] py-3 text-center text-[13px] font-bold text-white"
+            className="font-heading block rounded-[10px] bg-[#2458e8] py-3 text-center text-[15px] font-bold text-white transition hover:bg-[#1f4fd3]"
           >
             Go to Dashboard
           </Link>
 
           <Link
-  href="/profile/setup"
-  className="flex w-full items-center justify-center gap-3 rounded-[8px] bg-white py-3 text-center text-[13px] font-bold !text-black"
->
-  Set-up Profile
-  <LogIn size={15} className="text-green-500" />
-</Link>
+            href="/profile/setup"
+            className="font-heading flex items-center justify-center gap-3 rounded-[10px] bg-white py-3 text-center text-[15px] font-bold !text-[#4b4b4b] transition hover:bg-white/90"
+          >
+            Set-up Profile
+            <LogIn size={17} className="text-green-500" />
+          </Link>
         </div>
       </section>
     </main>

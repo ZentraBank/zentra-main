@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+// import { sfPro, lato } from "./fonts";
 import TenantProvider from "@/components/tenant/TenantProvider";
 import PageTransition from "@/components/PageTransition";
 

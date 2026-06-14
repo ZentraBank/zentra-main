@@ -10,7 +10,7 @@ export default function RegisterBiometricPage() {
       className="relative min-h-screen px-3 py-35 text-white"
       style={{
         background:
-          "radial-gradient(ellipse 95% 85% at 0% 100%, #d9d9d9 0%, #c91515 42%, #171717 100%)",
+          "radial-gradient(ellipse 100% 85% at 0% 100%, #d8d8d8 0%, #c91515 42%, #151515 100%)",
       }}
     >
       {/* <Link href="/register/otp" className="absolute left-4 top-4 text-white">
@@ -19,7 +19,7 @@ export default function RegisterBiometricPage() {
 
       <section className="mx-auto mt-20 max-w-[390px] rounded-[9px] bg-black px-4 pb-7 pt-6">
         <div className="mb-4 flex items-center gap-5">
-          <Link href="/register/otp" className="text-white">
+          <Link href="/register" className="text-white">
             <ArrowLeft size={18} />
           </Link>
 
