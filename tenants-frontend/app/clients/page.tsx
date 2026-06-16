@@ -1,56 +1,81 @@
-import Link from "next/link";
+"use client";
+
 import Image from "next/image";
+import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
   ChevronRight,
-  Menu,
   Search,
   SlidersHorizontal,
+  Share2,
   MessageCircle,
+  Users,
+  Bell,
 } from "lucide-react";
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((word) => word[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
+import { useEffect, useRef, useState } from "react";
 
 const clients = [
   {
     id: 1,
     name: "Gregory Winter",
-    desc: "An upcoming Philanthropist",
+    desc: "An upcoming Philanthropist.",
+    unreadCount: 4,
+    image: "/images/greg.png",
+    chatUrl: "/chat",
   },
   {
     id: 2,
-    name: "Client’s name here",
-    desc: "An overview of first few words of the client...",
+    name: "Paul Smith",
+    desc: "An over-view of first few words of the client...",
+    unreadCount: 3,
+    image: "/images/paul.png",
+    chatUrl: "/chat",
   },
   {
     id: 3,
-    name: "Client’s name here",
-    desc: "An overview of first few words of the client...",
+    name: "Anna Smith",
+    desc: "An over-view of first few words of the client...",
+    unreadCount: 5,
+    image: "/images/anna.png",
+    chatUrl: "/chat",
   },
   {
     id: 4,
-    name: "Client’s name here",
-    desc: "An overview of first few words of the client...",
+    name: "Jane Doe",
+    desc: "An over-view of first few words of the client...",
+    unreadCount: 0,
+    image: "/images/jane.png",
+    chatUrl: "/chat",
   },
   {
     id: 5,
-    name: "Client’s name here",
-    desc: "An overview of first few words of the client...",
+    name: "Jeffrey Smith",
+    desc: "An over-view of first few words of the client...",
+    unreadCount: 3,
+    image: "/images/jeff.png",
+    chatUrl: "/chat",
   },
 ];
 
-const adverts = [
-  "/images/advert-1.png",
-  "/images/advert-2.png",
-  "/images/advert-3.png",
+const adverts = ["/images/advert.png", "/images/advert.png", "/images/advert.png"];
+
+const bottomAdverts = [
+  {
+    image: "/images/carousel.png",
+    bg: "bg-[linear-gradient(90deg,#100000,#d00000,#160000)]",
+    button: "bg-[#2458e8]",
+  },
+  {
+    image: "/images/carousel.png",
+    bg: "bg-[#d4b82f]",
+    button: "bg-[#d89400]",
+  },
+  {
+    image: "/images/carousel.png",
+    bg: "bg-[linear-gradient(90deg,#110000,#d00000,#120000)]",
+    button: "bg-[#2458e8]",
+  },
 ];
 
 const helpItems = [
@@ -61,148 +86,252 @@ const helpItems = [
 ];
 
 export default function ClientsPage() {
+  const [activeFilter, setActiveFilter] = useState<"all" | "unread">("all");
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+
+  const totalUnread = clients.reduce(
+    (total, client) => total + client.unreadCount,
+    0
+  );
+
+  const filteredClients =
+    activeFilter === "all"
+      ? clients
+      : clients.filter((client) => client.unreadCount > 0);
+
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+
+    const interval = setInterval(() => {
+      const cardWidth = 346;
+
+      if (
+        carousel.scrollLeft + carousel.clientWidth >=
+        carousel.scrollWidth - 10
+      ) {
+        carousel.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        carousel.scrollBy({ left: cardWidth, behavior: "smooth" });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <main className="min-h-screen bg-black text-white lg:bg-[#050505]">
-      <div className="mx-auto max-w-[430px] px-2 pb-8 pt-28 lg:max-w-7xl lg:px-8 lg:py-32">
-        <Link href="/dashboard" className="mb-3 inline-flex text-white">
-          <ArrowLeft size={18} />
+    <main className="min-h-screen overflow-hidden bg-black text-white lg:bg-[#070707]">
+      <div className="mx-auto max-w-[430px] px-4 pb-8 pt-5 lg:max-w-7xl lg:px-8 lg:py-8">
+        <Link
+          href="/dashboard"
+          className="mb-7 inline-flex items-center gap-2 text-white/90 lg:mb-8"
+        >
+          <ArrowLeft size={20} />
+          <span className="hidden text-sm font-semibold lg:inline">
+            Back to dashboard
+          </span>
         </Link>
 
-        <div className="lg:grid lg:grid-cols-[360px_1fr] lg:gap-8">
-          {/* LEFT PANEL */}
-          <aside className="lg:sticky lg:top-8 lg:h-[calc(100vh-64px)] lg:rounded-[28px] lg:border lg:border-white/10 lg:bg-white/[0.04] lg:p-6 lg:shadow-2xl">
-            <div className="mb-3 flex items-center justify-between">
-              <h1 className="text-[24px] font-extrabold leading-none lg:text-[34px]">
-                Your Clients
-              </h1>
-
-              <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white lg:border-white/20 lg:bg-white/10">
-                <SlidersHorizontal size={22} />
-              </button>
-            </div>
-
-            <p className="hidden text-sm leading-6 text-white/60 lg:block">
-              Manage your client messages, view support activity, and start
-              conversations from one clean workspace.
+        <div className="lg:grid lg:grid-cols-[300px_1fr_320px] lg:gap-6">
+          <aside className="hidden rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-2xl lg:block">
+            <h1 className="font-heading text-[30px] font-black">
+              Your Clients
+            </h1>
+            <p className="font-body mt-2 text-sm leading-6 text-white/55">
+              Manage conversations, unread messages, adverts, and client support
+              actions from one workspace.
             </p>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {["Read", "Unread", "Personal"].map((tab, index) => (
-                <button
-                  key={tab}
-                  className={`h-[28px] rounded-[8px] text-[14px] lg:h-10 lg:rounded-xl ${
-                    index === 0
-                      ? "bg-[#2458E8] text-white"
-                      : "bg-[#9CA0AA] text-white lg:bg-white/10"
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            <div className="mt-6 space-y-3">
+              <StatCard
+                icon={<Users size={19} />}
+                label="Total Clients"
+                value={clients.length}
+              />
+              <StatCard
+                icon={<Bell size={19} />}
+                label="Unread Messages"
+                value={totalUnread}
+              />
+              <StatCard
+                icon={<MessageCircle size={19} />}
+                label="Active Chats"
+                value={filteredClients.length}
+              />
             </div>
 
-            <div className="mt-3 flex items-center gap-3">
-              <Menu size={24} className="lg:hidden" />
-
-              <div className="flex h-[30px] flex-1 items-center rounded-[10px] bg-[#eee9f1] px-3 text-black lg:h-12 lg:rounded-xl">
-                <input
-                  placeholder="Search client"
-                  className="w-full bg-transparent text-[18px] outline-none placeholder:text-[#5c5761] lg:text-sm"
-                />
-                <Search size={22} className="text-[#9a959d]" />
-              </div>
-            </div>
-
-            <div className="mt-6 hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#2458E8] to-[#0b1020] p-5 lg:block">
-              <p className="text-sm text-white/70">Client activity</p>
-              <h2 className="mt-2 text-4xl font-extrabold">24</h2>
-              <p className="mt-2 text-sm text-white/70">
-                active conversations this week
+            <div className="mt-6 rounded-[22px] bg-[linear-gradient(135deg,#2458e8,#111827)] p-5">
+              <p className="font-body text-sm text-white/70">Featured</p>
+              <h2 className="font-heading mt-2 text-2xl font-black">
+                Glowing Season
+              </h2>
+              <p className="font-body mt-2 text-xs leading-5 text-white/70">
+                Promote offers, campaigns, and client updates here.
               </p>
-            </div>
-
-            <div className="mt-5 hidden grid-cols-2 gap-3 lg:grid">
-              <div className="rounded-2xl bg-white/[0.06] p-4">
-                <p className="text-xs text-white/50">Unread</p>
-                <p className="mt-1 text-2xl font-bold">6</p>
-              </div>
-
-              <div className="rounded-2xl bg-white/[0.06] p-4">
-                <p className="text-xs text-white/50">Personal</p>
-                <p className="mt-1 text-2xl font-bold">12</p>
-              </div>
             </div>
           </aside>
 
-          {/* RIGHT PANEL */}
           <section>
-            {/* adverts mobile */}
-            <div className="mt-5 grid grid-cols-3 gap-2 lg:hidden">
-              {adverts.map((ad, i) => (
+            <div className="mb-3 flex items-center justify-between lg:mb-5">
+              <div>
+                <h1 className="font-heading text-[22px] font-extrabold lg:text-[32px]">
+                  Your Clients
+                </h1>
+                <p className="font-body mt-1 hidden text-sm text-white/55 lg:block">
+                  {filteredClients.length} clients showing
+                </p>
+              </div>
+
+              <button
+                type="button"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white lg:h-11 lg:w-11 lg:border-white/15 lg:bg-white/10"
+              >
+                <SlidersHorizontal size={21} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 px-2 lg:w-[280px] lg:px-0">
+              <button
+                type="button"
+                onClick={() => setActiveFilter("all")}
+                className={`h-[20px] rounded-[6px] text-[13px] font-medium lg:h-10 lg:rounded-xl ${
+                  activeFilter === "all" ? "bg-[#2458e8]" : "bg-[#8d929c]"
+                }`}
+              >
+                All
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveFilter("unread")}
+                className={`h-[20px] rounded-[6px] text-[13px] font-medium lg:h-10 lg:rounded-xl ${
+                  activeFilter === "unread" ? "bg-[#2458e8]" : "bg-[#8d929c]"
+                }`}
+              >
+                Unread
+              </button>
+            </div>
+
+            <div className="mx-auto mt-3 flex h-[29px] w-[82%] items-center rounded-full bg-[#eee9f1] px-4 text-black lg:mx-0 lg:h-12 lg:w-full lg:rounded-2xl">
+              <input
+                placeholder="Search client"
+                className="font-body w-full bg-transparent text-[15px] outline-none placeholder:text-[#5c5761] lg:text-sm"
+              />
+              <Search size={21} className="text-[#aaa4ad]" />
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2 lg:hidden">
+              {adverts.map((ad, index) => (
                 <div
-                  key={i}
-                  className="h-[80px] overflow-hidden rounded-[4px] bg-[linear-gradient(135deg,#ff0033,#030000)] p-1"
+                  key={index}
+                  className="h-[68px] overflow-hidden rounded-[4px] border border-red-600 bg-red-700"
                 >
                   <Image
                     src={ad}
-                    alt="Advert card"
+                    alt={`Advert Card ${index + 1}`}
                     width={120}
-                    height={80}
-                    className="h-full w-full rounded-[4px] object-cover"
+                    height={70}
+                    className="h-full w-full object-cover"
                   />
                 </div>
               ))}
             </div>
 
-            {/* desktop hero advert */}
-            <div className="hidden lg:grid lg:grid-cols-[1.4fr_1fr] lg:gap-5">
-              <div className="overflow-hidden rounded-[28px] bg-gradient-to-r from-[#c90707] via-[#680707] to-[#111] p-6 shadow-2xl">
-                <p className="text-sm font-semibold text-white/70">
-                  Featured campaign
-                </p>
-                <h2 className="mt-2 text-4xl font-extrabold leading-tight">
-                  Glowing Season
-                </h2>
-                <p className="mt-3 max-w-md text-sm leading-6 text-white/75">
-                  Offers that never fail. Promote important updates, premium
-                  services, or subscription prompts to clients.
-                </p>
-              </div>
-
-              <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-                <p className="text-sm text-white/60">Subscription</p>
-                <h3 className="mt-2 text-2xl font-bold">Upgrade clients</h3>
-                <p className="mt-3 text-sm leading-6 text-white/60">
-                  Keep track of client tiers, chat status, and pending requests
-                  in one place.
-                </p>
-              </div>
-            </div>
-
-            {/* subscription mobile */}
-            <div className="mt-3 flex h-[47px] overflow-hidden rounded-[4px] bg-[linear-gradient(90deg,#d80606,#050000)] lg:hidden">
-              <div className="w-[34%] bg-[#b8c574]">
+            <div className="mt-3 flex h-[41px] overflow-hidden rounded-[4px] border border-red-600 bg-[linear-gradient(90deg,#d00000,#050000)] lg:hidden">
+              <div className="w-[29%] bg-[#cad45e]">
                 <Image
-                  src="/images/subscription.png"
+                  src="/images/bell.png"
                   alt="Subscription"
-                  width={130}
-                  height={60}
+                  width={120}
+                  height={50}
                   className="h-full w-full object-cover"
                 />
               </div>
 
-              <div className="flex flex-1 items-center justify-around px-3 text-[8px]">
-                <h2 className="text-[9px] font-bold">Subscription</h2>
-                <p className="max-w-[160px] leading-[10px]">
-                  Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+              <div className="flex flex-1 items-center justify-around px-3">
+                <h2 className="font-heading text-[8px] font-bold">
+                  Subscription
+                </h2>
+                <p className="font-body max-w-[170px] text-[6px] leading-[8px]">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit.
                 </p>
               </div>
             </div>
 
-            {/* Get Help mobile */}
-            <div className="mt-4">
-              <h2 className="mb-3 text-[16px] font-extrabold text-white">
-                Get Help
+            <div className="mt-4 space-y-3 lg:mt-6 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+              {filteredClients.map((client) => (
+                <div
+                  key={client.id}
+                  className="flex items-center gap-2 lg:rounded-[22px] lg:border lg:border-white/10 lg:bg-white/[0.05] lg:p-4 lg:transition lg:hover:-translate-y-1 lg:hover:bg-white/[0.08]"
+                >
+                  <Link
+                    href={`/clients/${client.id}`}
+                    className="relative h-[48px] w-[48px] shrink-0 rounded-full border-2 border-[#2458e8] bg-white/20 lg:h-[58px] lg:w-[58px]"
+                  >
+                    <Image
+                      src={client.image}
+                      alt={client.name}
+                      width={58}
+                      height={58}
+                      className="h-full w-full rounded-full object-cover"
+                    />
+
+                    {client.unreadCount > 0 && (
+                      <span className="absolute -bottom-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-700 px-1 text-[11px] font-bold text-white lg:h-6 lg:min-w-6 lg:text-xs">
+                        {client.unreadCount}
+                      </span>
+                    )}
+                  </Link>
+
+                  <Link
+                    href={`/clients/${client.id}`}
+                    className="min-w-0 flex-1"
+                  >
+                    <h2 className="font-heading truncate text-[15px] font-extrabold leading-[17px] text-white lg:text-[17px] lg:leading-5">
+                      {client.name}
+                    </h2>
+                    <p className="font-body truncate text-[14px] leading-[16px] text-white lg:text-sm lg:text-white/55">
+                      {client.desc}
+                    </p>
+                  </Link>
+
+                  <Link
+                    href={client.chatUrl}
+                    className="rounded-full bg-white px-5 py-1 text-[13px] font-semibold !text-black lg:flex lg:h-10 lg:w-10 lg:items-center lg:justify-center lg:px-0"
+                  >
+                    <span className="lg:hidden">Chat client</span>
+                    <MessageCircle size={18} className="hidden lg:block" />
+                  </Link>
+
+                  <Link
+                    href={`/clients/${client.id}`}
+                    className="shrink-0 text-white/80"
+                  >
+                    <ChevronRight size={20} />
+                  </Link>
+                </div>
+              ))}
+            </div>
+
+            <p className="font-body mt-8 text-center text-[13px] text-white/75">
+              That’s all your clients
+            </p>
+
+            <div className="mt-6 h-[41px] overflow-hidden rounded-[4px] border border-red-600 bg-red-700 lg:hidden">
+              <Image
+                src="/images/advert.png"
+                alt="Advert Card"
+                width={390}
+                height={45}
+                className="h-full w-full object-cover"
+              />
+            </div>
+          </section>
+
+          <aside className="hidden space-y-5 lg:block">
+            <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] p-4">
+              <h2 className="font-heading mb-3 text-lg font-black">
+                Quick Help
               </h2>
 
               <div className="space-y-3">
@@ -210,84 +339,138 @@ export default function ClientsPage() {
                   <Link
                     key={item}
                     href="#"
-                    className="flex h-[40px] items-center justify-between rounded-xl bg-white px-4 text-[12px] font-medium text-black"
+                    className="font-body flex h-[44px] items-center justify-between rounded-[14px] bg-white/10 px-4 text-sm font-semibold text-white hover:bg-white/15"
                   >
-                    <span>{item}</span>
-                    <ArrowRight size={16} className="text-black/50" />
+                    {item}
+                    <ArrowRight size={18} className="text-white/45" />
                   </Link>
                 ))}
               </div>
             </div>
 
-            {/* Share website mobile */}
-            <div className="mt-6 border-t border-white/15 pt-3">
-              <div className="flex items-center justify-between rounded-full bg-black px-2 py-2">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-white/20 text-xs font-bold">
-                    ZB
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] font-semibold text-blue-500">
-                      Get subscription discount!
-                    </p>
-                    <p className="text-[12px] text-white">
-                      Share this website with friends
-                    </p>
-                  </div>
-                </div>
-
-                <Link
-                  href="#"
-                  className="flex h-9 items-center gap-1 rounded-xl bg-blue-700 px-3 text-[12px] font-semibold text-white"
-                >
-                  Go
-                  <ArrowRight size={14} />
-                </Link>
-              </div>
-            </div>
-
-            {/* client list */}
-            <div className="mt-4 space-y-4 lg:mt-6 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-              {clients.map((client) => (
+            <div
+              ref={carouselRef}
+              className="flex snap-x gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {bottomAdverts.map((ad, index) => (
                 <div
-                  key={client.id}
-                  className="flex items-center gap-2 lg:rounded-3xl lg:border lg:border-white/10 lg:bg-white/[0.04] lg:p-4 lg:transition lg:hover:-translate-y-1 lg:hover:bg-white/[0.07]"
+                  key={index}
+                  className={`flex min-w-[300px] snap-center items-center justify-between rounded-[24px] border border-white/20 px-4 py-3 ${ad.bg}`}
                 >
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/15 text-sm font-bold text-white">
-                    {getInitials(client.name)}
-                  </div>
+                  <div className="flex items-center gap-3">
+                    <Image
+                      src={ad.image}
+                      alt={`Share advert ${index + 1}`}
+                      width={52}
+                      height={52}
+                      className="h-13 w-13 rounded-full object-cover"
+                    />
 
-                  <div className="min-w-0 flex-1">
-                    <h2 className="truncate text-[17px] font-extrabold leading-[19px]">
-                      {client.name}
-                    </h2>
-                    <p className="truncate text-[16px] leading-[18px] text-white lg:text-sm lg:text-white/60">
-                      {client.desc}
-                    </p>
+                    <div>
+                      <p className="font-heading text-[12px] font-bold text-[#5d86ff]">
+                        Get subscription discount!
+                      </p>
+                      <p className="font-body text-[14px] text-white">
+                        Share this website
+                      </p>
+                    </div>
                   </div>
 
                   <Link
-                    href="/chat"
-                    className="shrink-0 rounded-full bg-white px-5 py-1 text-[14px] font-semibold text-black lg:flex lg:h-10 lg:w-10 lg:items-center lg:justify-center lg:px-0"
+                    href="#"
+                    className={`flex h-10 items-center gap-1 rounded-[12px] px-4 text-[14px] font-bold text-white ${ad.button}`}
                   >
-                    <span className="lg:hidden">Chat client</span>
-                    <MessageCircle size={18} className="hidden lg:block" />
-                  </Link>
-
-                  <Link href={`/clients/${client.id}`} className="shrink-0">
-                    <ChevronRight size={24} />
+                    Go
+                    <Share2 size={15} />
                   </Link>
                 </div>
               ))}
             </div>
+          </aside>
+        </div>
 
-            <p className="mt-8 text-center text-[16px] text-white/80">
-              That’s all your clients
-            </p>
-          </section>
+        <section className="mt-2 px-4 lg:hidden">
+          <h2 className="font-heading mb-3 text-[16px] font-extrabold">
+            Get Help
+          </h2>
+
+          <div className="space-y-3">
+            {helpItems.map((item) => (
+              <Link
+                key={item}
+                href="#"
+                className="font-body flex h-[37px] items-center justify-between rounded-[10px] bg-white px-4 text-[13px] font-semibold !text-black"
+              >
+                {item}
+                <ArrowRight size={18} className="text-black/45" />
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <div
+          ref={carouselRef}
+          className="mt-8 flex snap-x gap-4 overflow-x-auto scroll-smooth pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:hidden"
+        >
+          {bottomAdverts.map((ad, index) => (
+            <div
+              key={index}
+              className={`flex min-w-[330px] snap-center items-center justify-between rounded-[18px] border border-white/25 px-3 py-2 ${ad.bg}`}
+            >
+              <div className="flex items-center gap-2">
+                <Image
+                  src={ad.image}
+                  alt={`Share advert ${index + 1}`}
+                  width={48}
+                  height={48}
+                  className="h-12 w-12 rounded-full object-cover"
+                />
+
+                <div>
+                  <p className="font-heading text-[12px] font-bold text-[#2458e8]">
+                    Get subscription discount!
+                  </p>
+
+                  <p className="font-body text-[15px] text-white">
+                    Share this website with friends
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                href="#"
+                className={`flex h-10 items-center gap-1 rounded-[12px] px-4 text-[14px] font-bold text-white ${ad.button}`}
+              >
+                Go
+                <Share2 size={15} />
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
     </main>
+  );
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-[18px] border border-white/10 bg-white/[0.06] p-4">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
+        {icon}
+      </div>
+
+      <div>
+        <p className="font-body text-xs text-white/45">{label}</p>
+        <p className="font-heading text-2xl font-black">{value}</p>
+      </div>
+    </div>
   );
 }
