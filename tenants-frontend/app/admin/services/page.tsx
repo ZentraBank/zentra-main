@@ -116,13 +116,13 @@ const services = [
 export default function ServicesPage() {
   return (
     <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
-      <Image
-        src="/images/Background.png"
+      {/* <Image
+        src="/images/Background_1.png"
         alt="Background"
         fill
         priority
         className="object-cover opacity-70"
-      />
+      /> */}
 
       <div className="relative z-10 mx-auto max-w-[430px] px-5 pb-10 pt-10 lg:max-w-6xl lg:px-10 lg:pt-16">
         <Link href="/dashboard" className="absolute left-4 top-10 text-white">
