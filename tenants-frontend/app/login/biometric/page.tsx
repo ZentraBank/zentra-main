@@ -7,9 +7,11 @@ export default function BiometricLoginPage() {
     <main
       className="relative min-h-screen px-3 py-35 text-white"
       style={{
-        background:
-          "radial-gradient(ellipse 95% 85% at 0% 100%, #d9d9d9 0%, #c91515 42%, #171717 100%)",
-      }}
+    backgroundImage: "url('/images/Background_2.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "top right",
+  }}
     >
       <Link href="/login" className="absolute left-4 top-4 text-white">
         <ArrowLeft size={16} />

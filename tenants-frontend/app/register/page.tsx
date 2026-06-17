@@ -13,9 +13,11 @@ export default function RegisterPage() {
   return (
     <main className="relative min-h-screen overflow-hidden"
     style={{
-        background:
-          "radial-gradient(ellipse 100% 85% at 0% 100%, #d8d8d8 0%, #c91515 42%, #151515 100%)",
-      }}
+    backgroundImage: "url('/images/Background_2.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "top right",
+  }}
     >
       {/* Back Arrow - outside card */}
       <Link href="/" className="absolute left-3 top-5 z-50 !text-white">
@@ -100,7 +102,7 @@ export default function RegisterPage() {
             />
           ) : (
             <div className="flex h-[25px] w-full items-center border-b border-white/70">
-              <select
+              <select title="Country code"
                 defaultValue="+44"
                 className="h-full bg-transparent pr-1 text-[13px] text-white outline-none"
               >
@@ -136,7 +138,7 @@ export default function RegisterPage() {
 
             <div className="mt-1.5 flex justify-center gap-4">
               {[...Array(5)].map((_, i) => (
-                <input
+                <input title="Create Password"
                   key={i}
                   type="password"
                   maxLength={1}
@@ -153,7 +155,7 @@ export default function RegisterPage() {
 
             <div className="mt-1.5 flex justify-center gap-4">
               {[...Array(5)].map((_, i) => (
-                <input
+                <input title="Confirm Password"
                   key={i}
                   type="password"
                   maxLength={1}

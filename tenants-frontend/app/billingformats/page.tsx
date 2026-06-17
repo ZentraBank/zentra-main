@@ -11,8 +11,10 @@ export default function BillingFormatsSection() {
 <section
   className="relative h-[100svh] overflow-hidden text-center md:hidden"
   style={{
-    background:
-      "radial-gradient(132.61% 156.28% at 0% 100%, #BBBBBB 10.88%, rgba(255,0,0,0.6) 66.35%, rgba(0,0,0,0.9) 100%)",
+    backgroundImage: "url('/images/Background.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "top right",
   }}
 >
   {/* Header */}
@@ -138,12 +140,14 @@ export default function BillingFormatsSection() {
 
       {/* ================= IPAD + DESKTOP ================= */}
       <section
-        className="relative hidden min-h-screen overflow-hidden px-8 py-24 md:block"
-        style={{
-          background:
-            "radial-gradient(132.61% 156.28% at 0% 100%, #BBBBBB 10.88%, rgba(255, 0, 0, 0.6) 66.35%, rgba(0, 0, 0, 0.1) 100%)",
-        }}
-      >
+  className="relative hidden min-h-screen overflow-hidden px-8 py-24 md:block"
+  style={{
+    backgroundImage: "url('/images/Background.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "top right",
+  }}
+>
         <div className="relative z-20 mx-auto grid min-h-[calc(100vh-120px)] max-w-7xl items-center gap-16 md:grid-cols-2">
           <div className="max-w-2xl">
             <p className="mb-5 text-sm font-medium uppercase tracking-[0.26em] text-white/80">

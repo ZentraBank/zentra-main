@@ -9,9 +9,11 @@ export default function RegisterSuccessPage() {
     <main
       className="relative min-h-screen overflow-hidden px-5 pb-10 pt-[168px] text-white"
       style={{
-        background:
-          "radial-gradient(ellipse 100% 85% at 0% 100%, #d8d8d8 0%, #c91515 42%, #151515 100%)",
-      }}
+    backgroundImage: "url('/images/Background.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "top right",
+  }}
     >
       <Link
         href="/register/otp"

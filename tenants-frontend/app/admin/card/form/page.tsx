@@ -1,4 +1,9 @@
+
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
 
 const currencies = [
@@ -10,8 +15,25 @@ const currencies = [
   { label: "¥", value: "JPY" },
 ];
 
-const Pill = ({ children }: { children: React.ReactNode }) => (
-  <button className="h-[20px] rounded-md bg-white px-3 text-left text-[11px] text-black shadow-[inset_0_0_0_1px_#bfddff]">
+const Pill = ({
+  children,
+  selected,
+  onClick,
+}: {
+  children: React.ReactNode;
+  selected: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`h-[32px] rounded-xl px-3 text-[11px] font-medium transition-all duration-300
+      ${
+        selected
+          ? "!bg-[#2447d8] !text-white shadow-[0_0_12px_rgba(36,71,216,0.5)]"
+          : "!bg-white !text-black hover:bg-[#eef4ff]"
+      }`}
+  >
     {children}
   </button>
 );
@@ -63,16 +85,24 @@ function OptionGroup({
   title: string;
   options: string[];
 }) {
+  const [selected, setSelected] = useState<string>("");
+
   return (
-    <div className="rounded-lg bg-gray-100 p-2">
-      <div className="mb-2 flex items-center justify-between px-2 text-[12px] text-black">
+    <div className="rounded-2xl bg-[#f1f1f1] p-3">
+      <div className="mb-3 flex items-center justify-between text-[12px] font-medium text-black">
         <span>{title}</span>
         <ChevronDown size={14} />
       </div>
 
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 gap-2">
         {options.map((option) => (
-          <Pill key={option}>{option}</Pill>
+          <Pill
+            key={option}
+            selected={selected === option}
+            onClick={() => setSelected(option)}
+          >
+            {option}
+          </Pill>
         ))}
       </div>
     </div>
@@ -125,21 +155,28 @@ export default function EditTransferPage() {
 
             <button
                 type="button"
-                className="h-7 rounded-full bg-[#48a7ff] px-4 text-[11px] text-white transition hover:bg-[#3797ff]"
+                className="h-5 w-25 rounded-full !bg-[#60A5FA] px-4 text-[11px] text-white transition hover:bg-[#1E40AF]"
             >
                 Save client
             </button>
             </div>
           </section>
 
-          <section className="rounded-lg bg-[linear-gradient(150deg,#08a000,#d10000_70%)] p-4 shadow-[0_0_0_2px_#ffffff] md:p-5">
-            <p className="mb-2 text-[12px] font-semibold">Bank</p>
+          <section className="relative overflow-hidden rounded-xl border-2 border-white bg-[linear-gradient(145deg,#157000_0%,#8a4a00_35%,#e00000_70%,#0f6b00_100%)] p-3 md:p-4">
+            <p className="text-[12px] font-bold text-white">
+              Bank
+            </p>
 
-            <button className="mx-auto flex h-[55px] w-[160px] items-center justify-center rounded-full bg-[#2148d8] text-[13px] font-bold">
-              ZentraBank
-              <br />
-              Transfer
-            </button>
+            <div className="mt-4 flex justify-center">
+              <Image
+                src="/images/zentra.png"
+                alt="ZentraBank Transfer"
+                width={340}
+                height={110}
+                className="h-auto w-[170px] md:w-[220px] object-contain"
+                priority
+              />
+            </div>
           </section>
 
           <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
@@ -276,10 +313,51 @@ export default function EditTransferPage() {
           </section>
 
           <div className="md:col-span-2 lg:col-span-3">
-            <button className="mx-auto mt-8 flex h-[42px] w-[275px] items-center justify-center gap-4 rounded-xl bg-[#2447d8] text-[14px] font-bold">
-              Send gift
-              <ArrowRight size={18} />
-            </button>
+            <button
+  className="
+    group
+    relative
+    mx-auto
+    mt-10
+    flex
+    h-[52px]
+    w-[300px]
+    items-center
+    justify-center
+    overflow-hidden
+    rounded-full
+    !bg-[#1E40AF]
+    text-[15px]
+    font-semibold
+    text-white
+    shadow-[0_8px_30px_rgba(36,71,216,0.45)]
+    transition-all
+    duration-300
+    hover:scale-[1.02]
+  "
+>
+  <span className="tracking-wide">Send Gift</span>
+
+  <div
+    className="
+      absolute
+      right-1
+      flex
+      h-[44px]
+      w-[44px]
+      items-center
+      justify-center
+      rounded-full
+      bg-white/15
+      backdrop-blur-md
+      transition-all
+      duration-300
+      group-hover:translate-x-1
+    "
+  >
+    <ArrowRight size={18} />
+  </div>
+</button>
           </div>
         </div>
       </div>

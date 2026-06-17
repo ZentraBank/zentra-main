@@ -10,7 +10,14 @@ export default function LoginPage() {
   const [method, setMethod] = useState<"email" | "phone">("email");
 
   return (
-    <main className="auth-bg relative min-h-screen overflow-hidden">
+    <main className="relative min-h-screen overflow-hidden"
+    style={{
+    backgroundImage: "url('/images/Background_2.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "top right",
+  }}
+    >
       <Link href="/" className="absolute left-3 top-5 z-50 !text-white">
         <ArrowLeft size={20} />
       </Link>

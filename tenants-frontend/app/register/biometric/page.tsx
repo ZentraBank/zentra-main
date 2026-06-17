@@ -9,9 +9,11 @@ export default function RegisterBiometricPage() {
     <main
       className="relative min-h-screen px-3 py-35 text-white"
       style={{
-        background:
-          "radial-gradient(ellipse 100% 85% at 0% 100%, #d8d8d8 0%, #c91515 42%, #151515 100%)",
-      }}
+    backgroundImage: "url('/images/Background_2.png')",
+    backgroundRepeat: "no-repeat",
+    backgroundSize: "cover",
+    backgroundPosition: "top right",
+  }}
     >
       {/* <Link href="/register/otp" className="absolute left-4 top-4 text-white">
         <ArrowLeft size={16} />

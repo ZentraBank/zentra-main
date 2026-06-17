@@ -151,21 +151,21 @@ export default function ServicesPage() {
             </p>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-3 lg:mt-0 lg:grid-cols-6 lg:gap-5">
+          <div className="mt-6 grid grid-cols-3 gap-x-[10px] gap-y-4 lg:mt-0 lg:grid-cols-4 lg:gap-5">
             {services.map(({ title, icon: Icon, href }) => (
-            <Link
+              <Link
                 key={title}
                 href={href}
-                className="flex h-[64px] flex-col items-center justify-center rounded-md bg-[linear-gradient(180deg,#e42626,#9d0505)] p-2 shadow-[0_8px_18px_rgba(0,0,0,0.35)] transition hover:scale-[1.03] lg:h-[130px] lg:rounded-2xl"
-            >
-                <div className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-emerald-600 lg:h-14 lg:w-14 lg:rounded-xl">
-                <Icon size={22} className="lg:h-8 lg:w-8" />
+                className="flex h-[94px] w-[109.67px] flex-col items-center justify-center rounded-[8px] bg-[linear-gradient(180deg,#e42626,#9d0505)] p-2 shadow-[0_8px_18px_rgba(0,0,0,0.35)] transition hover:scale-[1.03] lg:h-[130px] lg:w-full lg:rounded-2xl"
+              >
+                <div className="flex h-[50px] w-[48px] items-center justify-center rounded-[8px] bg-white text-emerald-600">
+                  <Icon size={22} className="lg:h-8 lg:w-8" />
                 </div>
 
-                <span className="mt-1 text-center text-[10px] font-semibold leading-[11px] text-white lg:mt-3 lg:text-[14px]">
-                {title}
+                <span className="mt-2 text-center text-[10px] font-semibold leading-[11px] text-white lg:mt-3 lg:text-[14px]">
+                  {title}
                 </span>
-            </Link>
+              </Link>
             ))}
           </div>
         </section>

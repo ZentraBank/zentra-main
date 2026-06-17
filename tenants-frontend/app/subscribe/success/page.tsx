@@ -6,7 +6,7 @@ export default function SubscribeSuccessPage() {
   return (
     <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
       <Image
-        src="/images/Background_1.png"
+        src="/images/Background_2.png"
         alt="Background"
         fill
         priority
