@@ -111,13 +111,15 @@ function OptionGroup({
 
 export default function EditTransferPage() {
   return (
-    <main className="min-h-screen bg-[linear-gradient(135deg,#020202_0%,#070707_18%,#7b0000_42%,#d00000_68%,#060606_100%)] text-white">
+    <main className="min-h-screen"
+    style={{ background: "url('/images/Background_1.png" }}
+    >
       <div className="mx-auto min-h-screen w-full max-w-[430px] px-2 pb-8 pt-8 md:max-w-[900px] md:px-8 lg:max-w-[1180px]">
         <Link href="/dashboard" className="mb-5 inline-flex text-white">
           <ArrowLeft size={18} />
         </Link>
 
-        <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 md:text-2xl">
+        <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 md:text-2xl text-white">
           Edit Transfer
         </h1>
 
@@ -312,53 +314,30 @@ export default function EditTransferPage() {
             <Input placeholder="123 Main St, New York, NY 10001" />
           </section>
 
-          <div className="md:col-span-2 lg:col-span-3">
-            <button
-  className="
-    group
-    relative
-    mx-auto
-    mt-10
-    flex
-    h-[52px]
-    w-[300px]
-    items-center
-    justify-center
-    overflow-hidden
-    rounded-full
-    !bg-[#1E40AF]
-    text-[15px]
-    font-semibold
-    text-white
-    shadow-[0_8px_30px_rgba(36,71,216,0.45)]
-    transition-all
-    duration-300
-    hover:scale-[1.02]
-  "
->
-  <span className="tracking-wide">Send Gift</span>
-
-  <div
-    className="
-      absolute
-      right-1
-      flex
-      h-[44px]
-      w-[44px]
-      items-center
-      justify-center
-      rounded-full
-      bg-white/15
-      backdrop-blur-md
-      transition-all
-      duration-300
-      group-hover:translate-x-1
-    "
-  >
-    <ArrowRight size={18} />
-  </div>
-</button>
-          </div>
+          <div className="flex justify-center md:col-span-2 lg:col-span-3">
+          <Link
+            href="/subscribesection"
+            className="
+              mt-12
+              inline-flex
+              h-[48px]
+              w-[280px]
+              items-center
+              justify-center
+              gap-3
+              rounded-[12px]
+              bg-[#1E40AF]
+              text-[15px]
+              font-medium
+              !text-white
+              transition
+              hover:bg-blue-700
+            "
+          >
+            <span className="!text-white">See more</span>
+            <ArrowRight size={17} className="!text-white" />
+          </Link>
+        </div>
         </div>
       </div>
     </main>

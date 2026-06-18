@@ -83,6 +83,7 @@ const helpItems = [
   "Chat an admin",
   "Make complains",
   "How your subscription works",
+  
 ];
 
 export default function ClientsPage() {
@@ -173,22 +174,47 @@ export default function ClientsPage() {
 
           <section>
             <div className="mb-3 flex items-center justify-between lg:mb-5">
-              <div>
-                <h1 className="font-heading text-[22px] font-extrabold lg:text-[32px]">
-                  Your Clients
-                </h1>
-                <p className="font-body mt-1 hidden text-sm text-white/55 lg:block">
-                  {filteredClients.length} clients showing
-                </p>
-              </div>
+          <div>
+            <h1 className="font-heading text-[22px] font-extrabold lg:text-[32px]">
+              Your Clients
+            </h1>
 
-              <button
-                type="button"
-                className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white lg:h-11 lg:w-11 lg:border-white/15 lg:bg-white/10"
-              >
-                <SlidersHorizontal size={21} />
-              </button>
-            </div>
+            <p className="font-body mt-1 hidden text-sm text-white/55 lg:block">
+              {filteredClients.length} clients showing
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Link
+              href="/clients/add"
+              className="
+                flex
+                h-9
+                items-center
+                gap-2
+                rounded-xl
+                bg-[#2458e8]
+                px-3
+                text-sm
+                font-semibold
+                text-white
+                transition
+                hover:bg-[#1d4ed8]
+                lg:h-11
+              "
+            >
+              <Users size={16} />
+              <span className="hidden lg:block">Add Client</span>
+            </Link>
+
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border-2 border-white lg:h-11 lg:w-11 lg:border-white/15 lg:bg-white/10"
+            >
+              <SlidersHorizontal size={21} />
+            </button>
+          </div>
+        </div>
 
             <div className="grid grid-cols-2 gap-2 px-2 lg:w-[280px] lg:px-0">
               <button

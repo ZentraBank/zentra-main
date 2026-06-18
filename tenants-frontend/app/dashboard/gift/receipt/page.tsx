@@ -88,7 +88,7 @@ export default function GiftedFundsPage() {
             (action) => (
             <button
                 key={action}
-                className="h-10 rounded-lg border border-black/10 bg-white text-[12px] font-medium text-black/70 shadow-sm lg:h-12 lg:text-base"
+                className="h-10 rounded-lg border !border-black/10 bg-white text-[12px] font-medium !text-black/70 shadow-sm lg:h-12 lg:text-base"
             >
                 {action}
             </button>
@@ -97,7 +97,7 @@ export default function GiftedFundsPage() {
         </section>
 
         <div className="mt-2 flex justify-center">
-        <button className="h-10 w-full max-w-[260px] rounded-lg border border-black/10 bg-white text-[12px] font-medium text-black/70 shadow-sm lg:h-12 lg:max-w-[320px] lg:text-base">
+        <button className="h-10 w-full max-w-[260px] rounded-lg border border-black/10 bg-white text-[12px] font-medium !text-black/70 shadow-sm lg:h-12 lg:max-w-[320px] lg:text-base">
             Approve
         </button>
         </div>

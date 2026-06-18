@@ -58,7 +58,7 @@ export default function Sidebar() {
 
   return (
     <>
-      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-64 overflow-y-auto border-r border-gray-200 bg-white p-5 md:block">
+      <aside className="fixed left-0 top-0 z-30 hidden h-screen w-64 overflow-y-auto border-r border-gray-200 !bg-black p-5 md:block">
         <SidebarContent />
       </aside>
 
@@ -66,11 +66,11 @@ export default function Sidebar() {
         <div className="fixed inset-0 z-40 md:hidden">
           <button
             onClick={closeSidebar}
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 !bg-black/40"
             aria-label="Close sidebar"
           />
 
-          <aside className="relative h-full w-72 overflow-y-auto bg-white p-5 shadow-2xl">
+          <aside className="relative h-full w-72 overflow-y-auto bg-black p-5 shadow-2xl">
             <SidebarContent />
           </aside>
         </div>

@@ -5,50 +5,46 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Share2,
   Save,
+  Upload,
   FileText,
-  ShieldCheck,
-  UserCog,
+  UserPlus,
 } from "lucide-react";
 import { useState } from "react";
-
-const blue = "#2445B8";
 
 const adminSections = [
   {
     title: "Security Settings",
     items: [
-      ["Username", "button", "Change Username"],
-      ["Password", "button", "Change Option"],
-      ["2-Factor Authentication (2FA)", "button", "View"],
-      ["Security Questions", "button", "View"],
-      ["Login Activity / Device History", "button", "Set"],
-      ["Biometric Settings (Fingerprint)", "button", "Set"],
+      ["Username", "button", "Set Username"],
+      ["Password", "button", "Set Password"],
+      ["2-Factor Authentication", "toggle", "Off"],
+      ["Security Questions", "button", "Set"],
+      ["Biometric Settings", "toggle", "Off"],
     ],
   },
   {
     title: "Notification Preferences",
     items: [
-      ["Email Notifications (On/Off)", "toggle", "On"],
-      ["SMS Alerts (On/Off)", "toggle", "On"],
+      ["Email Notifications", "toggle", "On"],
+      ["SMS Alerts", "toggle", "On"],
       ["Push Notifications", "toggle", "On"],
       ["Transaction Alerts", "toggle", "On"],
-      ["Marketing Preferences", "toggle", "On"],
+      ["Marketing Preferences", "toggle", "Off"],
     ],
   },
   {
     title: "Linked Accounts & Cards",
     items: [
-      ["Debit/Credit Cards", "toggle", "On"],
-      ["Linked Bank Accounts", "toggle", "On"],
-      ["External Wallet", "toggle", "On"],
+      ["Debit/Credit Cards", "toggle", "Off"],
+      ["Linked Bank Accounts", "toggle", "Off"],
+      ["External Wallet", "toggle", "Off"],
     ],
   },
   {
     title: "Transaction & Limits Settings",
     items: [
-      ["Transaction & Limits Settings", "toggle", "On"],
+      ["Transfer Limit", "toggle", "On"],
       ["Withdrawal Limit", "toggle", "On"],
       ["Spending Limit", "toggle", "On"],
       ["Currency Preferences", "currency", "$"],
@@ -59,51 +55,47 @@ const adminSections = [
     items: [
       ["Contact Support Option", "toggle", "On"],
       ["Live Chat Access", "toggle", "On"],
-      ["Message Center / Inbox", "toggle", "On"],
-      ["Complaint History / Tickets", "toggle", "On"],
+      ["Message Center", "toggle", "On"],
+      ["Complaint History", "toggle", "Off"],
     ],
   },
   {
-    title: "Next-of-Kin / Beneficiary Information",
+    title: "Next-of-Kin / Beneficiary",
     items: [
-      ["Full Name", "toggle", "On"],
-      ["Relationship", "toggle", "On"],
-      ["Contact Details", "toggle", "On"],
-      ["Assigned Benefits / Instructions", "toggle", "On"],
-    ],
-  },
-  {
-    title: "Activity & Audit Logs",
-    items: [
-      ["Login History", "toggle", "On"],
-      ["Recent Account Changes", "toggle", "On"],
-      ["Device/IP Tracking", "toggle", "On"],
-      ["Security Alerts", "toggle", "On"],
+      ["Full Name", "input", ""],
+      ["Relationship", "input", ""],
+      ["Contact Details", "input", ""],
+      ["Assigned Benefits", "input", ""],
     ],
   },
 ];
 
-export default function ClientProfilePage() {
-  const [profile, setProfile] = useState({
-    name: "Gregory Winter",
-    description: "An upcoming Philanthropist",
-    gender: "Male",
-    nationality: "American",
-    email: "gregorywinter@yahoo.com",
-    phone: "+272 4748 8487",
-    address: "no. 3 cooker street, melbourne Washington DC, USA",
-    accountNumber: "827 938 9889",
+export default function AddClientPage() {
+  const [client, setClient] = useState({
+    name: "",
+    description: "",
+    gender: "",
+    nationality: "",
+    email: "",
+    phone: "",
+    address: "",
+    accountNumber: "",
     accountType: "Savings",
-    accountStatus: "Dormant",
-    createdAt: "Mon. 14 May, 2026",
+    accountStatus: "Active",
+    createdAt: "",
     kyc: "Passport",
-    governmentId: "XXX-XXX",
+    governmentId: "",
     idNumber: "",
     verificationStatus: "Pending",
   });
 
-  const update = (key: keyof typeof profile, value: string) => {
-    setProfile((prev) => ({ ...prev, [key]: value }));
+  const update = (key: keyof typeof client, value: string) => {
+    setClient((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = () => {
+    console.log("New client:", client);
+    alert("Client saved successfully!");
   };
 
   return (
@@ -121,16 +113,19 @@ export default function ClientProfilePage() {
 
               <div className="text-center">
                 <h1 className="text-sm font-bold tracking-wide md:text-xl">
-                  Client’s Profile
+                  Add Client
                 </h1>
                 <p className="hidden text-xs text-white/50 md:block">
-                  Admin editable client profile and account control panel
+                  Create a new client profile and account settings
                 </p>
               </div>
 
-              <button className="flex items-center gap-2 rounded-full bg-[#2445B8] px-4 py-2 text-xs font-bold shadow-[0_0_20px_rgba(36,69,184,0.7)]">
+              <button
+                onClick={handleSave}
+                className="flex items-center gap-2 rounded-full bg-[#2445B8] px-4 py-2 text-xs font-bold shadow-[0_0_20px_rgba(36,69,184,0.7)]"
+              >
                 <Save size={15} />
-                <span className="hidden md:inline">Save</span>
+                <span className="hidden md:inline">Save Client</span>
               </button>
             </div>
           </header>
@@ -138,90 +133,105 @@ export default function ClientProfilePage() {
           <div className="mx-auto grid max-w-[430px] gap-4 px-3 py-4 md:max-w-7xl md:grid-cols-[390px_1fr] md:px-8 md:py-8 xl:grid-cols-[430px_1fr]">
             <aside className="space-y-4 md:sticky md:top-24 md:self-start">
               <section className="overflow-hidden rounded-md bg-[#2445B8] p-2 shadow-[0_0_22px_rgba(36,88,232,0.7)] md:rounded-3xl md:p-5">
-                <h2 className="mb-1 text-xs font-bold tracking-wide md:mb-4 md:text-sm">
+                <h2 className="mb-2 text-xs font-bold tracking-wide md:mb-4 md:text-sm">
                   Personal Information
                 </h2>
 
                 <div className="grid grid-cols-2 gap-2 md:block">
-                  <div className="relative h-[215px] overflow-hidden rounded-sm bg-white/10 md:h-[390px] md:rounded-2xl">
+                  <div className="relative flex h-[215px] items-center justify-center overflow-hidden rounded-sm bg-white/10 md:h-[390px] md:rounded-2xl">
                     <Image
-                      src="/images/greg-winter.png"
-                      alt="Client"
+                      src="/images/user-placeholder.png"
+                      alt="Client placeholder"
                       fill
-                      priority
-                      className="object-cover"
+                      className="object-cover opacity-30"
                     />
 
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 md:p-5">
-                      <input
-                        value={profile.name}
-                        onChange={(e) => update("name", e.target.value)}
-                        className="w-full bg-transparent text-2xl font-bold text-white outline-none drop-shadow md:text-4xl"
-                      />
-                    </div>
+                    <label className="relative z-10 flex cursor-pointer flex-col items-center gap-2 rounded-2xl bg-black/40 px-5 py-4 text-xs font-semibold backdrop-blur">
+                    <Upload size={22} />
+                    Upload Photo
+
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+
+                        console.log("Selected photo:", file);
+                      }}
+                    />
+                  </label>
                   </div>
 
                   <div className="flex flex-col justify-between py-2 md:mt-4 md:gap-4">
                     <div className="space-y-2 md:space-y-3">
                       <AdminInput
-                        value={profile.description}
+                        value={client.name}
+                        placeholder="Full name"
+                        onChange={(v) => update("name", v)}
+                      />
+
+                      <AdminInput
+                        value={client.description}
+                        placeholder="Client description"
                         onChange={(v) => update("description", v)}
                       />
 
                       <AdminSelect
-                        value={profile.gender}
+                        value={client.gender}
                         onChange={(v) => update("gender", v)}
-                        options={["Male", "Female", "Other"]}
+                        options={["", "Male", "Female", "Other"]}
                       />
 
                       <AdminInput
-                        value={profile.nationality}
+                        value={client.nationality}
+                        placeholder="Nationality"
                         onChange={(v) => update("nationality", v)}
                       />
                     </div>
 
-                    <button className="mt-5 flex h-[24px] w-full items-center justify-center gap-2 rounded-full bg-green text-[11px] font-medium text-[#555] shadow-[inset_0_1px_5px_rgba(0,0,0,0.25)] md:h-11 md:text-sm">
-                      Share Profile
-                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-green-100 md:h-6 md:w-6">
-                        <Share2 size={13} className="text-green-600 md:size-4" />
-                      </span>
+                    <button className="mt-5 flex h-[34px] w-full items-center justify-center gap-2 rounded-full bg-white text-[11px] font-bold text-black md:h-11 md:text-sm">
+                      <UserPlus size={15} />
+                      New Client
                     </button>
                   </div>
                 </div>
               </section>
 
               <section className="hidden rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl md:block">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#2445B8]">
-                    <UserCog size={22} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold">Admin Control</h3>
-                    <p className="text-xs text-white/50">
-                      All fields are editable or settable.
-                    </p>
-                  </div>
-                </div>
+                <h3 className="font-bold">Client Setup</h3>
+                <p className="mt-1 text-xs text-white/50">
+                  Fill in the client details, account information, and default admin settings.
+                </p>
 
-                <button className="w-full rounded-2xl bg-white py-3 text-sm font-bold text-black">
-                  Update Client Profile
+                <button
+                  onClick={handleSave}
+                  className="mt-5 w-full rounded-2xl bg-white py-3 text-sm font-bold text-black"
+                >
+                  Create Client Profile
                 </button>
               </section>
             </aside>
 
             <section className="space-y-4">
               <div className="grid gap-4 xl:grid-cols-2">
-                <Card title="Contact">
+                <Card title="Contact Information">
                   <AdminInput
-                    value={profile.email}
+                    value={client.email}
+                    placeholder="Email address"
                     onChange={(v) => update("email", v)}
                   />
+
                   <AdminInput
-                    value={profile.phone}
+                    value={client.phone}
+                    placeholder="Phone number"
                     onChange={(v) => update("phone", v)}
                   />
+
                   <AdminTextarea
-                    value={profile.address}
+                    value={client.address}
+                    placeholder="Residential address"
                     onChange={(v) => update("address", v)}
                   />
                 </Card>
@@ -229,14 +239,15 @@ export default function ClientProfilePage() {
                 <Card title="Account Information">
                   <Row label="Account Number">
                     <AdminInput
-                      value={profile.accountNumber}
+                      value={client.accountNumber}
+                      placeholder="Enter account number"
                       onChange={(v) => update("accountNumber", v)}
                     />
                   </Row>
 
                   <Row label="Account Type">
                     <AdminSelect
-                      value={profile.accountType}
+                      value={client.accountType}
                       onChange={(v) => update("accountType", v)}
                       options={["Savings", "Current", "Business"]}
                     />
@@ -244,52 +255,65 @@ export default function ClientProfilePage() {
 
                   <Row label="Account Status">
                     <AdminSelect
-                      value={profile.accountStatus}
+                      value={client.accountStatus}
                       onChange={(v) => update("accountStatus", v)}
                       options={["Active", "Dormant", "Suspended", "Closed"]}
                     />
                   </Row>
 
-                  <Row label="Date of Account Creation">
+                  <Row label="Date Created">
                     <AdminInput
-                      value={profile.createdAt}
+                      value={client.createdAt}
+                      placeholder="e.g. Thu. 18 Jun, 2026"
                       onChange={(v) => update("createdAt", v)}
                     />
                   </Row>
 
-                  <Row label="KYC / Identity Verification">
+                  <Row label="KYC Type">
                     <AdminSelect
-                      value={profile.kyc}
+                      value={client.kyc}
                       onChange={(v) => update("kyc", v)}
                       options={["Passport", "Driver License", "National ID"]}
                     />
                   </Row>
 
-                  <Row label="Government-issued ID">
+                  <Row label="Government ID">
                     <AdminInput
-                      value={profile.governmentId}
+                      value={client.governmentId}
+                      placeholder="XXX-XXX"
                       onChange={(v) => update("governmentId", v)}
                     />
                   </Row>
 
                   <Row label="ID Number">
                     <AdminInput
-                      value={profile.idNumber}
+                      value={client.idNumber}
+                      placeholder="Enter ID number"
                       onChange={(v) => update("idNumber", v)}
-                      placeholder="Enter ID"
                     />
                   </Row>
 
                   <div className="flex justify-end">
-                    <button className="flex items-center gap-2 rounded-full bg-white px-4 py-1 text-xs text-gray-800">
-                      <FileText size={13} />
-                      View Documents
-                    </button>
+                    <label className="flex cursor-pointer items-center gap-2 rounded-full bg-white px-4 py-1 text-xs text-gray-800">
+                    <FileText size={13} />
+                    Upload Documents
+
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => {
+                        const files = Array.from(e.target.files || []);
+                        console.log("Selected documents:", files);
+                      }}
+                    />
+                  </label>
                   </div>
 
                   <Row label="Verification Status">
                     <AdminSelect
-                      value={profile.verificationStatus}
+                      value={client.verificationStatus}
                       onChange={(v) => update("verificationStatus", v)}
                       options={["Pending", "Verified", "Rejected"]}
                     />
@@ -308,6 +332,12 @@ export default function ClientProfilePage() {
                           <button className="min-w-[126px] rounded-full bg-white px-3 py-0.5 text-xs text-gray-800 shadow-inner md:py-1">
                             {value}
                           </button>
+                        )}
+                        {type === "input" && (
+                          <input
+                            placeholder="Enter"
+                            className="w-[130px] rounded-full bg-white px-3 py-1 text-xs text-gray-800 outline-none"
+                          />
                         )}
                       </SettingRow>
                     ))}
@@ -383,7 +413,7 @@ function AdminInput({
       value={value}
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-md bg-transparent px-1 text-sm text-white outline-none placeholder:text-white/40 focus:bg-white/10 md:px-2 md:py-1"
+      className="w-full rounded-md bg-transparent px-1 text-sm text-white outline-none placeholder:text-white/45 focus:bg-white/10 md:px-2 md:py-1"
     />
   );
 }
@@ -391,16 +421,19 @@ function AdminInput({
 function AdminTextarea({
   value,
   onChange,
+  placeholder,
 }: {
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }) {
   return (
     <textarea
       value={value}
+      placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       rows={2}
-      className="w-full resize-none rounded-md bg-transparent px-1 text-sm text-white outline-none focus:bg-white/10 md:px-2 md:py-1"
+      className="w-full resize-none rounded-md bg-transparent px-1 text-sm text-white outline-none placeholder:text-white/45 focus:bg-white/10 md:px-2 md:py-1"
     />
   );
 }
@@ -421,8 +454,8 @@ function AdminSelect({
       className="w-full rounded-md bg-transparent px-1 text-sm text-white outline-none focus:bg-white/10 md:px-2 md:py-1"
     >
       {options.map((option) => (
-        <option key={option} className="text-black">
-          {option}
+        <option key={option || "empty"} value={option} className="text-black">
+          {option || "Select option"}
         </option>
       ))}
     </select>
@@ -434,10 +467,22 @@ function Toggle({ defaultValue = "On" }: { defaultValue?: string }) {
 
   return (
     <button
+      type="button"
       onClick={() => setEnabled(!enabled)}
-      className="min-w-[44px] rounded-full bg-white px-3 py-0.5 text-xs font-medium text-gray-800 shadow-inner md:py-1"
+      className={`
+        relative h-7 w-14 rounded-full transition-all duration-300
+        ${enabled
+          ? "bg-green-500 shadow-[0_0_15px_rgba(34,197,94,0.6)]"
+          : "bg-white/20"}
+      `}
     >
-      {enabled ? "On" : "Off"}
+      <span
+        className={`
+          absolute top-1 h-5 w-5 rounded-full bg-white shadow-lg
+          transition-all duration-300
+          ${enabled ? "left-8" : "left-1"}
+        `}
+      />
     </button>
   );
 }
@@ -446,7 +491,7 @@ function CurrencySelect() {
   const [currency, setCurrency] = useState("$");
 
   return (
-    <select
+    <select title="currency"
       value={currency}
       onChange={(e) => setCurrency(e.target.value)}
       className="w-[72px] rounded-full bg-white px-3 py-0.5 text-xs text-gray-800 outline-none shadow-inner md:py-1"

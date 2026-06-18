@@ -9,22 +9,22 @@ const cards = [
   {
     title: "Celebrity card",
     emoji: "🏵️",
-    img: "/images/celebrity-card.png",
+    img: "/images/crypto-card.jpeg",
   },
   {
     title: "Cryptocurrency card",
     emoji: "💳",
-    img: "/images/crypto-card.png",
+    img: "/images/cryptocurrency.jpeg",
   },
   {
     title: "Official card",
     emoji: "🏆",
-    img: "/images/official-card.png",
+    img: "/images/official-card.jpeg",
   },
   {
     title: "Merchant card",
     emoji: "🤠",
-    img: "/images/merchant-card.png",
+    img: "/images/merchant-card.jpeg",
   },
 ];
 

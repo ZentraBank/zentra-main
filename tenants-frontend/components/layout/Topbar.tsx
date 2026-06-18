@@ -9,7 +9,7 @@ export default function Topbar() {
   const openSidebar = useUIStore((state) => state.openSidebar);
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-5">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 bg-black px-5">
       <div className="flex items-center gap-3">
         <button
           onClick={openSidebar}

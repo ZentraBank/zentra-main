@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
 
 const Pill = ({ children }: { children: React.ReactNode }) => (
-  <button className="h-[24px] rounded-md bg-white px-3 text-left text-[12px] text-black shadow-[inset_0_0_0_1px_#bfddff]">
+  <button className="h-[24px] rounded-md bg-white px-3 text-left text-[12px] !text-black shadow-[inset_0_0_0_1px_#bfddff]">
     {children}
   </button>
 );
@@ -32,12 +32,12 @@ const SelectBox = ({
 function OptionGroup() {
   return (
     <div className="rounded-lg bg-gray-100 p-2">
-      <div className="mb-2 flex items-center justify-between px-2 text-[12px] text-black">
+      <div className="mb-2 flex items-center justify-between px-2 text-[12px] !text-black">
         <span>Preferred means of funding</span>
         <ChevronDown size={14} />
       </div>
 
-      <div className="grid grid-cols-2 gap-1">
+      <div className="grid grid-cols-2 gap-1 text-[12px] !text-black">
         <Pill>Cryptocurrency</Pill>
         <Pill>Gift card</Pill>
         <div className="col-span-2">
@@ -52,7 +52,7 @@ export default function FundsDonorRegistrationPage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <Image
-        src="/images/Background.png"
+        src="/images/Background_1.png"
         alt="Background"
         fill
         priority
@@ -75,7 +75,7 @@ export default function FundsDonorRegistrationPage() {
         </h1>
 
         <section className="mx-auto mt-5 grid max-w-[980px] gap-4 md:mt-10 md:grid-cols-[360px_1fr] md:items-start">
-          <div className="rounded-lg bg-white p-2 text-black md:rounded-2xl md:p-4">
+          <div className="rounded-lg bg-white p-2 !text-black md:rounded-2xl md:p-4">
             <h2 className="mb-2 text-[12px] font-bold">
               Personal Information
             </h2>
@@ -103,7 +103,7 @@ export default function FundsDonorRegistrationPage() {
             </div>
           </div>
 
-          <div className="rounded-lg bg-white p-2 text-black md:rounded-2xl md:p-5">
+          <div className="rounded-lg bg-white p-2 !text-black md:rounded-2xl md:p-5">
             <section className="rounded-lg bg-[#a7a7a7] p-2 md:p-4">
               <h2 className="mb-2 text-[12px] font-bold">
                 Fill-in Your Funds Donator Information
