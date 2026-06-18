@@ -140,7 +140,7 @@ export default function AddClientPage() {
                 <div className="grid grid-cols-2 gap-2 md:block">
                   <div className="relative flex h-[215px] items-center justify-center overflow-hidden rounded-sm bg-white/10 md:h-[390px] md:rounded-2xl">
                     <Image
-                      src="/images/user-placeholder.png"
+                      src="/images/anna.png"
                       alt="Client placeholder"
                       fill
                       className="object-cover opacity-30"
