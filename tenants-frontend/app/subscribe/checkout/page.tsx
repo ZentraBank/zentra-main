@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState,Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -47,27 +47,35 @@ const plans = {
 
 
 export default function CryptoCardPurchasePage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-black" />}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
 
-const [copiedCoin, setCopiedCoin] = useState<string | null>(null);
+function CheckoutContent() {
+  const [copiedCoin, setCopiedCoin] = useState<string | null>(null);
 
-const copyAddress = async (coinName: string, address: string) => {
-  await navigator.clipboard.writeText(address);
-  setCopiedCoin(coinName);
+  const copyAddress = async (coinName: string, address: string) => {
+    await navigator.clipboard.writeText(address);
+    setCopiedCoin(coinName);
 
-  setTimeout(() => {
-    setCopiedCoin(null);
-  }, 1800);
-};
-const searchParams = useSearchParams();
+    setTimeout(() => {
+      setCopiedCoin(null);
+    }, 1800);
+  };
 
-const selectedPlan =
-  searchParams.get("plan")?.toLowerCase() || "bronze";
+  const searchParams = useSearchParams();
 
-const currentPlan =
-  plans[selectedPlan as keyof typeof plans] || plans.bronze;
+  const selectedPlan = searchParams.get("plan")?.toLowerCase() || "bronze";
+
+  const currentPlan =
+    plans[selectedPlan as keyof typeof plans] || plans.bronze;
 
 
   return (
+    
     <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
       <Image
         src="/images/Background_1.png"
