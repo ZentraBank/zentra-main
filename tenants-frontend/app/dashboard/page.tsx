@@ -83,7 +83,7 @@ const services = [
   {
     title: "Subscription",
     icon: Bell,
-    href: "/services/subscription",
+    href: "/subscribe",
   },
   {
     title: "Card setting",

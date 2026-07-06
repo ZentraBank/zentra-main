@@ -18,7 +18,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="font-sf antialiased overflow-x-hidden">
         <TenantProvider>
-          <PageTransition>{children}</PageTransition>
+          {children}
         </TenantProvider>
       </body>
     </html>

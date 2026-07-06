@@ -8,111 +8,110 @@ export default function HomeHero() {
   return (
     <>
       {/* ================= MOBILE ================= */}
-      <section className="relative h-screen overflow-hidden bg-white md:hidden">
+      <section className="relative min-h-screen overflow-hidden bg-white md:hidden">
+        <div className="relative z-20 px-5 pt-[62px] text-center">
+          <h1 className="font-heading text-[38px] font-medium leading-[33px] tracking-[-0.03em] text-[#1D4ED8] pt-4">
+            ZentraBank
+            <br />
+            Online Banking
+          </h1>
 
-  {/* Text */}
-  <div className="pt-14 px-6 text-center">
-      <h1 className="text-[46px] font-[540] leading-[40px] tracking-[0.04em] text-blue-700 text-center">
-    ZentraBank
-    <br />
-    Online Banking
-  </h1>
+          <p className="mx-auto mt-3 max-w-[320px] font-lato text-[14px] font-medium leading-[24px] tracking-[-0.01em] text-black/95 pt-8">
+            Welcome to the one-stop app that can help make your work easier on
+            the street - this is the only app where you find so many billing
+            format and lots more loading, even as a newbie...
+          </p>
+        </div>
 
-    <p className="mx-auto mt-4 w-[308px] text-center text-[18px] font-normal leading-[20px] tracking-[0.02em] text-black">
-  Welcome to the one-stop app that can help make your work easier on the
-  street - this is the only app where you find so many billing format and
-  lots more loading, even as a newbie...
-</p>
-  </div>
+        {/* Background artwork image */}
+        <div className="absolute inset-x-0 bottom-0 h-full w-full overflow-hidden">
+          <Image
+            src="/images/hero-new.png"
+            alt="ZentraBank hero background"
+            fill
+            priority
+            className="object-cover object-top"
+          />
+        </div>
 
-  {/* Hero Artwork */}
-  <div className="relative mt-6 h-[534px] w-full">
-    <Image
-      src="/images/HeroFrame.png"
-      alt="Hero Artwork"
-      fill
-      priority
-      className="object-cover object-top"
-    />
+        <Link
+          href="/billingformats"
+          className="
+            absolute
+            left-1/2
+            bottom-[112px]
+            z-30
+            flex
+            h-[35px]
+            w-[250px]
+            -translate-x-1/2
+            items-center
+            justify-center
+            gap-3
+            rounded-[12px]
+            bg-[#1E40AF]
+            text-[14px]
+            font-semibold
+            !text-white
+            shadow-[0_8px_18px_rgba(36,88,232,0.32)]
+          "
+        >
+          <span>See more</span>
+          <ArrowRight size={17} />
+        </Link>
+      </section>
 
-    {/* Button */}
-   <Link
-  href="/billingformats"
-  className="
-    absolute
-    left-1/2
-    bottom-[120px]
-    -translate-x-1/2
-    flex
-    h-[35px]
-    w-[250px]
-    items-center
-    justify-center
-    gap-[10px]
-    rounded-[12px]
-    bg-[#1E40AF]
-    px-[16px]
-    py-[8px]
-    text-[16px]
-    font-medium
-    !text-white
-    shadow-[inset_0px_0px_4px_rgba(0,0,0,0.1)]
-    z-50
-  "
->
-  <span className="!text-white">See more</span>
-  <ArrowRight size={18} className="!text-white" />
-</Link>
-  </div>
+      {/* ================= DESKTOP ================= */}
+      <section className="relative hidden min-h-screen overflow-hidden bg-white md:block">
+        <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-2 items-center gap-12 px-12">
+          <div className="relative z-20 max-w-xl">
+            <h1 className="font-heading text-[72px] font-bold leading-[0.9] tracking-[-0.04em] text-[#2458E8] xl:text-[84px]">
+              ZentraBank
+              <span className="block">Online Banking</span>
+            </h1>
 
-</section>
+            <p className="mt-6 max-w-lg text-[20px] font-medium leading-[30px] text-black/75">
+              Welcome to the one-stop app that can help make your work easier
+              on the street. Find billing formats, subscriptions, cards,
+              payments and more.
+            </p>
 
- 
-{/* ================= DESKTOP ================= */}
-<section className="relative hidden min-h-screen overflow-hidden bg-white md:block">
-  <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-2 items-center gap-16 px-12">
-    {/* Left */}
-    <div className="max-w-xl">
-      <p className="mb-5 text-sm font-medium uppercase tracking-[0.28em] text-blue-700">
-        Mobile-first online banking
-      </p>
+            <Link
+              href="/billingformats"
+              className="
+                mt-8
+                inline-flex
+                h-[48px]
+                w-[210px]
+                items-center
+                justify-center
+                gap-3
+                rounded-[12px]
+                bg-[#1E40AF]
+                text-[16px]
+                font-semibold
+                !text-white
+                shadow-[0_14px_28px_rgba(36,88,232,0.28)]
+                transition
+                hover:bg-[#1d48c7]
+              "
+            >
+              <span>See more</span>
+              <ArrowRight size={18} />
+            </Link>
+          </div>
 
-      <h1 className="text-[72px] font-medium leading-[0.95] tracking-[-0.04em] text-blue-700 xl:text-[84px]">
-        ZentraBank
-        <span className="block">Online Banking</span>
-      </h1>
-
-      <p className="mt-7 max-w-lg text-[20px] leading-[32px] tracking-[0.01em] text-black/70">
-        A clean digital banking experience for billing formats, cards,
-        payments, subscriptions and client management.
-      </p>
-
-      <Link
-        href="/billingformats"
-        className="mt-9 inline-flex h-[48px] w-[190px] items-center justify-center gap-3 rounded-[12px] bg-blue-800 text-[15px] font-medium !text-white shadow-sm transition hover:bg-blue-900"
-      >
-        <span className="!text-white">See more</span>
-        <ArrowRight size={17} className="!text-white" />
-      </Link>
-    </div>
-
-    {/* Right */}
-    <div className="relative flex h-[680px] items-center justify-center">
-      <div className="absolute h-[520px] w-[520px] rounded-full border border-black/10" />
-      <div className="absolute h-[440px] w-[440px] rounded-full bg-blue-700/5" />
-
-      <Image
-        src="/images/HeroBlob.png"
-        alt="ZentraBank building"
-        width={520}
-        height={520}
-        priority
-        className="relative z-10 h-[520px] w-[520px] object-contain drop-shadow-[0_35px_55px_rgba(0,0,0,0.22)]"
-      />
-    </div>
-  </div>
-</section>
-</>
+          <div className="relative h-[700px] w-full">
+            <Image
+              src="/images/HeroFrame.png"
+              alt="ZentraBank hero"
+              fill
+              priority
+              className="object-contain object-center drop-shadow-[0_35px_55px_rgba(0,0,0,0.25)]"
+            />
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
-

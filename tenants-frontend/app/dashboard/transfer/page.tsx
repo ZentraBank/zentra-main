@@ -1,345 +1,221 @@
-
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowLeftRight,
+  SquarePen,
+  MoveDownLeft,
+  MoveUpRight,
+} from "lucide-react";
+import { EDITED_TRANSACTION_KEY } from "@/app/dashboard/transfer/edit/page";
 
-const currencies = [
-  { label: "$", value: "USD" },
-  { label: "£", value: "GBP" },
-  { label: "€", value: "EUR" },
-  { label: "C$", value: "CAD" },
-  { label: "A$", value: "AUD" },
-  { label: "¥", value: "JPY" },
+type Transfer = {
+  id: number;
+  type: "in" | "out";
+  title: string;
+  bank: string;
+  amount: string;
+};
+
+const initialTransfers: Transfer[] = [
+  {
+    id: 1,
+    type: "in",
+    title: "Transfer from Mar Parkersbur",
+    bank: "ZentraBank",
+    amount: "-$17,000,000",
+  },
+  {
+    id: 2,
+    type: "out",
+    title: "Transfer to Mark Parkersburg",
+    bank: "ZentraBank",
+    amount: "-$100,000",
+  },
+  {
+    id: 3,
+    type: "in",
+    title: "Butcher Maxwell has insured ...",
+    bank: "ZentraBank",
+    amount: "-$150,000",
+  },
+  {
+    id: 4,
+    type: "out",
+    title: "Butcher Maxwell has insured ...",
+    bank: "ZentraBank",
+    amount: "-$13,000,000",
+  },
+  {
+    id: 5,
+    type: "in",
+    title: "Butcher Maxwell has insured ...",
+    bank: "ZentraBank",
+    amount: "-$100,000",
+  },
+  {
+    id: 6,
+    type: "in",
+    title: "Butcher Maxwell has insured ...",
+    bank: "ZentraBank",
+    amount: "-$1,000,000",
+  },
 ];
 
-const Pill = ({
-  children,
-  selected,
-  onClick,
-}: {
-  children: React.ReactNode;
-  selected: boolean;
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`h-[32px] rounded-xl px-3 text-[11px] font-medium transition-all duration-300
-      ${
-        selected
-          ? "!bg-[#2447d8] !text-white shadow-[0_0_12px_rgba(36,71,216,0.5)]"
-          : "!bg-white !text-black hover:bg-[#eef4ff]"
-      }`}
-  >
-    {children}
-  </button>
-);
+export default function TransferPage() {
+  const [transfers, setTransfers] = useState<Transfer[]>(initialTransfers);
+  const router = useRouter();
 
-const SelectBox = ({
-  options,
-  placeholder,
-}: {
-  options: string[];
-  placeholder: string;
-}) => (
-  <select
-    defaultValue=""
-    className="h-[27px] w-full rounded-lg bg-white px-3 text-[12px] text-gray-500 outline-none"
-  >
-    <option value="" disabled>
-      {placeholder}
-    </option>
+  // Pick up whatever was last saved on the Edit Transfer page and merge it
+  // into the matching row. This is what actually makes the edit visible —
+  // without this, the list only ever renders its hardcoded initial data.
+  useEffect(() => {
+    const raw = sessionStorage.getItem(EDITED_TRANSACTION_KEY);
+    if (!raw) return;
 
-    {options.map((option) => (
-      <option key={option} value={option}>
-        {option}
-      </option>
-    ))}
-  </select>
-);
+    try {
+      const edited = JSON.parse(raw) as {
+        id: string;
+        title?: string;
+        bank?: string;
+        amountDisplay?: string;
+        type?: "in" | "out";
+      };
 
-const Input = ({ placeholder }: { placeholder: string }) => (
-  <input
-    placeholder={placeholder}
-    className="h-[27px] w-full rounded-md bg-white px-2 text-[13px] text-black placeholder:text-gray-400 outline-none"
-  />
-);
+      const editedId = Number(edited.id);
+      if (!editedId) return;
 
-const CurrencyDropdown = () => (
-  <select className="h-[27px] w-[58px] rounded-lg bg-white px-2 text-[12px] text-gray-700 outline-none">
-    {currencies.map((currency) => (
-      <option key={currency.value} value={currency.value}>
-        {currency.label}
-      </option>
-    ))}
-  </select>
-);
+      setTransfers((prev) =>
+        prev.map((item) =>
+          item.id === editedId
+            ? {
+                ...item,
+                title: edited.title ?? item.title,
+                bank: edited.bank ?? item.bank,
+                amount: edited.amountDisplay ?? item.amount,
+                type: edited.type ?? item.type,
+              }
+            : item
+        )
+      );
+    } catch {
+      // Malformed or stale entry — ignore it rather than crash the list.
+    }
+  }, []);
 
-function OptionGroup({
-  title,
-  options,
-}: {
-  title: string;
-  options: string[];
-}) {
-  const [selected, setSelected] = useState<string>("");
+  const goToEdit = (item: Transfer) => {
+    const params = new URLSearchParams({
+      id: String(item.id),
+      title: item.title,
+      bank: item.bank,
+      amount: item.amount,
+      type: item.type,
+    });
+
+    router.push(`/dashboard/transfer/edit?${params.toString()}`);
+  };
 
   return (
-    <div className="rounded-2xl bg-[#f1f1f1] p-3">
-      <div className="mb-3 flex items-center justify-between text-[12px] font-medium text-black">
-        <span>{title}</span>
-        <ChevronDown size={14} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((option) => (
-          <Pill
-            key={option}
-            selected={selected === option}
-            onClick={() => setSelected(option)}
-          >
-            {option}
-          </Pill>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default function EditTransferPage() {
-  return (
-    <main className="min-h-screen"
-    style={{ background: "url('/images/Background_1.png" }}
-    >
-      <div className="mx-auto min-h-screen w-full max-w-[430px] px-2 pb-8 pt-8 md:max-w-[900px] md:px-8 lg:max-w-[1180px]">
-        <Link href="/dashboard" className="mb-5 inline-flex text-white">
-          <ArrowLeft size={18} />
-        </Link>
-
-        <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 md:text-2xl text-white">
-          Edit Transfer
-        </h1>
-
-        <div className="grid gap-3 md:grid-cols-2 md:gap-5 lg:grid-cols-3">
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <OptionGroup
-              title="Transaction type"
-              options={["IntraBank", "InterBank", "International"]}
-            />
-
-            <div className="mt-3">
-              <OptionGroup
-                title="Current account status"
-                options={["Verified!", "Unverified", "Pending verification"]}
-              />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Available Balance
-            </label>
-            <Input placeholder="$XXX, XXX, XX.XX" />
-          </section>
-
-          <section className="rounded-lg border-[3px] border-white bg-[#d40000] p-2 shadow-[0_0_0_2px_#ff0000] md:p-3">
-            <label className="mb-1 block text-[12px] font-bold">
-              Account number
-            </label>
-
-            <div className="flex h-[40px] items-center gap-2 rounded-md bg-[#b9c4c7] px-2">
-            <input
-                type="text"
-                placeholder="XXX XXX XXXX"
-                className="flex-1 bg-transparent text-[18px] text-black outline-none placeholder:text-black"
-            />
-
-            <button
-                type="button"
-                className="h-5 w-25 rounded-full !bg-[#60A5FA] px-4 text-[11px] text-white transition hover:bg-[#1E40AF]"
-            >
-                Save client
-            </button>
-            </div>
-          </section>
-
-          <section className="relative overflow-hidden rounded-xl border-2 border-white bg-[linear-gradient(145deg,#157000_0%,#8a4a00_35%,#e00000_70%,#0f6b00_100%)] p-3 md:p-4">
-            <p className="text-[12px] font-bold text-white">
-              Bank
-            </p>
-
-            <div className="mt-4 flex justify-center">
-              <Image
-                src="/images/zentra.png"
-                alt="ZentraBank Transfer"
-                width={340}
-                height={110}
-                className="h-auto w-[170px] md:w-[220px] object-contain"
-                priority
-              />
-            </div>
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <label className="mb-1 block text-center text-[12px] font-bold">
-              Amount
-            </label>
-
-            <div className="flex gap-2">
-              <CurrencyDropdown />
-
-              <input
-                placeholder="eg. $50,000"
-                className="h-[27px] flex-1 rounded-md bg-white px-2 text-[13px] text-black placeholder:text-gray-400 outline-none"
-              />
-            </div>
-
-            <p className="mt-1 text-right text-[10px] text-white">
-              balance: &nbsp;&nbsp; $50, 000, 000
-            </p>
-
-            <div className="mt-3">
-              <OptionGroup
-                title="Transaction status"
-                options={["pending", "Successful", "reversed"]}
-              />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Coming from
-            </label>
-            <Input placeholder="Sender's name" />
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <OptionGroup
-              title="Bank type"
-              options={["IntraBank", "InterBank", "International"]}
-            />
-
-            <div className="mt-3">
-              <OptionGroup
-                title="Current account status"
-                options={["Verified!", "Unverified", "Pending verification"]}
-              />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Transaction date
-            </label>
-
-            <div className="grid grid-cols-3 gap-1">
-              <SelectBox placeholder="Day" options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]} />
-                <SelectBox placeholder="Month" options={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]} />
-                <SelectBox placeholder="Year" options={["2024", "2025", "2026"]} />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Available Balance
-            </label>
-            <Input placeholder="$5,0001,234.56" />
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <label className="mb-1 block text-[11px] font-semibold text-gray-700">
-              Set transaction time
-            </label>
-
-            <div className="grid grid-cols-3 gap-1">
-              <SelectBox placeholder="Hour" options={["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"]} />
-            <SelectBox placeholder="Minute" options={["00", "15", "30", "45"]} />
-            <SelectBox placeholder="Seconds" options={["00", "15", "30", "45"]} />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Fee
-            </label>
-            <Input placeholder="%10" />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Transaction ID
-            </label>
-            <Input placeholder="98234723948" />
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <label className="block text-[11px] font-semibold text-gray-700">
-              Transaction ID
-            </label>
-            <Input placeholder="98234723948" />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Customer Care line
-            </label>
-            <Input placeholder="98234723948" />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Customer Care line
-            </label>
-
-            <div className="grid grid-cols-[1fr_2fr] gap-1">
-              <SelectBox
-                placeholder="Choose country"
-                options={["United States", "United Kingdom", "Canada"]}
-                />
-              <Input placeholder="9058535885" />
-            </div>
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <OptionGroup
-              title="Transaction type"
-              options={["Online transfer", "Cryptocurrency", "International"]}
-            />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Transaction date
-            </label>
-
-            <div className="grid grid-cols-3 gap-1">
-              <SelectBox placeholder="Day" options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]} />
-            <SelectBox placeholder="Month" options={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]} />
-            <SelectBox placeholder="Year" options={["2024", "2025", "2026", "2027", "2028", "2029", "2030"]} />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Authorization Code
-            </label>
-            <Input placeholder="009823" />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Bank address
-            </label>
-            <Input placeholder="123 Main St, New York, NY 10001" />
-          </section>
-
-          <div className="flex justify-center md:col-span-2 lg:col-span-3">
+    <main className="min-h-[100svh] bg-black text-white">
+      <section className="mx-auto min-h-[100svh] w-full max-w-[430px] px-[14px] pb-10 pt-4">
+        {/* Header */}
+        <div className="relative flex items-center justify-center">
           <Link
-            href="/subscribesection"
-            className="
-              mt-12
-              inline-flex
-              h-[48px]
-              w-[280px]
-              items-center
-              justify-center
-              gap-3
-              rounded-[12px]
-              bg-[#1E40AF]
-              text-[15px]
-              font-medium
-              !text-white
-              transition
-              hover:bg-blue-700
-            "
+            href="/dashboard"
+            className="absolute left-0 inline-flex text-white"
+            aria-label="Go back"
           >
-            <span className="!text-white">See more</span>
-            <ArrowRight size={17} className="!text-white" />
+            <ArrowLeft size={18} />
+          </Link>
+          <h1 className="text-[13px] font-bold">Transfer</h1>
+        </div>
+
+        {/* New transfer button */}
+        <div className="mt-6 flex justify-center">
+          <Link
+            href="/dashboard/transfer/edit"
+            className="flex h-[92px] w-[220px] flex-col items-center justify-center gap-2 rounded-[10px] bg-[linear-gradient(180deg,#d71919,#9f0505)] shadow-[0_8px_18px_rgba(160,0,0,0.45)] transition-transform active:scale-[0.98]"
+          >
+            <div className="flex h-[44px] w-[44px] items-center justify-center rounded-[8px] bg-white text-emerald-600">
+              <ArrowLeftRight size={22} strokeWidth={2.4} />
+            </div>
+
+            <span className="text-[12px] font-semibold text-white">
+              New Transfer
+            </span>
           </Link>
         </div>
+
+        <div className="mx-8 mt-4 h-px bg-white/50" />
+
+        <h2 className="mt-3 text-[13px] font-bold">
+          Gregory Winter Transfer History
+        </h2>
+
+        {/* Transfer list */}
+        <div className="mt-3 space-y-[9px]">
+          {transfers.map((item) => {
+            const incoming = item.type === "in";
+
+            return (
+              <div
+                key={item.id}
+                className="flex h-[48px] w-full items-center gap-2 rounded-[8px] bg-white px-2.5 text-black shadow-[0_1px_5px_rgba(255,255,255,0.15)]"
+              >
+                {/* Direction icon */}
+                <div
+                  className={`flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full ${
+                    incoming
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-red-50 text-red-600"
+                  }`}
+                >
+                  {incoming ? (
+                    <MoveDownLeft size={15} strokeWidth={2.6} />
+                  ) : (
+                    <MoveUpRight size={15} strokeWidth={2.6} />
+                  )}
+                </div>
+
+                {/* Title/bank */}
+                <div className="min-w-0 flex-1 overflow-hidden">
+                  <p className="truncate text-[11px] font-medium leading-[13px] text-black/55">
+                    {item.title}
+                  </p>
+                  <p className="truncate text-[11px] font-bold leading-[13px] text-black/75">
+                    {item.bank}
+                  </p>
+                </div>
+
+                {/* Amount */}
+                <p
+                  className={`flex-none truncate text-right text-[13px] font-bold ${
+                    incoming ? "text-emerald-600" : "text-red-600"
+                  }`}
+                  style={{ maxWidth: 92 }}
+                >
+                  {item.amount}
+                </p>
+
+                {/* Edit button — navigates to the Edit Transfer form, pre-filled */}
+                <button
+                  type="button"
+                  onClick={() => goToEdit(item)}
+                  className="flex h-[26px] w-[22px] flex-none items-center justify-center active:scale-90"
+                  style={{ color: "#000000" }}
+                  aria-label="Edit transfer"
+                >
+                  <SquarePen size={16} strokeWidth={2.3} color="#000000" />
+                </button>
+              </div>
+            );
+          })}
         </div>
-      </div>
+      </section>
     </main>
   );
 }
