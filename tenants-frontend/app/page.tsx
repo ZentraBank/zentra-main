@@ -10,7 +10,7 @@ export default function HomeHero() {
       {/* ================= MOBILE ================= */}
       <section className="relative min-h-screen overflow-hidden bg-white md:hidden">
         <div className="relative z-20 px-5 pt-[62px] text-center">
-          <h1 className="font-heading text-[38px] font-medium leading-[33px] tracking-[-0.03em] text-[#1D4ED8] pt-4">
+          <h1 className="font-heading text-[38px] font-bold leading-[33px] tracking-[-0.03em] text-[#1D4ED8] pt-4">
             ZentraBank
             <br />
             Online Banking
@@ -26,7 +26,7 @@ export default function HomeHero() {
         {/* Background artwork image */}
         <div className="absolute inset-x-0 bottom-0 h-full w-full overflow-hidden">
           <Image
-            src="/images/hero-new.png"
+            src="/images/HeroImage.png"
             alt="ZentraBank hero background"
             fill
             priority

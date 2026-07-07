@@ -577,7 +577,7 @@ function EditTransferForm() {
             />
           </section>
 
-          <div className="flex justify-center md:col-span-2 lg:col-span-3">
+          <div className="flex justify-center md:col-span-2 lg:col-span-3 p-2 md:p-3">
             <button
               type="button"
               onClick={handleSave}
@@ -590,7 +590,7 @@ function EditTransferForm() {
                 justify-center
                 gap-3
                 rounded-[12px]
-                bg-[#1E40AF]
+                !bg-[#1E40AF]
                 text-[15px]
                 font-medium
                 !text-white
@@ -599,7 +599,7 @@ function EditTransferForm() {
                 active:scale-[0.98]
               "
             >
-              <span className="!text-white">Save</span>
+              <span className="!text-white">Transfer</span>
               <ArrowRight size={17} className="!text-white" />
             </button>
           </div>

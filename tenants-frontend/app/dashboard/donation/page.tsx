@@ -109,7 +109,7 @@ function OptionGroup({
   );
 }
 
-export default function EditTransferPage() {
+export default function DonationPage() {
   return (
     <main className="min-h-screen"
     style={{ background: "url('/images/Background_1.png" }}
@@ -120,7 +120,7 @@ export default function EditTransferPage() {
         </Link>
 
         <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 md:text-2xl text-white">
-          Edit Transfer
+          Make Donation
         </h1>
 
         <div className="grid gap-3 md:grid-cols-2 md:gap-5 lg:grid-cols-3">

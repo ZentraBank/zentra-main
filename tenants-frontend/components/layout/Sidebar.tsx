@@ -43,13 +43,13 @@ const customerNavItems = [
 ];
 
 const adminNavItems = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { label: "Users", href: "/admin/users", icon: Users },
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Users", href: "/clients", icon: Users },
   { label: "Accounts", href: "/admin/accounts", icon: Wallet },
   { label: "Transactions", href: "/admin/transactions", icon: ArrowLeftRight },
-  { label: "Chats", href: "/admin/chats", icon: MessageCircle },
-  { label: "Audit Logs", href: "/admin/audit-logs", icon: ShieldCheck },
-  { label: "Subscriptions", href: "/admin/subscriptions", icon: CreditCard },
+  { label: "Chats", href: "/admin/chat", icon: MessageCircle },
+  { label: "Audit Logs", href: "#", icon: ShieldCheck },
+  { label: "Subscriptions", href: "/subscribe", icon: CreditCard },
 ];
 
 export default function Sidebar() {
@@ -102,13 +102,13 @@ function SidebarContent() {
               className="h-10 w-10 rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tenant font-bold text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tenant font-bold !text-white">
               {tenant?.app_name?.charAt(0) || "Z"}
             </div>
           )}
 
           <div>
-            <h1 className="text-sm font-bold text-gray-900">
+            <h1 className="text-sm font-bold text-white">
               {tenant?.app_name || "ZentraBank"}
             </h1>
             <p className="text-xs text-gray-500">

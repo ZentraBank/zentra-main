@@ -19,7 +19,7 @@ export default function Topbar() {
         </button>
 
         <div>
-          <h2 className="text-sm font-bold text-gray-900">
+          <h2 className="text-sm font-bold text-white">
             {tenant?.app_name || "ZentraBank"}
           </h2>
           <p className="text-xs text-gray-500">Welcome back</p>
