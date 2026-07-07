@@ -203,11 +203,11 @@ export default function RegisterPage() {
         </div>
 
         <div className="mt-7 flex justify-center gap-8 text-[11px] text-white">
-          <Link href="/privacy-policy" className="!text-white">
+          <Link href="#" className="!text-white">
             Privacy Policy
           </Link>
 
-          <Link href="/terms" className="!text-white">
+          <Link href="#" className="!text-white">
             Terms and Conditions
           </Link>
         </div>

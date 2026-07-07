@@ -7,9 +7,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { ArrowLeft, X, Send } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function ForgotPasswordPage() {
   const [method, setMethod] = useState<"email" | "phone">("email");
+  const router = useRouter();
+
+const handleSendResetCode = () => {
+  // Later: call backend to send OTP
+  router.push("/forgot-password/otp");
+};
 
   return (
     <main className="auth-bg relative min-h-screen overflow-hidden">
@@ -136,11 +143,11 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="mt-20 flex justify-center gap-8 text-[11px] text-white">
-          <Link href="/privacy-policy" className="!text-white">
+          <Link href="#" className="!text-white">
             Privacy Policy
           </Link>
 
-          <Link href="/terms" className="!text-white">
+          <Link href="#" className="!text-white">
             Terms and Conditions
           </Link>
         </div>
