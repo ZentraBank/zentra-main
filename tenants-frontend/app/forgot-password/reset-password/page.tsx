@@ -156,7 +156,7 @@ export default function ResetPasswordPage() {
             type="button"
             disabled={!canSubmit}
             onClick={handleResetPassword}
-            className={`mt-8 h-[50px] w-full rounded-[14px] text-[15px] font-black text-white shadow-lg transition ${
+            className={`mt-8 h-[35px] w-full rounded-[14px] text-[15px] font-black text-white shadow-lg transition ${
               canSubmit
                 ? "bg-[#2458e8] hover:bg-[#1f4bc7]"
                 : "cursor-not-allowed bg-[#6f6f6f] text-white/45"

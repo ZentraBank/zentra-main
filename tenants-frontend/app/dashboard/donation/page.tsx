@@ -1,344 +1,132 @@
-
-"use client";
-
-import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ArrowRight, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Gift,
+  HandHeart,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
-const currencies = [
-  { label: "$", value: "USD" },
-  { label: "£", value: "GBP" },
-  { label: "€", value: "EUR" },
-  { label: "C$", value: "CAD" },
-  { label: "A$", value: "AUD" },
-  { label: "¥", value: "JPY" },
+const donorStats = [
+  { label: "Active Donors", value: "128" },
+  { label: "Pending Requests", value: "34" },
+  { label: "Completed Funding", value: "$2.4M" },
 ];
 
-const Pill = ({
-  children,
-  selected,
-  onClick,
-}: {
-  children: React.ReactNode;
-  selected: boolean;
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`h-[32px] rounded-xl px-3 text-[11px] font-medium transition-all duration-300
-      ${
-        selected
-          ? "!bg-[#2447d8] !text-white shadow-[0_0_12px_rgba(36,71,216,0.5)]"
-          : "!bg-white !text-black hover:bg-[#eef4ff]"
-      }`}
-  >
-    {children}
-  </button>
-);
+const benefits = [
+  {
+    icon: HandHeart,
+    title: "Support verified users",
+    text: "Help clients receive funds through secure donation channels.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Verified donor profile",
+    text: "Register your profile and become visible to approved clients.",
+  },
+  {
+    icon: Gift,
+    title: "Multiple funding methods",
+    text: "Donate with crypto, gift card, or direct bank transfer.",
+  },
+];
 
-const SelectBox = ({
-  options,
-  placeholder,
-}: {
-  options: string[];
-  placeholder: string;
-}) => (
-  <select
-    defaultValue=""
-    className="h-[27px] w-full rounded-lg bg-white px-3 text-[12px] text-gray-500 outline-none"
-  >
-    <option value="" disabled>
-      {placeholder}
-    </option>
-
-    {options.map((option) => (
-      <option key={option} value={option}>
-        {option}
-      </option>
-    ))}
-  </select>
-);
-
-const Input = ({ placeholder }: { placeholder: string }) => (
-  <input
-    placeholder={placeholder}
-    className="h-[27px] w-full rounded-md bg-white px-2 text-[13px] text-black placeholder:text-gray-400 outline-none"
-  />
-);
-
-const CurrencyDropdown = () => (
-  <select className="h-[27px] w-[58px] rounded-lg bg-white px-2 text-[12px] text-gray-700 outline-none">
-    {currencies.map((currency) => (
-      <option key={currency.value} value={currency.value}>
-        {currency.label}
-      </option>
-    ))}
-  </select>
-);
-
-function OptionGroup({
-  title,
-  options,
-}: {
-  title: string;
-  options: string[];
-}) {
-  const [selected, setSelected] = useState<string>("");
-
+export default function DonorPage() {
   return (
-    <div className="rounded-2xl bg-[#f1f1f1] p-3">
-      <div className="mb-3 flex items-center justify-between text-[12px] font-medium text-black">
-        <span>{title}</span>
-        <ChevronDown size={14} />
-      </div>
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      <Image
+        src="/images/Background_1.png"
+        alt="Background"
+        fill
+        priority
+        className="object-cover"
+      />
 
-      <div className="grid grid-cols-2 gap-2">
-        {options.map((option) => (
-          <Pill
-            key={option}
-            selected={selected === option}
-            onClick={() => setSelected(option)}
-          >
-            {option}
-          </Pill>
-        ))}
-      </div>
-    </div>
-  );
-}
+      <div className="absolute inset-0 bg-black/35" />
 
-export default function DonationPage() {
-  return (
-    <main className="min-h-screen"
-    style={{ background: "url('/images/Background_1.png" }}
-    >
-      <div className="mx-auto min-h-screen w-full max-w-[430px] px-2 pb-8 pt-8 md:max-w-[900px] md:px-8 lg:max-w-[1180px]">
-        <Link href="/dashboard" className="mb-5 inline-flex text-white">
-          <ArrowLeft size={18} />
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[430px] flex-col px-4 pb-10 pt-10 md:max-w-[1180px] md:px-10">
+        <Link href="/dashboard/donation" className="mb-6 inline-flex text-white">
+          <ArrowLeft size={20} />
         </Link>
 
-        <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 md:text-2xl text-white">
-          Make Donation
-        </h1>
-
-        <div className="grid gap-3 md:grid-cols-2 md:gap-5 lg:grid-cols-3">
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <OptionGroup
-              title="Transaction type"
-              options={["IntraBank", "InterBank", "International"]}
-            />
-
-            <div className="mt-3">
-              <OptionGroup
-                title="Current account status"
-                options={["Verified!", "Unverified", "Pending verification"]}
-              />
+        <section className="grid flex-1 items-center gap-8 md:grid-cols-[1fr_420px]">
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-[12px] font-bold backdrop-blur-md md:text-sm">
+              <Users size={16} />
+              Funds Donor Portal
             </div>
 
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Available Balance
-            </label>
-            <Input placeholder="$XXX, XXX, XX.XX" />
-          </section>
+            <h1 className="text-[42px] font-black leading-[0.92] tracking-[-1px] md:text-[76px]">
+              Become a
+              <br />
+              <span className="text-[#d6c51f]">Funds Donor</span>
+            </h1>
 
-          <section className="rounded-lg border-[3px] border-white bg-[#d40000] p-2 shadow-[0_0_0_2px_#ff0000] md:p-3">
-            <label className="mb-1 block text-[12px] font-bold">
-              Account number
-            </label>
+            <p className="mt-5 max-w-[560px] text-[14px] font-medium leading-[21px] text-white/80 md:text-lg md:leading-7">
+              Register as a verified donor and support clients through crypto,
+              gift cards, or direct bank transfer.
+            </p>
 
-            <div className="flex h-[40px] items-center gap-2 rounded-md bg-[#b9c4c7] px-2">
-            <input
-                type="text"
-                placeholder="XXX XXX XXXX"
-                className="flex-1 bg-transparent text-[18px] text-black outline-none placeholder:text-black"
-            />
-
-            <button
-                type="button"
-                className="h-5 w-25 rounded-full !bg-[#60A5FA] px-4 text-[11px] text-white transition hover:bg-[#1E40AF]"
+            <Link
+              href="/dashboard/donation/donor/register"
+              className="mt-8 inline-flex h-[50px] w-full max-w-[320px] items-center justify-center gap-3 rounded-[12px] bg-[#2447d8] text-[15px] font-black text-white shadow-xl transition hover:bg-[#1f3fc0] md:h-[56px]"
             >
-                Save client
-            </button>
-            </div>
-          </section>
+              Register Donor
+              <ArrowRight size={19} />
+            </Link>
+          </div>
 
-          <section className="relative overflow-hidden rounded-xl border-2 border-white bg-[linear-gradient(145deg,#157000_0%,#8a4a00_35%,#e00000_70%,#0f6b00_100%)] p-3 md:p-4">
-            <p className="text-[12px] font-bold text-white">
-              Bank
-            </p>
-
-            <div className="mt-4 flex justify-center">
-              <Image
-                src="/images/zentra.png"
-                alt="ZentraBank Transfer"
-                width={340}
-                height={110}
-                className="h-auto w-[170px] md:w-[220px] object-contain"
-                priority
-              />
-            </div>
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <label className="mb-1 block text-center text-[12px] font-bold">
-              Amount
-            </label>
-
-            <div className="flex gap-2">
-              <CurrencyDropdown />
-
-              <input
-                placeholder="eg. $50,000"
-                className="h-[27px] flex-1 rounded-md bg-white px-2 text-[13px] text-black placeholder:text-gray-400 outline-none"
-              />
-            </div>
-
-            <p className="mt-1 text-right text-[10px] text-white">
-              balance: &nbsp;&nbsp; $50, 000, 000
-            </p>
-
-            <div className="mt-3">
-              <OptionGroup
-                title="Transaction status"
-                options={["pending", "Successful", "reversed"]}
-              />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Coming from
-            </label>
-            <Input placeholder="Sender's name" />
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <OptionGroup
-              title="Bank type"
-              options={["IntraBank", "InterBank", "International"]}
+          <div className="rounded-[24px] border border-white/15 bg-white/90 p-4 text-black shadow-2xl backdrop-blur-xl md:p-5">
+            <Image
+              src="/images/David.png"
+              alt="Donor"
+              width={420}
+              height={300}
+              className="h-[230px] w-full rounded-[18px] object-cover md:h-[280px]"
             />
 
-            <div className="mt-3">
-              <OptionGroup
-                title="Current account status"
-                options={["Verified!", "Unverified", "Pending verification"]}
-              />
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {donorStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-[14px] bg-black px-2 py-3 text-center text-white"
+                >
+                  <p className="text-[15px] font-black md:text-xl">
+                    {stat.value}
+                  </p>
+                  <p className="mt-1 text-[9px] font-bold text-white/60 md:text-[11px]">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
             </div>
+          </div>
+        </section>
 
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Transaction date
-            </label>
+        <section className="mt-8 grid gap-3 md:grid-cols-3">
+          {benefits.map((benefit) => {
+            const Icon = benefit.icon;
 
-            <div className="grid grid-cols-3 gap-1">
-              <SelectBox placeholder="Day" options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]} />
-                <SelectBox placeholder="Month" options={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]} />
-                <SelectBox placeholder="Year" options={["2024", "2025", "2026"]} />
-            </div>
+            return (
+              <div
+                key={benefit.title}
+                className="rounded-[18px] border border-white/15 bg-black/55 p-4 backdrop-blur-md"
+              >
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[#2447d8]">
+                  <Icon size={19} />
+                </div>
 
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Available Balance
-            </label>
-            <Input placeholder="$5,0001,234.56" />
-          </section>
+                <h3 className="text-[15px] font-black">{benefit.title}</h3>
 
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <label className="mb-1 block text-[11px] font-semibold text-gray-700">
-              Set transaction time
-            </label>
-
-            <div className="grid grid-cols-3 gap-1">
-              <SelectBox placeholder="Hour" options={["00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"]} />
-            <SelectBox placeholder="Minute" options={["00", "15", "30", "45"]} />
-            <SelectBox placeholder="Seconds" options={["00", "15", "30", "45"]} />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Fee
-            </label>
-            <Input placeholder="%10" />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Transaction ID
-            </label>
-            <Input placeholder="98234723948" />
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <label className="block text-[11px] font-semibold text-gray-700">
-              Transaction ID
-            </label>
-            <Input placeholder="98234723948" />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Customer Care line
-            </label>
-            <Input placeholder="98234723948" />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Customer Care line
-            </label>
-
-            <div className="grid grid-cols-[1fr_2fr] gap-1">
-              <SelectBox
-                placeholder="Choose country"
-                options={["United States", "United Kingdom", "Canada"]}
-                />
-              <Input placeholder="9058535885" />
-            </div>
-          </section>
-
-          <section className="rounded-lg bg-[#a8a8a8] p-2 md:p-3">
-            <OptionGroup
-              title="Transaction type"
-              options={["Online transfer", "Cryptocurrency", "International"]}
-            />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Transaction date
-            </label>
-
-            <div className="grid grid-cols-3 gap-1">
-              <SelectBox placeholder="Day" options={["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30", "31"]} />
-            <SelectBox placeholder="Month" options={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]} />
-            <SelectBox placeholder="Year" options={["2024", "2025", "2026", "2027", "2028", "2029", "2030"]} />
-            </div>
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Authorization Code
-            </label>
-            <Input placeholder="009823" />
-
-            <label className="mt-2 block text-[11px] font-semibold text-gray-700">
-              Bank address
-            </label>
-            <Input placeholder="123 Main St, New York, NY 10001" />
-          </section>
-
-          <div className="flex justify-center md:col-span-2 lg:col-span-3">
-          <Link
-            href="/subscribesection"
-            className="
-              mt-12
-              inline-flex
-              h-[48px]
-              w-[280px]
-              items-center
-              justify-center
-              gap-3
-              rounded-[12px]
-              bg-[#1E40AF]
-              text-[15px]
-              font-medium
-              !text-white
-              transition
-              hover:bg-blue-700
-            "
-          >
-            <span className="!text-white">See more</span>
-            <ArrowRight size={17} className="!text-white" />
-          </Link>
-        </div>
-        </div>
+                <p className="mt-2 text-[12px] leading-[17px] text-white/65 md:text-sm md:leading-5">
+                  {benefit.text}
+                </p>
+              </div>
+            );
+          })}
+        </section>
       </div>
     </main>
   );

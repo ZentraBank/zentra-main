@@ -270,7 +270,7 @@ function EditTransferForm() {
           <ArrowLeft size={18} />
         </Link>
 
-        <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 md:text-2xl text-white">
+        <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 pb-4 md:text-2xl text-white">
           Edit Transfer
         </h1>
 
@@ -584,7 +584,7 @@ function EditTransferForm() {
               className="
                 mt-12
                 inline-flex
-                h-[48px]
+                h-[35px]
                 w-[280px]
                 items-center
                 justify-center
