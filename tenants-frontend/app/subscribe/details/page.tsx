@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Video, X } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 const plans = ["Bronze", "Gold", "Diamond"] as const;
 
@@ -69,7 +69,8 @@ const planDetails: Record<
   },
 };
 
-export default function SubscribeDetailsPage() {
+// Rename the main function to act as the child component
+function SubscribeDetailsContent() {
   const searchParams = useSearchParams();
   const planParam = searchParams.get("plan")?.toLowerCase();
   const [showFeatures, setShowFeatures] = useState(false);
@@ -174,12 +175,12 @@ export default function SubscribeDetailsPage() {
 
         <div className="mt-auto flex justify-center pt-10">
           <Link
-  href={`/subscribe/checkout?plan=${selectedPlan}`}
-  className="flex h-[30px] w-[206px] items-center justify-center gap-2 rounded-[9px] bg-blue-700 text-[14px] font-medium !text-white shadow-[0_8px_18px_rgba(0,0,0,0.25)] md:h-[46px] md:w-[300px] md:text-[17px]"
->
-  Subscribe now
-  <ArrowRight size={17} />
-</Link>
+            href={`/subscribe/checkout?plan=${selectedPlan}`}
+            className="flex h-[30px] w-[206px] items-center justify-center gap-2 rounded-[9px] bg-blue-700 text-[14px] font-medium !text-white shadow-[0_8px_18px_rgba(0,0,0,0.25)] md:h-[46px] md:w-[300px] md:text-[17px]"
+          >
+            Subscribe now
+            <ArrowRight size={17} />
+          </Link>
         </div>
       </div>
 
@@ -250,5 +251,20 @@ export default function SubscribeDetailsPage() {
         </div>
       )}
     </main>
+  );
+}
+
+// Export the default component wrapped in a Suspense boundary
+export default function SubscribeDetailsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-[100svh] items-center justify-center bg-black text-white">
+          <p>Loading details...</p>
+        </div>
+      }
+    >
+      <SubscribeDetailsContent />
+    </Suspense>
   );
 }
