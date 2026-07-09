@@ -16,6 +16,7 @@ const currencies = [
 ];
 
 export const EDITED_TRANSACTION_KEY = "zentra_edited_transaction";
+export const TRANSFER_OVERRIDES_KEY = "zentra_transfer_overrides";
 
 type FormState = {
   transactionType: string;
@@ -26,7 +27,7 @@ type FormState = {
   currency: string;
   amount: string;
   transactionStatus: string;
-  contactLabel: string; // "Coming from" or "Sending to"
+  contactLabel: string;
   contactName: string;
   bankType: string;
   accountStatus2: string;
@@ -63,12 +64,11 @@ const Pill = ({
   <button
     type="button"
     onClick={onClick}
-    className={`h-[32px] rounded-xl px-3 text-[11px] font-medium transition-all duration-300
-      ${
-        selected
-          ? "!bg-[#2447d8] !text-white shadow-[0_0_12px_rgba(36,71,216,0.5)]"
-          : "!bg-white !text-black hover:bg-[#eef4ff]"
-      }`}
+    className={`h-[32px] rounded-xl px-3 text-[11px] font-medium transition-all duration-300 ${
+      selected
+        ? "!bg-[#2447d8] !text-white shadow-[0_0_12px_rgba(36,71,216,0.5)]"
+        : "!bg-white !text-black hover:bg-[#eef4ff]"
+    }`}
   >
     {children}
   </button>
@@ -126,7 +126,8 @@ const CurrencyDropdown = ({
   value: string;
   onChange: (value: string) => void;
 }) => (
-  <select title="Currency Dropdown"
+  <select
+    title="Currency Dropdown"
     value={value}
     onChange={(e) => onChange(e.target.value)}
     className="h-[27px] w-[58px] rounded-lg bg-white px-2 text-[12px] text-gray-700 outline-none"
@@ -226,12 +227,14 @@ function buildInitialForm(searchParams: URLSearchParams): FormState {
 function EditTransferForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
+
   const [form, setForm] = useState<FormState>(() =>
     buildInitialForm(searchParams)
   );
 
-  const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
 
   const handleSave = () => {
     const type: "in" | "out" =
@@ -243,7 +246,7 @@ function EditTransferForm() {
         : `Transfer to ${form.contactName}`;
 
     const payload = {
-      id: searchParams.get("id") ?? "",
+      id: searchParams.get("id") ?? crypto.randomUUID(),
       ...form,
       type,
       title,
@@ -252,7 +255,20 @@ function EditTransferForm() {
       }${form.amount}`,
     };
 
+    const existing = JSON.parse(
+      localStorage.getItem(TRANSFER_OVERRIDES_KEY) || "{}"
+    );
+
+    localStorage.setItem(
+      TRANSFER_OVERRIDES_KEY,
+      JSON.stringify({
+        ...existing,
+        [payload.id]: payload,
+      })
+    );
+
     sessionStorage.setItem(EDITED_TRANSACTION_KEY, JSON.stringify(payload));
+
     router.push("/dashboard/transfer/transaction");
   };
 
@@ -270,7 +286,7 @@ function EditTransferForm() {
           <ArrowLeft size={18} />
         </Link>
 
-        <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 pb-4 md:text-2xl text-white">
+        <h1 className="mb-4 pb-4 text-center text-[13px] font-bold text-white md:mb-8 md:text-2xl">
           Edit Transfer
         </h1>
 
@@ -318,7 +334,7 @@ function EditTransferForm() {
 
               <button
                 type="button"
-                className="h-5 w-25 rounded-full !bg-[#60A5FA] px-4 text-[11px] text-white transition hover:bg-[#1E40AF]"
+                className="h-5 rounded-full !bg-[#60A5FA] px-4 text-[11px] text-white transition hover:bg-[#1E40AF]"
               >
                 Save client
               </button>
@@ -334,7 +350,7 @@ function EditTransferForm() {
                 alt="ZentraBank Transfer"
                 width={340}
                 height={110}
-                className="h-auto w-[170px] md:w-[220px] object-contain"
+                className="h-auto w-[170px] object-contain md:w-[220px]"
                 priority
               />
             </div>
@@ -413,15 +429,25 @@ function EditTransferForm() {
               <SelectBox
                 placeholder="Month"
                 options={[
-                  "Jan","Feb","Mar","Apr","May","Jun",
-                  "Jul","Aug","Sep","Oct","Nov","Dec",
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec",
                 ]}
                 value={form.dateMonth}
                 onChange={(v) => set("dateMonth", v)}
               />
               <SelectBox
                 placeholder="Year"
-                options={["2024", "2025", "2026"]}
+                options={["2024", "2025", "2026", "2027", "2028", "2029", "2030"]}
                 value={form.dateYear}
                 onChange={(v) => set("dateYear", v)}
               />
@@ -445,7 +471,7 @@ function EditTransferForm() {
             <div className="grid grid-cols-3 gap-1">
               <SelectBox
                 placeholder="Hour"
-                options={Array.from({ length: 25 }, (_, i) =>
+                options={Array.from({ length: 24 }, (_, i) =>
                   String(i).padStart(2, "0")
                 )}
                 value={form.timeHour}
@@ -544,8 +570,18 @@ function EditTransferForm() {
               <SelectBox
                 placeholder="Month"
                 options={[
-                  "Jan","Feb","Mar","Apr","May","Jun",
-                  "Jul","Aug","Sep","Oct","Nov","Dec",
+                  "Jan",
+                  "Feb",
+                  "Mar",
+                  "Apr",
+                  "May",
+                  "Jun",
+                  "Jul",
+                  "Aug",
+                  "Sep",
+                  "Oct",
+                  "Nov",
+                  "Dec",
                 ]}
                 value={form.date2Month}
                 onChange={(v) => set("date2Month", v)}
@@ -577,27 +613,11 @@ function EditTransferForm() {
             />
           </section>
 
-          <div className="flex justify-center md:col-span-2 lg:col-span-3 p-2 md:p-3">
+          <div className="flex justify-center p-2 md:col-span-2 md:p-3 lg:col-span-3">
             <button
               type="button"
               onClick={handleSave}
-              className="
-                mt-12
-                inline-flex
-                h-[35px]
-                w-[280px]
-                items-center
-                justify-center
-                gap-3
-                rounded-[12px]
-                !bg-[#1E40AF]
-                text-[15px]
-                font-medium
-                !text-white
-                transition
-                hover:bg-blue-700
-                active:scale-[0.98]
-              "
+              className="mt-12 inline-flex h-[35px] w-[280px] items-center justify-center gap-3 rounded-[12px] !bg-[#1E40AF] text-[15px] font-medium !text-white transition hover:bg-blue-700 active:scale-[0.98]"
             >
               <span className="!text-white">Transfer</span>
               <ArrowRight size={17} className="!text-white" />
@@ -609,7 +629,6 @@ function EditTransferForm() {
   );
 }
 
-// useSearchParams() requires a Suspense boundary in the App Router.
 export default function EditTransferPage() {
   return (
     <Suspense fallback={null}>

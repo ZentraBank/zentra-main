@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,19 +12,25 @@ import {
   MoveUpRight,
   RefreshCw,
 } from "lucide-react";
-import { EDITED_TRANSACTION_KEY } from "@/app/dashboard/transfer/edit/page";
+import {
+  EDITED_TRANSACTION_KEY,
+  TRANSFER_OVERRIDES_KEY,
+} from "@/app/dashboard/transfer/edit/page";
+
+type TransferType = "in" | "out";
 
 type Transfer = {
-  id: number;
-  type: "in" | "out";
+  id: number | string;
+  type: TransferType;
   title: string;
   bank: string;
   amount: string;
 };
 
-const API_URL = "/api/transfers";
+const API_URL =
+  process.env.NEXT_PUBLIC_TRANSFERS_API_URL || "/api/transfers";
 
-const fallbackTransfers: Transfer[] = [
+const demoTransfers: Transfer[] = [
   {
     id: 1,
     type: "in",
@@ -69,35 +75,90 @@ const fallbackTransfers: Transfer[] = [
   },
 ];
 
+function normaliseTransfer(item: Partial<Transfer>): Transfer | null {
+  if (!item.id) return null;
+
+  return {
+    id: item.id,
+    type: item.type === "out" ? "out" : "in",
+    title: item.title || "Untitled transfer",
+    bank: item.bank || "Unknown bank",
+    amount: item.amount || "$0",
+  };
+}
+
+function applySavedEdits(items: Transfer[]) {
+  if (typeof window === "undefined") return items;
+
+  const raw = localStorage.getItem(TRANSFER_OVERRIDES_KEY);
+  if (!raw) return items;
+
+  try {
+    const edits = JSON.parse(raw);
+
+    return items.map((item) => {
+      const edited = edits[String(item.id)];
+      if (!edited) return item;
+
+      return {
+        ...item,
+        title: edited.title ?? item.title,
+        bank: edited.bank ?? item.bank,
+        amount: edited.amountDisplay ?? item.amount,
+        type: edited.type ?? item.type,
+      };
+    });
+  } catch {
+    return items;
+  }
+}
+
 export default function TransferPage() {
   const router = useRouter();
 
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
+  const recordCount = useMemo(() => transfers.length, [transfers]);
+
   const fetchTransfers = useCallback(async () => {
-    setLoading(true);
     setError("");
+    setRefreshing(true);
 
     try {
-      const res = await fetch(API_URL, {
+      const response = await fetch(API_URL, {
         method: "GET",
         cache: "no-store",
+        headers: {
+          Accept: "application/json",
+        },
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to fetch transfers");
+      if (!response.ok) {
+        throw new Error("Transfers request failed");
       }
 
-      const data = (await res.json()) as Transfer[];
+      const data = await response.json();
 
-      setTransfers(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.transfers)
+          ? data.transfers
+          : [];
+
+      const cleanTransfers = list
+        .map(normaliseTransfer)
+        .filter(Boolean) as Transfer[];
+
+      setTransfers(applySavedEdits(cleanTransfers));
     } catch {
-      setTransfers(fallbackTransfers);
+      setTransfers(applySavedEdits(demoTransfers));
       setError("Backend not connected yet. Showing demo transfer records.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -110,20 +171,11 @@ export default function TransferPage() {
     if (!raw) return;
 
     try {
-      const edited = JSON.parse(raw) as {
-        id: string;
-        title?: string;
-        bank?: string;
-        amountDisplay?: string;
-        type?: "in" | "out";
-      };
-
-      const editedId = Number(edited.id);
-      if (!editedId) return;
+      const edited = JSON.parse(raw);
 
       setTransfers((prev) =>
         prev.map((item) =>
-          item.id === editedId
+          String(item.id) === String(edited.id)
             ? {
                 ...item,
                 title: edited.title ?? item.title,
@@ -134,8 +186,10 @@ export default function TransferPage() {
             : item
         )
       );
+
+      sessionStorage.removeItem(EDITED_TRANSACTION_KEY);
     } catch {
-      // Ignore invalid session data.
+      sessionStorage.removeItem(EDITED_TRANSACTION_KEY);
     }
   }, []);
 
@@ -176,10 +230,14 @@ export default function TransferPage() {
             <button
               type="button"
               onClick={fetchTransfers}
-              className="hidden h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition hover:bg-white/20 md:flex"
+              disabled={refreshing}
+              className="hidden h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-50 md:flex"
               aria-label="Refresh transfers"
             >
-              <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+              <RefreshCw
+                size={18}
+                className={refreshing ? "animate-spin" : ""}
+              />
             </button>
           </div>
 
@@ -221,7 +279,7 @@ export default function TransferPage() {
                 </div>
 
                 <div className="hidden rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white/75 md:block">
-                  {transfers.length} records
+                  {recordCount} records
                 </div>
               </div>
 
@@ -254,7 +312,7 @@ export default function TransferPage() {
 
                     return (
                       <div
-                        key={item.id}
+                        key={String(item.id)}
                         className="flex h-[48px] w-full items-center gap-2 rounded-[8px] bg-white px-2.5 text-black shadow-[0_1px_5px_rgba(255,255,255,0.15)] md:h-[82px] md:gap-4 md:rounded-[20px] md:px-5 md:shadow-[0_14px_35px_rgba(0,0,0,0.18)]"
                       >
                         <div

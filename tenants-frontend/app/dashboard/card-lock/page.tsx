@@ -165,7 +165,7 @@ export default function CardStatusPage() {
                   isLocked ? "opacity-75 grayscale" : "opacity-100"
                 }`}
               >
-                <div className="relative h-[100px] overflow-hidden md:h-[180px] lg:h-[200px]">
+                <div className="relative h-[162px] overflow-hidden md:h-[180px] lg:h-[200px]">
                   <Image
                     src={card.img}
                     alt={card.title}
@@ -206,7 +206,7 @@ export default function CardStatusPage() {
                     />
                   </div>
 
-                  <div className="absolute bottom-0 left-0 right-0 z-30 grid grid-cols-4 items-end bg-black/75 px-4 py-2 text-[8px] leading-tight md:px-6 md:py-4 md:text-xs">
+                  <div className="absolute bottom-0 left-0 right-0 z-30 grid grid-cols-4 items-end bg-black/75 px-4 py-2 text-[11px] leading-tight md:px-6 md:py-4 md:text-xs">
                     <div>
                       <p>2386 **** **** 1234</p>
                       <p>CVV: 7XX</p>
