@@ -1,55 +1,70 @@
 @import "tailwindcss";
 
-:root {
-  --primary: #1d4ed8;
-  --primary-dark: #1e40af;
+@font-face {
+  font-family: "SF Pro";
+  src: url("/fonts/SF-Pro.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
-  --background: #000000;;
-  --card: #ffffff;
-  --border: #e5e7eb;
+@font-face {
+  font-family: "Lato";
+  src: url("/fonts/Lato-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
-  --foreground: #0f172a;
-  --muted: rgba(15, 23, 42, 0.65);
-  --helper: rgba(15, 23, 42, 0.8);
-
-  --dark-bg: #000000;
-  --dark-surface: rgba(255, 255, 255, 0.08);
-  --dark-border: rgba(255, 255, 255, 0.15);
-  --dark-text: #ffffff;
-  --dark-muted: rgba(255, 255, 255, 0.75);
-
-  --font-sf: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-    "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-
-  --font-lato: "Lato", sans-serif;
-
-  --font-heading: var(--font-sf);
-  --font-body: var(--font-lato);
+@font-face {
+  font-family: "Lato";
+  src: url("/fonts/Lato-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
 }
 
 @theme {
-  --font-sf: var(--font-sf);
-  --font-lato: var(--font-lato);
-  --font-heading: var(--font-heading);
-  --font-body: var(--font-body);
+  --font-sf: "SF Pro", sans-serif;
+  --font-lato: "Lato", sans-serif;
 }
 
-*,
-*::before,
-*::after {
+:root {
+  --font-sf: "SF Pro", sans-serif;
+  --font-lato: "Lato", sans-serif;
+
+  --color-background: #a7c7e7;
+  --color-soft-blue: #2e4053;
+  --color-bank-green: #2e8b57;
+  --color-primary-dark: #1f1f1f;
+  --color-warning: #f4d03f;
+  --color-error: #c0392b;
+  --color-neutral-gray: #bdc3c7;
+  --color-success: #27ae60;
+  --color-button:1D4ED8;
+
+  --color-card: #ffffff;
+  --color-card-dark: #2e4053;
+
+  --color-text-primary: #1f1f1f;
+  --color-text-secondary: #5e6b76;
+
+  --color-border: rgba(0, 0, 0, 0.08);
+}
+
+* {
   box-sizing: border-box;
 }
 
-html,
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
-  padding: 0;
-  min-height: 100%;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-body);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: geometricPrecision;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-lato);
 }
 
 h1,
@@ -60,68 +75,14 @@ h5,
 h6,
 button,
 a {
-  font-family: var(--font-heading);
+  font-family: var(--font-sf);
 }
 
-p,
-span,
-label,
-input,
-textarea,
-select {
-  font-family: var(--font-body);
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  margin: 0;
-}
-
-a {
-  text-decoration: none;
-  color: white;
-}
-
-button {
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  font-family: var(--font-heading);
-  font-weight: 500;
-  color: white;
-}
-
-button:disabled {
-  cursor: not-allowed;
-}
-
-.dark-section {
-  background: var(--dark-bg);
-  color: var(--dark-text);
-}
-
-.auth-bg {
-  background: radial-gradient(
-    132.61% 156.28% at 0% 100%,
-    #bbbbbb 10.88%,
-    rgba(255, 0, 0, 0.6) 66.35%,
-    rgba(0, 0, 0, 0.1) 100%
-  );
-}
-
-.glass {
-  background: var(--dark-surface);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--dark-border);
-}
-
-img {
-  max-width: 100%;
-  display: block;
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

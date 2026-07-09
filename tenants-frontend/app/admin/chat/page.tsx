@@ -37,7 +37,7 @@ export default function AdminChatClientsPage() {
       <div className="relative z-10 mx-auto min-h-[100svh] max-w-[430px]">
         <header className="bg-[#B00000] px-4 pb-4 pt-4">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-white">
+            <Link href="/agent" className="text-white">
               <ArrowLeft size={18} />
             </Link>
 
@@ -46,18 +46,26 @@ export default function AdminChatClientsPage() {
             </h1>
           </div>
 
+          {/* Replace your current grid of buttons with this in the Chat Page */}
           <div className="mt-4 grid grid-cols-3 gap-2 px-9">
-            {["Chat", "Codes", "Format"].map((tab, index) => (
-              <button
-                key={tab}
-                type="button"
-                className={`flex h-[18px] items-center justify-center rounded-[6px] text-[11px] font-medium ${
-                  index === 0 ? "bg-blue-700 text-white" : "bg-[#8F969F] text-white"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
+            <Link
+              href="/admin/chat"
+              className="flex h-[18px] items-center justify-center rounded-[6px] bg-blue-700 text-[11px] font-medium text-white"
+            >
+              Chat
+            </Link>
+            <Link
+              href="/admin/codes"
+              className="flex h-[18px] items-center justify-center rounded-[6px] bg-[#8F969F] text-[11px] font-medium text-white"
+            >
+              Codes
+            </Link>
+            <Link
+              href="/admin/format"
+              className="flex h-[18px] items-center justify-center rounded-[6px] bg-[#8F969F] text-[11px] font-medium text-white"
+            >
+              Format
+            </Link>
           </div>
         </header>
 

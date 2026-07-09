@@ -54,14 +54,14 @@ export default function RegisterSuccessPage() {
         <div className="mx-auto w-[86%] space-y-2">
           <Link
             href="/dashboard"
-            className="font-heading block rounded-[10px] bg-[#2458e8] py-3 text-center text-[15px] font-bold text-white transition hover:bg-[#1f4fd3]"
+            className="font-heading block rounded-[10px] bg-[#2458e8] py-3 text-center text-[15px] font-bold text-white transition hover:bg-[#1f4fd3] h-[39px] flex items-center justify-center"
           >
             Go to Dashboard
           </Link>
 
           <Link
             href="/profile/setup"
-            className="font-heading flex items-center justify-center gap-3 rounded-[10px] bg-white py-3 text-center text-[15px] font-bold !text-[#4b4b4b] transition hover:bg-white/90"
+            className="font-heading flex items-center justify-center gap-3 rounded-[10px] bg-white py-3 text-center text-[15px] font-bold !text-[#4b4b4b] transition hover:bg-white/90 h-[39px] flex items-center justify-center"
           >
             Set-up Profile
             <LogIn size={17} className="text-green-500" />

@@ -30,6 +30,7 @@ export default function RegisterOtpPage() {
 
     const newOtp = [...otp];
     newOtp[index] = digit;
+
     setOtp(newOtp);
     setError("");
 
@@ -47,6 +48,11 @@ export default function RegisterOtpPage() {
     }
   };
 
+  const handleGetOtp = () => {
+    setCountdown(30);
+    setError("");
+  };
+
   const handleFinishSignup = () => {
     const enteredOtp = otp.join("");
 
@@ -55,7 +61,6 @@ export default function RegisterOtpPage() {
       return;
     }
 
-    // Temporary test OTP. Replace with backend verification later.
     if (enteredOtp === "123456") {
       router.push("/register/success");
       return;
@@ -78,10 +83,10 @@ export default function RegisterOtpPage() {
         <ArrowLeft size={22} />
       </Link>
 
-      <section className="relative mx-auto max-w-[340px] rounded-[10px] border-[4px] border-[#d6c51f] bg-black px-3 pb-8 pt-5 shadow-2xl">
+      <section className="relative mx-auto max-w-[340px] rounded-[16px] border-[4px] border-[#d6c51f] bg-black/95 px-4 pb-8 pt-5 shadow-2xl">
         <button
           type="button"
-          className="absolute left-3 top-6 text-white/40"
+          className="absolute left-3 top-6 text-white/40 transition hover:text-white"
           aria-label="close"
         >
           <X size={16} />
@@ -113,25 +118,29 @@ export default function RegisterOtpPage() {
 
         <div className="mx-auto my-5 w-[86%] border-b border-white/70" />
 
-        <label className="pl-1 text-[13px] font-bold">Input OTP</label>
+        <div className="mt-6">
+          <label className="pl-1 text-[13px] font-bold text-white/90">
+            Input OTP
+          </label>
 
-        <div className="mt-2 grid grid-cols-6 gap-2 px-4">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              ref={(el) => {
-                inputRefs.current[index] = el;
-              }}
-              title={`OTP digit ${index + 1}`}
-              type="password"
-              inputMode="numeric"
-              maxLength={1}
-              value={digit}
-              onChange={(e) => handleOtpChange(e.target.value, index)}
-              onKeyDown={(e) => handleOtpKeyDown(e, index)}
-              className="h-[38px] rounded-[4px] bg-white text-center text-lg font-bold text-[#2458e8] outline-none"
-            />
-          ))}
+          <div className="mt-3 grid grid-cols-6 gap-2">
+            {otp.map((digit, index) => (
+              <input
+                key={index}
+                ref={(el) => {
+                  inputRefs.current[index] = el;
+                }}
+                title={`OTP digit ${index + 1}`}
+                type="password"
+                inputMode="numeric"
+                maxLength={1}
+                value={digit}
+                onChange={(e) => handleOtpChange(e.target.value, index)}
+                onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                className="h-[44px] rounded-[10px] border border-white/20 bg-white text-center text-[18px] font-black text-[#2458e8] shadow-[0_6px_14px_rgba(0,0,0,0.35)] outline-none transition focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/50"
+              />
+            ))}
+          </div>
         </div>
 
         {error && (
@@ -140,26 +149,28 @@ export default function RegisterOtpPage() {
           </p>
         )}
 
-        <button
-          type="button"
-          disabled={countdown > 0}
-          onClick={() => setCountdown(30)}
-          className={`font-roboto mx-auto mt-4 flex h-[36px] w-[86%] items-center justify-center rounded-full text-[13px] font-bold transition-all duration-300 ${
-            countdown > 0
-              ? "cursor-not-allowed border border-white/20 bg-[#6f6f6f] text-white/45 opacity-60 shadow-inner"
-              : "cursor-pointer bg-white text-black"
-          }`}
-        >
-          {countdown > 0 ? `Get OTP (${countdown}s)` : "Get OTP"}
-        </button>
+        <div className="mt-6 flex flex-col gap-3 mx-auto w-[250px]">
+          <button
+            type="button"
+            disabled={countdown > 0}
+            onClick={handleGetOtp}
+            className={`font-roboto flex h-[39px] w-[250px] items-center justify-center rounded-[14px] text-[14px] font-bold shadow-lg transition-all duration-300 active:scale-[0.98] ${
+              countdown > 0
+                ? "cursor-not-allowed border border-white/10 bg-white/10 text-white/45 shadow-inner"
+                : "!bg-white !text-black hover:bg-gray-100"
+            }`}
+          >
+            {countdown > 0 ? `Get OTP in ${countdown}s` : "Get OTP"}
+          </button>
 
-        <button
-          type="button"
-          onClick={handleFinishSignup}
-          className="mx-auto mt-10 block w-[86%] rounded-[10px] bg-[#2458e8] py-3 text-center text-[15px] font-bold text-white transition hover:bg-[#1f4bc7]"
-        >
-          Finish Signup
-        </button>
+          <button
+            type="button"
+            onClick={handleFinishSignup}
+            className="font-roboto flex h-[39px] w-[250px] items-center justify-center rounded-[14px] !bg-[#2458e8] text-[15px] font-bold text-white shadow-[0_10px_22px_rgba(36,88,232,0.45)] transition hover:bg-[#1f4bc7] active:scale-[0.98]"
+          >
+            Finish Signup
+          </button>
+        </div>
       </section>
     </main>
   );

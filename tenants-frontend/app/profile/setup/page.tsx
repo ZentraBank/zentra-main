@@ -7,7 +7,6 @@ import {
   ArrowRight,
   ChevronDown,
   Check,
-  ShieldCheck,
   UserRound,
   IdCard,
   Phone,
@@ -17,26 +16,11 @@ import {
 import { useState } from "react";
 
 const tabs = [
-  {
-    title: "Personal Information",
-    icon: UserRound,
-  },
-  {
-    title: "Identification Details",
-    icon: IdCard,
-  },
-  {
-    title: "Contact Information",
-    icon: Phone,
-  },
-  {
-    title: "Communication Preferences",
-    icon: Bell,
-  },
-  {
-    title: "Employment & Financial Information",
-    icon: BriefcaseBusiness,
-  },
+  { title: "Personal Information", icon: UserRound },
+  { title: "Identification Details", icon: IdCard },
+  { title: "Contact Information", icon: Phone },
+  { title: "Communication Preferences", icon: Bell },
+  { title: "Employment & Financial Information", icon: BriefcaseBusiness },
 ];
 
 const countries = [
@@ -50,42 +34,40 @@ const countries = [
   "Kenya",
 ];
 
-
-
 export default function ProfileSetupPage() {
   const [activeTab, setActiveTab] = useState("Personal Information");
 
   const [preferences, setPreferences] = useState({
-  email: true,
-  sms: true,
-  push: true,
-  marketing: false,
-  calls: false,
-});
-
-const allChecked = Object.values(preferences).every(Boolean);
-
-const togglePreference = (key: keyof typeof preferences) => {
-  setPreferences((prev) => ({
-    ...prev,
-    [key]: !prev[key],
-  }));
-};
-
-const checkAll = () => {
-  setPreferences({
     email: true,
     sms: true,
     push: true,
-    marketing: true,
-    calls: true,
+    marketing: false,
+    calls: false,
   });
-};
 
-const saveProfile = () => {
-  console.log("Saved preferences:", preferences);
-  alert("Profile saved successfully");
-};
+  const allChecked = Object.values(preferences).every(Boolean);
+
+  const togglePreference = (key: keyof typeof preferences) => {
+    setPreferences((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const checkAll = () => {
+    setPreferences({
+      email: true,
+      sms: true,
+      push: true,
+      marketing: true,
+      calls: true,
+    });
+  };
+
+  const saveProfile = () => {
+    console.log("Saved preferences:", preferences);
+    alert("Profile saved successfully");
+  };
 
   return (
     <main
@@ -222,12 +204,12 @@ const saveProfile = () => {
 
             <div className="mt-8 flex flex-col gap-3 md:flex-row md:justify-end">
               <button
-              type="button"
-              onClick={saveProfile}
-              className="font-heading h-[42px] rounded-[10px] border border-white/20 px-6 text-[14px] font-bold text-white hover:bg-white/10"
-            >
-              Save
-            </button>
+                type="button"
+                onClick={saveProfile}
+                className="font-heading h-[42px] rounded-[10px] border border-white/20 px-6 text-[14px] font-bold text-white hover:bg-white/10"
+              >
+                Save
+              </button>
 
               <Link
                 href="/dashboard"
@@ -247,10 +229,10 @@ const saveProfile = () => {
 function PersonalInformation() {
   return (
     <FormGrid>
-      <Field label="First Name" placeholder="Ugochukwu" required />
-      <Field label="Middle Name" placeholder="Precious" />
-      <Field label="Last Name" placeholder="Onah" required />
-      <Field label="Date of Birth" placeholder="DD/MM/YYYY" required />
+      <Field label="First Name" placeholder="Michael" required />
+      <Field label="Middle Name" placeholder="Michael" />
+      <Field label="Last Name" placeholder="Smith" required />
+      <DateField label="Date of Birth" required />
       <SelectField label="Gender" options={["Male", "Female"]} required />
       <SelectField
         label="Marital Status"
@@ -276,8 +258,8 @@ function IdentificationDetails() {
         required
       />
       <Field label="ID Number" placeholder="Enter ID number" required />
-      <Field label="Issue Date" placeholder="DD/MM/YYYY" />
-      <Field label="Expiry Date" placeholder="DD/MM/YYYY" required />
+      <DateField label="Issue Date" />
+      <DateField label="Expiry Date" required />
       <SelectField label="Issuing Country" options={countries} required />
     </FormGrid>
   );
@@ -440,6 +422,28 @@ function Field({
   );
 }
 
+function DateField({
+  label,
+  required,
+}: {
+  label: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="font-heading text-[12px] font-bold md:text-[13px]">
+        {label}
+        {required && <span className="text-red-300"> *</span>}
+      </label>
+
+      <input
+        type="date"
+        className="font-body mt-1 h-[38px] w-full rounded-[9px] bg-white/90 px-3 text-[13px] text-black outline-none md:h-[42px] md:text-[14px]"
+      />
+    </div>
+  );
+}
+
 function SelectField({
   label,
   options,
@@ -495,9 +499,7 @@ function SwitchRow({
       >
         <span
           className={`absolute top-[3px] h-[20px] w-[20px] rounded-full transition ${
-            enabled
-              ? "left-[25px] bg-[#2458e8]"
-              : "left-[3px] bg-white"
+            enabled ? "left-[25px] bg-[#2458e8]" : "left-[3px] bg-white"
           }`}
         />
       </span>

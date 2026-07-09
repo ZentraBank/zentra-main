@@ -119,7 +119,7 @@ export default function GiftPage() {
           <ArrowLeft size={18} />
         </Link>
 
-        <h1 className="mb-4 text-center text-[13px] font-bold md:mb-8 md:text-2xl text-white">
+        <h1 className="mb-4 pb-4 text-center text-[13px] font-bold md:mb-8 md:text-2xl text-white">
           Send Gift
         </h1>
 

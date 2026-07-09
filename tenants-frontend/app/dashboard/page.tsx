@@ -36,7 +36,7 @@ const mainServices = [
 
 const accountServices = [
   { title: "My Clients", icon: UsersRound, href: "/clients" },
-  { title: "Me as Agent", icon: UserCog, href: "/admin/chat" },
+  { title: "Me as Agent", icon: UserCog, href: "/agent" },
   { title: "Account info.", icon: ArrowRightLeft, href: "/admin/accounts" },
 ];
 
