@@ -1,0 +1,31 @@
+import {
+  Activity,
+  Bell,
+  Building2,
+  CreditCard,
+  FileCheck2,
+  HeartPulse,
+  LayoutDashboard,
+  ReceiptText,
+  Settings,
+  ShieldCheck,
+  UserRoundCog,
+  Users,
+  WalletCards,
+} from "lucide-react";
+
+export const navigation = [
+  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Tenants", href: "/tenants", icon: Building2 },
+  { label: "Administrators", href: "/administrators", icon: UserRoundCog },
+  { label: "Users", href: "/users", icon: Users },
+  { label: "Accounts", href: "/accounts", icon: WalletCards },
+  { label: "Transactions", href: "/transactions", icon: ReceiptText },
+  { label: "Subscriptions", href: "/subscriptions", icon: CreditCard },
+  { label: "Payment Proofs", href: "/payment-proofs", icon: FileCheck2 },
+  { label: "Notifications", href: "/notifications", icon: Bell },
+  { label: "Audit Logs", href: "/audit-logs", icon: Activity },
+  { label: "Security", href: "/security", icon: ShieldCheck },
+  { label: "System Health", href: "/system-health", icon: HeartPulse },
+  { label: "System Settings", href: "/system-settings", icon: Settings },
+] as const;
