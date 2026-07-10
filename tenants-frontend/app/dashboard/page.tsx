@@ -24,7 +24,7 @@ const mainServices = [
   { title: "Airtime", icon: Smartphone, href: "#" },
   { title: "Data", icon: Globe2, href: "#" },
   { title: "Cards", icon: CreditCard, href: "/dashboard/card-lock" },
-  { title: "Next-of-kin", icon: Receipt, href: "/nok" },
+  { title: "Next-of-kin", icon: Receipt, href: "#" },
   { title: "Subscription", icon: CircleDollarSign, href: "/subscribe" },
   { title: "Investment", icon: Wallet, href: "#" },
   { title: "Donations", icon: HeartHandshake, href: "/dashboard/donation" },

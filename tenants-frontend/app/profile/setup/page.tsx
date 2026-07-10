@@ -177,7 +177,7 @@ export default function ProfileSetupPage() {
             </div>
           </aside>
 
-          <section className="rounded-[18px] border border-white/25 bg-black/60 p-3 shadow-2xl backdrop-blur-md md:p-6">
+          <section className="min-w-0 overflow-hidden rounded-[18px] border border-white/25 bg-black/60 p-3 shadow-2xl backdrop-blur-md md:p-6">
             <div className="mb-5">
               <p className="font-heading text-[17px] font-extrabold md:text-[24px]">
                 {activeTab}
@@ -395,7 +395,11 @@ function EmploymentInformation() {
 }
 
 function FormGrid({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
+  return (
+    <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
+      {children}
+    </div>
+  );
 }
 
 function Field({
@@ -430,15 +434,34 @@ function DateField({
   required?: boolean;
 }) {
   return (
-    <div>
-      <label className="font-heading text-[12px] font-bold md:text-[13px]">
+    <div className="min-w-0 w-full">
+      <label className="font-heading block text-[12px] font-bold md:text-[13px]">
         {label}
         {required && <span className="text-red-300"> *</span>}
       </label>
 
       <input
         type="date"
-        className="font-body mt-1 h-[38px] w-full rounded-[9px] bg-white/90 px-3 text-[13px] text-black outline-none md:h-[42px] md:text-[14px]"
+        className="
+          font-body
+          mt-1
+          block
+          h-[38px]
+          w-full
+          min-w-0
+          max-w-full
+          appearance-none
+          rounded-[9px]
+          bg-white/90
+          px-2
+          text-[12px]
+          text-black
+          outline-none
+          [color-scheme:light]
+          md:h-[42px]
+          md:px-3
+          md:text-[14px]
+        "
       />
     </div>
   );

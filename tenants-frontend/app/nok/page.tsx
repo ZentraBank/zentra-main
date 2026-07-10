@@ -30,7 +30,7 @@ export default function PodRedemptionPage() {
     <main className="min-h-screen bg-[#E7EBF0] px-6 pb-10 pt-12 text-[#4A4A4A]">
       <section className="mx-auto w-full max-w-[430px]">
         <header className="relative flex items-center justify-center">
-          <Link href="/dashboard" className="absolute left-0 text-[#555]">
+          <Link href="/dashboard" className="absolute left-0 !text-black">
             <ArrowLeft size={24} />
           </Link>
 

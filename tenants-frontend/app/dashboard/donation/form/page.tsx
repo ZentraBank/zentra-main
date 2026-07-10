@@ -83,7 +83,7 @@ export default function EditTransferPage() {
   return (
     <main className="min-h-screen bg-[linear-gradient(135deg,#020202_0%,#070707_18%,#7b0000_42%,#d00000_68%,#060606_100%)] text-white">
       <div className="mx-auto min-h-screen w-full max-w-[430px] px-2 pb-8 pt-8 md:max-w-[900px] md:px-8 lg:max-w-[1180px]">
-        <Link href="/dashboard" className="mb-5 inline-flex text-white">
+        <Link href="/dashboard/donation" className="mb-5 inline-flex text-white">
           <ArrowLeft size={18} />
         </Link>
 

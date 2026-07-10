@@ -101,7 +101,7 @@ export default function DonorPage() {
       <div className="absolute inset-0 bg-black/35" />
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[430px] flex-col px-4 pb-10 pt-10 md:max-w-[1180px] md:px-10">
-        <Link href="/dashboard/donation" className="mb-6 inline-flex text-white hover:text-white/80 transition-colors">
+        <Link href="/dashboard" className="mb-6 inline-flex text-white hover:text-white/80 transition-colors">
           <ArrowLeft size={20} />
         </Link>
 

@@ -10,21 +10,37 @@ const cards = [
     title: "Celebrity card",
     emoji: "🏵️",
     img: "/images/crypto-card.jpeg",
+    number: "5382 **** **** 9021",
+    cvv: "4XX",
+    expiry: "09/28",
+    cardType: "Premium credit card",
   },
   {
     title: "Cryptocurrency card",
     emoji: "💳",
     img: "/images/cryptocurrency.jpeg",
+    number: "7821 **** **** 4478",
+    cvv: "9XX",
+    expiry: "12/27",
+    cardType: "Crypto debit card",
   },
   {
     title: "Official card",
     emoji: "🏆",
     img: "/images/official-card.jpeg",
+    number: "4197 **** **** 1185",
+    cvv: "2XX",
+    expiry: "04/29",
+    cardType: "Business credit card",
   },
   {
     title: "Merchant card",
     emoji: "🤠",
     img: "/images/merchant-card.jpeg",
+    number: "6305 **** **** 7362",
+    cvv: "6XX",
+    expiry: "07/30",
+    cardType: "Merchant debit card",
   },
 ];
 
@@ -143,13 +159,13 @@ export default function CardStatusPage() {
         </Link>
 
         <div className="mx-auto mb-8 max-w-[720px] text-center md:mb-12">
-          <h1 className="text-[34px] font-black leading-[0.9] tracking-[-1px] text-[#2f73ff] drop-shadow-[0_2px_0_#ffffff] md:text-[58px] lg:text-[72px]">
+          <h1 className="text-[34px] font-black leading-[0.9] tracking-[-1px] text-[#2f73ff] drop-shadow-[0_2px_0_#ffffff] text-[42x] md:text-[58px] lg:text-[72px]">
             Control Your client&apos;s
             <br />
             card status
           </h1>
 
-          <p className="mx-auto mt-5 max-w-[480px] text-[11px] font-bold leading-tight md:text-base">
+          <p className="mx-auto mt-5 max-w-[480px] text-[14px] font-bold leading-tight md:text-base">
             Control Your Client&apos;s Credit card or Debit card Status
           </p>
         </div>
@@ -206,25 +222,24 @@ export default function CardStatusPage() {
                     />
                   </div>
 
-                  <div className="absolute bottom-0 left-0 right-0 z-30 grid grid-cols-4 items-end bg-black/75 px-4 py-2 text-[11px] leading-tight md:px-6 md:py-4 md:text-xs">
-                    <div>
-                      <p>2386 **** **** 1234</p>
-                      <p>CVV: 7XX</p>
-                    </div>
+                  <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/85 px-4 py-3 text-white">
+  <div className="grid grid-cols-[1.3fr_1fr_1fr] items-end gap-3 text-[10px] leading-tight md:text-sm">
+    <div>
+      <p className="font-bold">{card.number}</p>
+      <p className="mt-1 text-white/75">CVV: {card.cvv}</p>
+    </div>
 
-                    <div />
+    <div>
+      <p className="text-white/75">Expiry</p>
+      <p className="font-bold">{card.expiry}</p>
+    </div>
 
-                    <div>
-                      <p>Expiry date: 27/</p>
-                      <p>XX</p>
-                    </div>
-
-                    <p className="text-right text-[11px] font-semibold md:text-base">
-                      Credit card
-                    </p>
-                  </div>
+    <p className="text-right font-bold">
+      {card.cardType}
+    </p>
+  </div>
+</div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-x-2 gap-y-1 bg-white/90 px-3 py-2 text-black md:gap-3 md:px-5 md:py-4">
                   {actions.map((action) => {
                     const isActive = cardSettings[cardIndex][action.key];

@@ -46,7 +46,7 @@ const adminNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Users", href: "/clients", icon: Users },
   { label: "Accounts", href: "/admin/accounts", icon: Wallet },
-  { label: "Transactions", href: "/admin/transactions", icon: ArrowLeftRight },
+  { label: "Transactions", href: "/transactions", icon: ArrowLeftRight },
   { label: "Chats", href: "/admin/chat", icon: MessageCircle },
   { label: "Audit Logs", href: "#", icon: ShieldCheck },
   { label: "Subscriptions", href: "/subscribe", icon: CreditCard },
