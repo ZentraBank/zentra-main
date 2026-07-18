@@ -28,7 +28,7 @@ const investmentCategories: InvestmentCategory[] = [
     items: [
       {
         label: "Crowdfunded Charity Project",
-        href: "/investments/charity-impact/crowdfunded-project",
+        href: "/investments/categories/charity-impact/investments",
       },
       {
         label: "Nonprofit Investment Pools",

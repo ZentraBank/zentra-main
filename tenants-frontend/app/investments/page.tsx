@@ -21,7 +21,7 @@ const investments = [
     title: "Digital Asset",
     subtitle: "Charity-Linked Digital Assets",
     image: "/images/investments-3.png",
-    href: "/investments/digital-assets",
+    href: "/investments/charity-impact",
   },
   {
     title: "Sustainable & Ethical",
