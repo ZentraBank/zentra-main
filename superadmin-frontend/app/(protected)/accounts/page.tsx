@@ -8,10 +8,10 @@ export default function Page() {
         eyebrow="Finance"
         title="Accounts"
         description="Monitor all customer banking and wallet accounts."
-        actionLabel=null
-        actionHref=null
+        actionLabel={undefined}
+        actionHref={undefined}
       />
-      <DataTablePlaceholder columns=["Account holder", "Account number", "Tenant", "Type", "Balance", "Status", "Actions"] />
+      <DataTablePlaceholder columns={["Account holder", "Account number", "Tenant", "Type", "Balance", "Status", "Actions"]} />
     </main>
   );
 }

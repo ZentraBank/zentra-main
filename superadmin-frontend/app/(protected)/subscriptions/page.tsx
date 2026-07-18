@@ -11,7 +11,7 @@ export default function Page() {
         actionLabel="Manage plans"
         actionHref="/subscriptions/plans"
       />
-      <DataTablePlaceholder columns=["Subscriber", "Tenant", "Plan", "Amount", "Renewal", "Status", "Actions"] />
+      <DataTablePlaceholder columns={["Subscriber", "Tenant", "Plan", "Amount", "Renewal", "Status", "Actions"]} />
     </main>
   );
 }

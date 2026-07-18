@@ -8,10 +8,10 @@ export default function Page() {
         eyebrow="Approvals"
         title="Payment proofs"
         description="Review submitted payment evidence and activate subscriptions."
-        actionLabel=null
-        actionHref=null
+        actionLabel={undefined}
+        actionHref={undefined}
       />
-      <DataTablePlaceholder columns=["Submitted by", "Tenant", "Plan", "Amount", "Submitted", "Status", "Actions"] />
+      <DataTablePlaceholder columns={["Submitted by", "Tenant", "Plan", "Amount", "Submitted", "Status", "Actions"]} />
     </main>
   );
 }

@@ -11,7 +11,7 @@ export default function Page() {
         actionLabel="Create tenant"
         actionHref="/tenants/create"
       />
-      <DataTablePlaceholder columns=["Tenant", "Domain", "Plan", "Users", "Status", "Created", "Actions"] />
+      <DataTablePlaceholder columns={["Tenant", "Domain", "Plan", "Users", "Status", "Created", "Actions"]} />
     </main>
   );
-}
+}        

@@ -8,10 +8,10 @@ export default function Page() {
         eyebrow="Platform users"
         title="Users"
         description="View customers across every tenant."
-        actionLabel=null
-        actionHref=null
+        actionLabel={undefined}
+        actionHref={undefined}
       />
-      <DataTablePlaceholder columns=["User", "Tenant", "Account", "KYC", "Subscription", "Status", "Actions"] />
+      <DataTablePlaceholder columns={["User", "Tenant", "Account", "KYC", "Subscription", "Status", "Actions"]} />
     </main>
   );
 }

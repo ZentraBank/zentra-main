@@ -8,10 +8,10 @@ export default function Page() {
         eyebrow="Compliance"
         title="Audit logs"
         description="Review immutable records of privileged actions."
-        actionLabel=null
-        actionHref=null
+        actionLabel={undefined}
+        actionHref={undefined}
       />
-      <DataTablePlaceholder columns=["Actor", "Action", "Resource", "Tenant", "IP address", "Time", "Severity"] />
+      <DataTablePlaceholder columns={["Actor", "Action", "Resource", "Tenant", "IP address", "Time", "Severity"]} />
     </main>
   );
 }

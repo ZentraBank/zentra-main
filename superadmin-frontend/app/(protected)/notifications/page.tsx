@@ -8,10 +8,10 @@ export default function Page() {
         eyebrow="Communication"
         title="Notifications"
         description="Send targeted platform, tenant, and security notifications."
-        actionLabel=null
-        actionHref=null
+        actionLabel={undefined}
+        actionHref={undefined}
       />
-      <DataTablePlaceholder columns=["Title", "Audience", "Channels", "Status", "Sent", "Created by", "Actions"] />
+      <DataTablePlaceholder columns={["Title", "Audience", "Channels", "Status", "Sent", "Created by", "Actions"]} />
     </main>
   );
 }

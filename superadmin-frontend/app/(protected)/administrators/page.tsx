@@ -11,7 +11,7 @@ export default function Page() {
         actionLabel="Create administrator"
         actionHref="/administrators/create"
       />
-      <DataTablePlaceholder columns=["Administrator", "Tenant", "Role", "2FA", "Status", "Last login", "Actions"] />
+      <DataTablePlaceholder columns={["Administrator", "Tenant", "Role", "2FA", "Status", "Last login", "Actions"]} />
     </main>
   );
 }

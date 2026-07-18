@@ -8,10 +8,10 @@ export default function Page() {
         eyebrow="Finance"
         title="Transactions"
         description="Review transactions across all tenants."
-        actionLabel=null
-        actionHref=null
+        actionLabel={undefined}
+        actionHref={undefined}
       />
-      <DataTablePlaceholder columns=["Transaction ID", "User", "Tenant", "Type", "Amount", "Status", "Date"] />
+      <DataTablePlaceholder columns={["Transaction ID", "User", "Tenant", "Type", "Amount", "Status", "Date"]} />
     </main>
   );
 }
