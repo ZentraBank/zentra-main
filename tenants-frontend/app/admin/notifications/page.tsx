@@ -779,7 +779,7 @@ export default function NotificationPage() {
                       <span
                         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl md:h-12 md:w-12 ${style.bg}`}
                       >
-                        <Icon className={style.color} size={22} />
+                        <Icon className={style.color} width={22} height={22} />
                       </span>
 
                       <div className="min-w-0 flex-1">

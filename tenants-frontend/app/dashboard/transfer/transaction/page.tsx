@@ -97,7 +97,7 @@ function saveTransferOverride(transaction: EditedTransaction) {
   }
 }
 
-function normaliseTransaction(data: Partial<EditedTransaction>) {
+function normaliseTransaction(data: Partial<EditedTransaction>): EditedTransaction {
   return {
     ...emptyTransaction,
     ...data,
