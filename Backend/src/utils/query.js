@@ -1,24 +1,44 @@
-function getPagination(query) {
-  const limit = Math.min(Number(query.limit) || 20, 100);
-  const page = Math.max(Number(query.page) || 1, 1);
-  const offset = (page - 1) * limit;
+const { pool } = require("../config/db");
 
-  return { limit, page, offset };
-}
+/**
+ * Run a prepared SQL statement.
+ *
+ * @param {string} sql
+ * @param {Array} parameters
+ * @returns {Promise<any>}
+ */
+const query = async (sql, parameters = []) => {
+  const [result] = await pool.execute(sql, parameters);
 
-function cleanFilters(query, allowedFilters = []) {
-  const filters = {};
+  return result;
+};
 
-  allowedFilters.forEach((key) => {
-    if (query[key] !== undefined && query[key] !== "") {
-      filters[key] = query[key];
-    }
-  });
+/**
+ * Execute several database operations in one transaction.
+ *
+ * @param {(connection: import("mysql2/promise").PoolConnection) =>
+ * Promise<any>} callback
+ */
+const withTransaction = async (callback) => {
+  const connection = await pool.getConnection();
 
-  return filters;
-}
+  try {
+    await connection.beginTransaction();
+
+    const result = await callback(connection);
+
+    await connection.commit();
+
+    return result;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
 
 module.exports = {
-  getPagination,
-  cleanFilters,
+  query,
+  withTransaction,
 };

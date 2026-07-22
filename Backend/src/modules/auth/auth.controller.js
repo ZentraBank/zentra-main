@@ -1,79 +1,78 @@
+const asyncHandler = require("../../utils/asyncHandler");
+const { sendSuccess } = require("../../utils/response");
 const authService = require("./auth.service");
 
-function setAuthCookie(res, token) {
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+/**
+ * Register a new customer.
+ *
+ * The tenant is resolved by resolveTenantMiddleware
+ * before this controller runs.
+ */
+const register = asyncHandler(async (req, res) => {
+  const result = await authService.registerUser({
+    tenantId: req.tenant.id,
+    full_name: req.body.full_name,
+    email: req.body.email,
+    phone: req.body.phone,
+    password: req.body.password,
   });
-}
 
-async function register(req, res, next) {
-  try {
-    const result = await authService.registerUser({
-      tenantId: req.tenant.id,
-      ...req.body,
-    });
-
-    setAuthCookie(res, result.token);
-
-    return res.status(201).json({
-      success: true,
-      message: "Registration successful",
-      data: {
-        user: result.user,
-        account: result.account,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function login(req, res, next) {
-  try {
-    const result = await authService.loginUser({
-      tenantId: req.tenant.id,
-      ...req.body,
-    });
-
-    setAuthCookie(res, result.token);
-
-    return res.json({
-      success: true,
-      message: "Login successful",
-      data: {
-        user: result.user,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-}
-
-async function me(req, res) {
-  return res.json({
-    success: true,
+  return sendSuccess(res, {
+    statusCode: 201,
+    message: "Registration successful",
     data: {
-      user: req.user,
-      tenant: req.tenant,
+      user: result.user,
+      account: result.account,
+      accessToken: result.token,
     },
   });
-}
+});
 
-async function logout(req, res) {
-  res.clearCookie("token");
-
-  return res.json({
-    success: true,
-    message: "Logged out successfully",
+/**
+ * Log in an existing tenant user.
+ */
+const login = asyncHandler(async (req, res) => {
+  const result = await authService.loginUser({
+    tenantId: req.tenant.id,
+    email: req.body.email,
+    password: req.body.password,
   });
-}
+
+  return sendSuccess(res, {
+    message: "Login successful",
+    data: {
+      user: result.user,
+      accessToken: result.token,
+    },
+  });
+});
+
+/**
+ * Return the currently authenticated user.
+ *
+ * authenticate middleware should load the latest role,
+ * permissions, subscription and plan features into req.auth.
+ */
+const me = asyncHandler(async (req, res) => {
+  return sendSuccess(res, {
+    message: "Authenticated user retrieved successfully",
+    data: {
+      id: req.auth.userId,
+      tenantId: req.auth.tenantId,
+      membershipId: req.auth.membershipId || null,
+
+      role: req.auth.role || null,
+      permissions: req.auth.permissions || [],
+
+      subscription: req.auth.subscription || null,
+      plan: req.auth.plan || null,
+      planFeatures: req.auth.planFeatures || {},
+    },
+  });
+});
 
 module.exports = {
   register,
   login,
   me,
-  logout,
 };

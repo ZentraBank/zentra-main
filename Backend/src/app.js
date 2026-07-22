@@ -1,77 +1,139 @@
+const tenantRoutes = require(
+  "../src/modules/tenants/tenant.routes"
+);
+
+
+
 const express = require("express");
 const cors = require("cors");
-const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
-const rateLimit = require("express-rate-limit");
+const compression = require("compression");
+const morgan = require("morgan");
+const cookieParser = require("cookie-parser");
+const crypto = require("crypto");
 
-const tenantMiddleware = require("./middleware/tenant.middleware");
-const subscriptionMiddleware = require("./middleware/subscription.middleware");
-const errorMiddleware = require("./middleware/error.middleware");
+const env = require("./config/env");
+const corsOptions = require("./config/cors");
+const {
+  sendSuccess,
+} = require("./utils/response");
 
-const adminRoutes = require("./modules/admin/admin.routes");
-const authRoutes = require("./modules/auth/auth.routes");
-const auditRoutes = require("./modules/auditLogs/audit.routes");
-const tenantRoutes = require("./modules/tenants/tenant.routes");
-const notificationRoutes = require("./modules/notifications/notification.routes");
-const chatRoutes = require("./modules/chats/chat.routes");
-const subscriptionRoutes = require("./modules/subscriptions/subscription.routes");
-const accountRoutes = require("./modules/accounts/account.routes");
-const transactionRoutes = require("./modules/transactions/transaction.routes");
-const platformRoutes = require("./modules/platform/platform.routes");
+const notFoundMiddleware = require(
+  "./middleware/notFound.middleware"
+);
+const errorMiddleware = require(
+  "./middleware/error.middleware"
+);
 
 const app = express();
 
-// Core middlewares
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
+
+app.use((req, res, next) => {
+  const requestId =
+    req.get("x-request-id") || crypto.randomUUID();
+
+  req.requestId = requestId;
+  res.setHeader("x-request-id", requestId);
+
+  next();
+});
+
 app.use(
-  cors({
-    origin: ["http://localhost:3000", "http://localhost:3001"],
-    credentials: true,
+  helmet({
+    crossOriginResourcePolicy: {
+      policy: "cross-origin",
+    },
   })
 );
 
-app.use(helmet());
-app.use(express.json());
+app.use(cors(corsOptions));
+app.options("/{*any}", cors(corsOptions));
+
+app.use(compression());
 app.use(cookieParser());
 
-// Rate limit
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: {
-    success: false,
-    message: "Too many requests, please try again later",
-  },
-});
+app.use(
+  express.json({
+    limit: "2mb",
+  })
+);
 
-app.use("/api", limiter);
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: "2mb",
+  })
+);
 
-// Health check
+if (!env.isTest) {
+  app.use(
+    morgan(
+      env.isDevelopment
+        ? "dev"
+        : ":remote-addr :method :url :status :response-time ms"
+    )
+  );
+}
+
 app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "ZentraBank API running",
+  return sendSuccess(res, {
+    message: `${env.appName} is running`,
+    data: {
+      environment: env.nodeEnv,
+      version: "1.0.0",
+      requestId: req.requestId,
+    },
   });
 });
 
-// Tenant resolution should happen before tenant-based routes
-app.use(tenantMiddleware);
+app.get("/health", (req, res) => {
+  return sendSuccess(res, {
+    message: "API health check successful",
+    data: {
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptimeSeconds: Math.floor(process.uptime()),
+      environment: env.nodeEnv,
+    },
+  });
+});
 
-// Subscription check after tenant is resolved
-app.use(subscriptionMiddleware);
+/*
+|--------------------------------------------------------------------------
+| API routes
+|--------------------------------------------------------------------------
+| We will add routes here after the foundation is tested.
+|
+| app.use(`${env.apiPrefix}/platform`, platformRoutes);
+| app.use(`${env.apiPrefix}`, tenantMiddleware);
+| app.use(`${env.apiPrefix}/auth`, authRoutes);
+|--------------------------------------------------------------------------
+*/
+const authRoutes = require(
+  "./modules/auth/auth.routes"
+);
 
-// Routes
-app.use("/api/tenants", tenantRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/accounts", accountRoutes);
-app.use("/api/transactions", transactionRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/chats", chatRoutes);
-app.use("/api/subscriptions", subscriptionRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/audit-logs", auditRoutes);
-app.use("/api/platform", platformRoutes);
+app.use(
+  `${env.apiPrefix}/tenants`,
+  tenantRoutes
+);
 
-// Error handler should always be last
+app.use(
+  `${env.apiPrefix}/tenants`,
+  tenantRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/auth`,
+  authRoutes
+);
+
+app.use(notFoundMiddleware);
+app.use(errorMiddleware);
+
+app.use(notFoundMiddleware);
 app.use(errorMiddleware);
 
 module.exports = app;

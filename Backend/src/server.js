@@ -1,41 +1,104 @@
 const http = require("http");
+
 const app = require("./app");
-const { Server } = require("socket.io");
-require("dotenv").config();
+const env = require("./config/env");
 
-const PORT = process.env.PORT || 5000;
+const {
+  testDatabaseConnection,
+  closeDatabaseConnection,
+} = require("./config/db");
 
-const server = http.createServer(app);
+let server;
+let isShuttingDown = false;
 
-const io = new Server(server, {
-  cors: {
-    origin: ["http://localhost:3000", "http://localhost:3001"],
-    credentials: true,
-  },
+const startServer = async () => {
+  try {
+    await testDatabaseConnection();
+
+    server = http.createServer(app);
+
+    server.listen(env.port, () => {
+      console.log("---------------------------------------");
+      console.log(`${env.appName} started successfully`);
+      console.log(`Environment: ${env.nodeEnv}`);
+      console.log(`Port: ${env.port}`);
+      console.log(
+        `API: http://localhost:${env.port}${env.apiPrefix}`
+      );
+      console.log(
+        `Health: http://localhost:${env.port}/health`
+      );
+      console.log("---------------------------------------");
+    });
+  } catch (error) {
+    console.error(
+      "The server could not start:",
+      error.message
+    );
+
+    process.exit(1);
+  }
+};
+
+const shutdown = async (signal, exitCode = 0) => {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+
+  console.log(`${signal} received. Shutting down...`);
+
+  const forceShutdownTimer = setTimeout(() => {
+    console.error("Forced shutdown after timeout");
+    process.exit(1);
+  }, 10000);
+
+  forceShutdownTimer.unref();
+
+  try {
+    if (server) {
+      await new Promise((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      });
+
+      console.log("HTTP server closed");
+    }
+
+    await closeDatabaseConnection();
+
+    process.exit(exitCode);
+  } catch (error) {
+    console.error("Shutdown failed:", error);
+    process.exit(1);
+  }
+};
+
+process.on("SIGINT", () => {
+  shutdown("SIGINT");
 });
 
-app.set("io", io);
-
-io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id);
-
-  socket.on("join_user_room", ({ tenantId, userId }) => {
-    socket.join(`tenant:${tenantId}:user:${userId}`);
-  });
-
-  socket.on("join_tenant_admin_room", ({ tenantId }) => {
-    socket.join(`tenant:${tenantId}:admins`);
-  });
-
-  socket.on("join_conversation", ({ conversationId }) => {
-    socket.join(`conversation:${conversationId}`);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("Socket disconnected:", socket.id);
-  });
+process.on("SIGTERM", () => {
+  shutdown("SIGTERM");
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+process.on("uncaughtException", (error) => {
+  console.error("Uncaught exception:", error);
+
+  shutdown("UNCAUGHT_EXCEPTION", 1);
 });
+
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled promise rejection:", reason);
+
+  shutdown("UNHANDLED_REJECTION", 1);
+});
+
+startServer();

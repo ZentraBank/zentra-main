@@ -3,16 +3,22 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
-  },
+    "start": "node src/server.js",
+    "db:schema": "node src/database/runSchema.js",
+    "db:seed": "node src/database/seeds/core.seed.js",
+    "db:setup": "npm run db:schema && npm run db:seed",
+    "test": "node --test"
+  }
+,
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "compression": "^1.8.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -21,6 +27,7 @@
     "helmet": "^8.1.0",
     "joi": "^18.1.2",
     "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.11.0",
     "mysql2": "^3.22.2",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3"

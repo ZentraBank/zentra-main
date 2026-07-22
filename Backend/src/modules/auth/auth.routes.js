@@ -1,19 +1,49 @@
 const express = require("express");
+
+const validate = require(
+  "../../middleware/validate.middleware"
+);
+
+const {
+  resolveTenantMiddleware,
+} = require(
+  "../../middleware/tenant.middleware"
+);
+
+const {
+  authenticate,
+} = require(
+  "../../middleware/auth.middleware"
+);
+
 const authController = require("./auth.controller");
-const authMiddleware = require("../../middleware/auth.middleware");
+
+const {
+  registerSchema,
+  loginSchema,
+} = require("./auth.validation");
 
 const router = express.Router();
-const validate = require("../../middleware/validate.middleware");
-const { registerSchema, loginSchema } = require("./auth.validation");
 
-router.post("/register", validate(registerSchema), authController.register);
-router.post("/login", validate(loginSchema), authController.login);
-router.get("/me", authMiddleware, authController.me);
-router.post("/logout", authMiddleware, authController.logout);
+router.post(
+  "/register",
+  resolveTenantMiddleware,
+  validate(registerSchema),
+  authController.register
+);
 
-router.post("/register", authController.register);
-router.post("/login", authController.login);
-router.get("/me", authMiddleware, authController.me);
-router.post("/logout", authMiddleware, authController.logout);
+router.post(
+  "/login",
+  resolveTenantMiddleware,
+  validate(loginSchema),
+  authController.login
+);
+
+router.get(
+  "/me",
+  resolveTenantMiddleware,
+  authenticate,
+  authController.me
+);
 
 module.exports = router;

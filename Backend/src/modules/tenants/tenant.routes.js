@@ -1,12 +1,17 @@
 const express = require("express");
-const router = express.Router();
 
 const tenantController = require("./tenant.controller");
 
-// public
-router.get("/current", tenantController.getCurrentTenant);
+const {
+  resolveTenantMiddleware,
+} = require("../../middleware/tenant.middleware");
 
-// later: protect this with super_admin
-router.post("/", tenantController.createTenant);
+const router = express.Router();
+
+router.get(
+  "/current",
+  resolveTenantMiddleware,
+  tenantController.getCurrentTenant
+);
 
 module.exports = router;

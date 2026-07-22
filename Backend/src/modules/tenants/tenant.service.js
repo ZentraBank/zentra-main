@@ -1,35 +1,202 @@
-const tenantRepo = require("./tenant.repository");
+const ApiError = require("../../utils/ApiError");
+const tenantRepository = require("./tenant.repository");
 
-async function resolveTenant(host) {
-  if (!host) {
-    throw new Error("Missing host header");
+const parseJsonValue = (value) => {
+  if (value === null || value === undefined) {
+    return null;
   }
 
-  const cleanHost = host.split(":")[0];
+  if (typeof value !== "string") {
+    return value;
+  }
 
-  const tenant = await tenantRepo.findByDomain(cleanHost);
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
 
+const mapSettingsToObject = (settings) => {
+  return settings.reduce((result, setting) => {
+    result[setting.setting_key] = parseJsonValue(
+      setting.setting_value
+    );
+
+    return result;
+  }, {});
+};
+
+const mapFeaturesToObject = (features) => {
+  return features.reduce((result, feature) => {
+    result[feature.feature_key] = {
+      enabled: Boolean(feature.is_enabled),
+      configuration: parseJsonValue(
+        feature.configuration
+      ),
+    };
+
+    return result;
+  }, {});
+};
+
+const mapEnabledFeatureList = (features) => {
+  return features
+    .filter((feature) => Boolean(feature.is_enabled))
+    .map((feature) => feature.feature_key);
+};
+
+const ensureTenantIsAvailable = (tenant) => {
   if (!tenant) {
-    throw new Error("Tenant not found");
+    throw ApiError.notFound("Tenant was not found");
+  }
+
+  if (tenant.status === "suspended") {
+    throw ApiError.forbidden(
+      "This tenant has been suspended"
+    );
+  }
+
+  if (tenant.status !== "active") {
+    throw ApiError.forbidden(
+      "This tenant is currently unavailable"
+    );
   }
 
   return tenant;
-}
+};
 
-async function createTenant(data) {
-  if (!data.name || !data.slug || !data.domain) {
-    throw new Error("Name, slug, and domain are required");
+const getTenantById = async (tenantId) => {
+  const tenant = await tenantRepository.findTenantById(
+    tenantId
+  );
+
+  return ensureTenantIsAvailable(tenant);
+};
+
+const getTenantBySlug = async (slug) => {
+  const normalisedSlug = slug
+    ?.trim()
+    .toLowerCase();
+
+  if (!normalisedSlug) {
+    throw ApiError.badRequest(
+      "A tenant slug is required"
+    );
   }
 
-  const tenantId = await tenantRepo.createTenant(data);
+  const tenant = await tenantRepository.findTenantBySlug(
+    normalisedSlug
+  );
+
+  return ensureTenantIsAvailable(tenant);
+};
+
+const getTenantByDomain = async (domain) => {
+  const normalisedDomain = domain
+    ?.trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/:\d+$/, "")
+    .replace(/^www\./, "");
+
+  if (!normalisedDomain) {
+    throw ApiError.badRequest(
+      "A tenant domain is required"
+    );
+  }
+
+  const tenant =
+    await tenantRepository.findTenantByDomain(
+      normalisedDomain
+    );
+
+  return ensureTenantIsAvailable(tenant);
+};
+
+const resolveTenant = async ({
+  slug,
+  domain,
+}) => {
+  if (slug) {
+    return getTenantBySlug(slug);
+  }
+
+  if (domain) {
+    return getTenantByDomain(domain);
+  }
+
+  throw ApiError.badRequest(
+    "Unable to determine the tenant"
+  );
+};
+
+const getTenantConfiguration = async (
+  tenant,
+  {
+    includePrivateSettings = false,
+  } = {}
+) => {
+  const settings = includePrivateSettings
+    ? await tenantRepository.findAllTenantSettings(
+        tenant.id
+      )
+    : await tenantRepository.findPublicTenantSettings(
+        tenant.id
+      );
+
+  const features =
+    await tenantRepository.findTenantFeatures(
+      tenant.id
+    );
 
   return {
-    id: tenantId,
-    ...data,
+    id: tenant.id,
+    name: tenant.name,
+    slug: tenant.slug,
+    domain: tenant.domain,
+
+    branding: {
+      appName: tenant.app_name,
+      logoUrl: tenant.logo_url,
+      primaryColor: tenant.primary_color,
+      secondaryColor: tenant.secondary_color,
+    },
+
+    contact: {
+      email: tenant.contact_email,
+      phone: tenant.contact_phone,
+    },
+
+    localisation: {
+      countryCode: tenant.country_code,
+      currency: tenant.default_currency,
+      timezone: tenant.timezone,
+    },
+
+    settings: mapSettingsToObject(settings),
+
+    features: mapFeaturesToObject(features),
+
+    enabledFeatures: mapEnabledFeatureList(features),
   };
-}
+};
+
+const getCurrentTenantConfiguration = async (
+  tenant
+) => {
+  ensureTenantIsAvailable(tenant);
+
+  return getTenantConfiguration(tenant, {
+    includePrivateSettings: false,
+  });
+};
 
 module.exports = {
+  getTenantById,
+  getTenantBySlug,
+  getTenantByDomain,
   resolveTenant,
-  createTenant,
+  getTenantConfiguration,
+  getCurrentTenantConfiguration,
 };

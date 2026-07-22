@@ -1,33 +1,25 @@
+const asyncHandler = require("../../utils/asyncHandler");
+const {
+  sendSuccess,
+} = require("../../utils/response");
+
 const tenantService = require("./tenant.service");
 
-async function getCurrentTenant(req, res, next) {
-  try {
-    return res.json({
-      success: true,
-      data: {
-        tenant: req.tenant,
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-}
+const getCurrentTenant = asyncHandler(
+  async (req, res) => {
+    const configuration =
+      await tenantService.getCurrentTenantConfiguration(
+        req.tenant
+      );
 
-async function createTenant(req, res, next) {
-  try {
-    const tenant = await tenantService.createTenant(req.body);
-
-    return res.status(201).json({
-      success: true,
-      message: "Tenant created",
-      data: tenant,
+    return sendSuccess(res, {
+      message:
+        "Tenant configuration retrieved successfully",
+      data: configuration,
     });
-  } catch (error) {
-    next(error);
   }
-}
+);
 
 module.exports = {
   getCurrentTenant,
-  createTenant,
 };
