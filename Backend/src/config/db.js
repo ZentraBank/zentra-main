@@ -13,8 +13,6 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-
-
 const testDatabaseConnection = async () => {
   let connection;
 
@@ -41,6 +39,8 @@ const closeDatabaseConnection = async () => {
 
 module.exports = {
   pool,
+  // Add this query helper so db.query(...) works seamlessly everywhere
+  query: (sql, params) => pool.query(sql, params),
   testDatabaseConnection,
   closeDatabaseConnection,
 };

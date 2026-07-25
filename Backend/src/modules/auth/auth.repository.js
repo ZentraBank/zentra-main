@@ -1,192 +1,142 @@
-const { query } = require("../../utils/query");
+const { randomUUID } = require("crypto");
+const db = require("../../config/db");
 
-const findUserForLogin = async ({
-  email,
-  tenantId,
-}) => {
-  const rows = await query(
+/*
+Expected database adapter:
+  db.query(sql, params) -> mysql2-compatible result.
+
+If your database module exports query directly, replace:
+  const [rows] = await db.query(...)
+with your project's equivalent.
+*/
+
+const findUserByEmailAndTenant = async (email, tenantId) => {
+  const [rows] = await db.query(
     `
       SELECT
-        users.id,
-        users.first_name,
-        users.middle_name,
-        users.last_name,
-        users.email,
-        users.phone,
-        users.password_hash,
-        users.avatar_url,
-        users.status AS user_status,
-        users.email_verified_at,
-        users.last_login_at,
+        u.id,
+        CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) AS full_name,
+        u.email,
+        u.phone,
+        u.password_hash,
+        u.kyc_status,
+        u.status AS user_status,
 
-        tenant_memberships.id AS membership_id,
-        tenant_memberships.status AS membership_status,
+        tm.id AS membership_id,
+        tm.status AS membership_status,
 
-        roles.id AS role_id,
-        roles.name AS role_name,
-        roles.code AS role_code,
+        r.id AS role_id,
+        r.name AS role_name,
+        r.code AS role_code,
 
-        tenants.id AS tenant_id,
-        tenants.name AS tenant_name,
-        tenants.slug AS tenant_slug,
-        tenants.status AS tenant_status
+        t.id AS tenant_id,
+        t.slug AS tenant_slug,
 
-      FROM users
+        us.id AS subscription_id,
+        us.status AS subscription_status,
+        us.starts_at AS subscription_starts_at,
+        us.expires_at AS subscription_expires_at,
 
-      INNER JOIN tenant_memberships
-        ON tenant_memberships.user_id = users.id
+        sp.id AS plan_id,
+        sp.name AS plan_name,
+        sp.code AS plan_code
 
-      INNER JOIN roles
-        ON roles.id = tenant_memberships.role_id
-
-      INNER JOIN tenants
-        ON tenants.id = tenant_memberships.tenant_id
-
-      WHERE users.email = ?
-        AND tenants.id = ?
-        AND users.deleted_at IS NULL
+      FROM users u
+      INNER JOIN tenant_memberships tm
+        ON tm.user_id = u.id
+       AND tm.tenant_id = ?
+      INNER JOIN roles r
+        ON r.id = tm.role_id
+       AND r.is_active = TRUE
+      INNER JOIN tenants t
+        ON t.id = tm.tenant_id
+      LEFT JOIN user_subscriptions us
+        ON us.user_id = u.id
+       AND us.tenant_id = t.id
+       AND us.status = 'active'
+       AND (us.expires_at IS NULL OR us.expires_at > NOW())
+      LEFT JOIN subscription_plans sp
+        ON sp.id = us.plan_id
+       AND sp.is_active = TRUE
+      WHERE LOWER(u.email) = LOWER(?)
       LIMIT 1
     `,
-    [
-      email,
-      tenantId,
-    ]
+    [tenantId, email]
   );
 
   return rows[0] || null;
 };
 
-const findAuthenticationContext = async ({
+const findAuthContextByIdentity = async ({
   userId,
+  tenantId,
   membershipId,
-  tenantId,
 }) => {
-  const rows = await query(
+  const [rows] = await db.query(
     `
       SELECT
-        users.id,
-        users.first_name,
-        users.middle_name,
-        users.last_name,
-        users.email,
-        users.phone,
-        users.avatar_url,
-        users.status AS user_status,
-        users.email_verified_at,
-        users.last_login_at,
+        u.id,
+        CONCAT_WS(' ', u.first_name, u.middle_name, u.last_name) AS full_name,
+        u.email,
+        u.phone,
+        u.kyc_status,
+        u.status AS user_status,
 
-        tenant_memberships.id AS membership_id,
-        tenant_memberships.status AS membership_status,
+        tm.id AS membership_id,
+        tm.status AS membership_status,
 
-        roles.id AS role_id,
-        roles.name AS role_name,
-        roles.code AS role_code,
-        roles.is_active AS role_is_active,
+        r.id AS role_id,
+        r.name AS role_name,
+        r.code AS role_code,
 
-        tenants.id AS tenant_id,
-        tenants.name AS tenant_name,
-        tenants.slug AS tenant_slug,
-        tenants.status AS tenant_status
+        t.id AS tenant_id,
+        t.slug AS tenant_slug,
 
-      FROM users
+        us.id AS subscription_id,
+        us.status AS subscription_status,
+        us.starts_at AS subscription_starts_at,
+        us.expires_at AS subscription_expires_at,
 
-      INNER JOIN tenant_memberships
-        ON tenant_memberships.user_id = users.id
+        sp.id AS plan_id,
+        sp.name AS plan_name,
+        sp.code AS plan_code
 
-      INNER JOIN roles
-        ON roles.id = tenant_memberships.role_id
-
-      INNER JOIN tenants
-        ON tenants.id = tenant_memberships.tenant_id
-
-      WHERE users.id = ?
-        AND tenant_memberships.id = ?
-        AND tenants.id = ?
-        AND users.deleted_at IS NULL
+      FROM users u
+      INNER JOIN tenant_memberships tm
+        ON tm.user_id = u.id
+       AND tm.tenant_id = ?
+       AND tm.id = ?
+      INNER JOIN roles r
+        ON r.id = tm.role_id
+       AND r.is_active = TRUE
+      INNER JOIN tenants t
+        ON t.id = tm.tenant_id
+      LEFT JOIN user_subscriptions us
+        ON us.user_id = u.id
+       AND us.tenant_id = t.id
+       AND us.status = 'active'
+       AND (us.expires_at IS NULL OR us.expires_at > NOW())
+      LEFT JOIN subscription_plans sp
+        ON sp.id = us.plan_id
+       AND sp.is_active = TRUE
+      WHERE u.id = ?
       LIMIT 1
     `,
-    [
-      userId,
-      membershipId,
-      tenantId,
-    ]
-  );
-
-  return rows[0] || null;
-};
-
-const findUserMembershipByTenant = async ({
-  userId,
-  tenantId,
-}) => {
-  const rows = await query(
-    `
-      SELECT
-        users.id,
-        users.first_name,
-        users.middle_name,
-        users.last_name,
-        users.email,
-        users.phone,
-        users.avatar_url,
-        users.status AS user_status,
-        users.email_verified_at,
-        users.last_login_at,
-
-        tenant_memberships.id AS membership_id,
-        tenant_memberships.status AS membership_status,
-
-        roles.id AS role_id,
-        roles.name AS role_name,
-        roles.code AS role_code,
-        roles.is_active AS role_is_active,
-
-        tenants.id AS tenant_id,
-        tenants.name AS tenant_name,
-        tenants.slug AS tenant_slug,
-        tenants.status AS tenant_status
-
-      FROM users
-
-      INNER JOIN tenant_memberships
-        ON tenant_memberships.user_id = users.id
-
-      INNER JOIN roles
-        ON roles.id = tenant_memberships.role_id
-
-      INNER JOIN tenants
-        ON tenants.id = tenant_memberships.tenant_id
-
-      WHERE users.id = ?
-        AND tenants.id = ?
-        AND users.deleted_at IS NULL
-      LIMIT 1
-    `,
-    [
-      userId,
-      tenantId,
-    ]
+    [tenantId, membershipId, userId]
   );
 
   return rows[0] || null;
 };
 
 const findPermissionsByRoleId = async (roleId) => {
-  const rows = await query(
+  const [rows] = await db.query(
     `
-      SELECT
-        permissions.code,
-        permissions.name,
-        permissions.module
-      FROM role_permissions
-
-      INNER JOIN permissions
-        ON permissions.id =
-          role_permissions.permission_id
-
-      WHERE role_permissions.role_id = ?
-
-      ORDER BY permissions.code ASC
+      SELECT p.id, p.name, p.code, p.module
+      FROM role_permissions rp
+      INNER JOIN permissions p
+        ON p.id = rp.permission_id
+      WHERE rp.role_id = ?
+      ORDER BY p.code ASC
     `,
     [roleId]
   );
@@ -194,68 +144,69 @@ const findPermissionsByRoleId = async (roleId) => {
   return rows;
 };
 
-const updateLastLogin = async (userId) => {
-  return query(
+const findPlanFeatures = async (planId) => {
+  if (!planId) return [];
+
+  const [rows] = await db.query(
     `
-      UPDATE users
-      SET last_login_at = NOW()
-      WHERE id = ?
+      SELECT feature_key, is_enabled, feature_value
+      FROM plan_features
+      WHERE plan_id = ?
+      ORDER BY feature_key ASC
     `,
-    [userId]
+    [planId]
   );
+
+  return rows;
 };
 
 const createRefreshToken = async ({
-  id,
   userId,
   tenantId,
+  membershipId,
   tokenHash,
-  expiresAt,
   ipAddress,
   userAgent,
+  expiresAt,
 }) => {
-  return query(
+  const id = randomUUID();
+
+  await db.query(
     `
       INSERT INTO refresh_tokens (
         id,
         user_id,
         tenant_id,
+        membership_id,
         token_hash,
-        expires_at,
-        created_by_ip,
-        user_agent
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+        ip_address,
+        user_agent,
+        expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       id,
       userId,
       tenantId,
+      membershipId,
       tokenHash,
-      expiresAt,
       ipAddress,
       userAgent,
+      expiresAt,
     ]
   );
+
+  return id;
 };
 
-const findRefreshTokenByHash = async (tokenHash) => {
-  const rows = await query(
+const findActiveRefreshToken = async (tokenHash) => {
+  const [rows] = await db.query(
     `
-      SELECT
-        id,
-        user_id,
-        tenant_id,
-        token_hash,
-        expires_at,
-        revoked_at,
-        replaced_by_token_id,
-        created_by_ip,
-        revoked_by_ip,
-        user_agent,
-        created_at
+      SELECT *
       FROM refresh_tokens
       WHERE token_hash = ?
+        AND revoked_at IS NULL
+        AND expires_at > NOW()
       LIMIT 1
     `,
     [tokenHash]
@@ -266,58 +217,26 @@ const findRefreshTokenByHash = async (tokenHash) => {
 
 const revokeRefreshToken = async ({
   tokenId,
-  ipAddress,
-  replacementTokenId = null,
+  replacedByTokenId = null,
 }) => {
-  return query(
+  await db.query(
     `
       UPDATE refresh_tokens
-      SET
-        revoked_at = NOW(),
-        revoked_by_ip = ?,
-        replaced_by_token_id = ?
+      SET revoked_at = NOW(),
+          replaced_by_token_id = ?
       WHERE id = ?
         AND revoked_at IS NULL
     `,
-    [
-      ipAddress,
-      replacementTokenId,
-      tokenId,
-    ]
-  );
-};
-
-const revokeAllUserRefreshTokens = async ({
-  userId,
-  tenantId,
-  ipAddress,
-}) => {
-  return query(
-    `
-      UPDATE refresh_tokens
-      SET
-        revoked_at = NOW(),
-        revoked_by_ip = ?
-      WHERE user_id = ?
-        AND tenant_id = ?
-        AND revoked_at IS NULL
-    `,
-    [
-      ipAddress,
-      userId,
-      tenantId,
-    ]
+    [replacedByTokenId, tokenId]
   );
 };
 
 module.exports = {
-  findUserForLogin,
-  findAuthenticationContext,
-  findUserMembershipByTenant,
+  findUserByEmailAndTenant,
+  findAuthContextByIdentity,
   findPermissionsByRoleId,
-  updateLastLogin,
+  findPlanFeatures,
   createRefreshToken,
-  findRefreshTokenByHash,
+  findActiveRefreshToken,
   revokeRefreshToken,
-  revokeAllUserRefreshTokens,
 };

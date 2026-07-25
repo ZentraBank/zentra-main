@@ -1,97 +1,95 @@
-const ApiError = require("../utils/ApiError");
+const authRepo = require("../modules/auth/auth.repository");
+const { verifyAccessToken } = require("../utils/authTokens");
 
-const requireRole = (...allowedRoles) => {
-  return (req, res, next) => {
-    if (!req.auth) {
-      return next(
-        ApiError.unauthorized(
-          "Authentication is required"
-        )
-      );
+const createHttpError = (statusCode, message) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+const parseFeatureValue = (value) => {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "string") return value;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+const authenticate = async (req, res, next) => {
+  try {
+    const authorization = req.get("authorization") || "";
+    const [scheme, token] = authorization.split(" ");
+
+    if (scheme !== "Bearer" || !token) {
+      throw createHttpError(401, "Authentication is required");
     }
 
+    const payload = verifyAccessToken(token);
+
+    const user = await authRepo.findAuthContextByIdentity({
+      userId: payload.userId || payload.sub,
+      tenantId: payload.tenantId,
+      membershipId: payload.membershipId,
+    });
+
+    if (!user) {
+      throw createHttpError(401, "Authenticated user no longer exists");
+    }
+
+    if (user.user_status && user.user_status !== "active") {
+      throw createHttpError(403, "Your account is not active");
+    }
+
+    if (user.membership_status !== "active") {
+      throw createHttpError(403, "Your tenant membership is not active");
+    }
+
+    if (req.tenant?.id && req.tenant.id !== user.tenant_id) {
+      throw createHttpError(403, "Token does not belong to this tenant");
+    }
+
+    const [permissionRows, planFeatureRows] = await Promise.all([
+      authRepo.findPermissionsByRoleId(user.role_id),
+      authRepo.findPlanFeatures(user.plan_id),
+    ]);
+
+    const planFeatures = planFeatureRows.reduce((result, feature) => {
+      result[feature.feature_key] = {
+        enabled: Boolean(feature.is_enabled),
+        value: parseFeatureValue(feature.feature_value),
+      };
+      return result;
+    }, {});
+
+    req.auth = {
+      userId: user.id,
+      tenantId: user.tenant_id,
+      membershipId: user.membership_id,
+      roleId: user.role_id,
+      role: user.role_code,
+      permissions: permissionRows.map((permission) => permission.code),
+      subscriptionId: user.subscription_id || null,
+      planId: user.plan_id || null,
+      plan: user.plan_code || null,
+      planFeatures,
+    };
+
+    return next();
+  } catch (error) {
     if (
-      !allowedRoles.includes(req.auth.roleCode)
+      error.name === "JsonWebTokenError" ||
+      error.name === "TokenExpiredError"
     ) {
-      return next(
-        ApiError.forbidden(
-          "Your role cannot perform this action"
-        )
-      );
+      return next(createHttpError(401, "Access token is invalid or expired"));
     }
 
-    return next();
-  };
-};
-
-const requirePermission = (
-  ...requiredPermissions
-) => {
-  return (req, res, next) => {
-    if (!req.auth) {
-      return next(
-        ApiError.unauthorized(
-          "Authentication is required"
-        )
-      );
-    }
-
-    const userPermissions = new Set(
-      req.auth.permissions || []
-    );
-
-    const hasEveryPermission =
-      requiredPermissions.every((permission) =>
-        userPermissions.has(permission)
-      );
-
-    if (!hasEveryPermission) {
-      return next(
-        ApiError.forbidden(
-          "You do not have permission to perform this action"
-        )
-      );
-    }
-
-    return next();
-  };
-};
-
-const requireAnyPermission = (
-  ...requiredPermissions
-) => {
-  return (req, res, next) => {
-    if (!req.auth) {
-      return next(
-        ApiError.unauthorized(
-          "Authentication is required"
-        )
-      );
-    }
-
-    const userPermissions = new Set(
-      req.auth.permissions || []
-    );
-
-    const hasPermission =
-      requiredPermissions.some((permission) =>
-        userPermissions.has(permission)
-      );
-
-    if (!hasPermission) {
-      return next(
-        ApiError.forbidden(
-          "You do not have permission to perform this action"
-        )
-      );
-    }
-
-    return next();
-  };
+    return next(error);
+  }
 };
 
 module.exports = {
-  requireRole,
-  requirePermission,
-  requireAnyPermission,
+  authenticate,
 };

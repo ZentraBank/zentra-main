@@ -1,34 +1,85 @@
-function subscriptionMiddleware(req, res, next) {
-  const allowedPaths = [
-    "/api/auth/login",
-    "/api/auth/register",
-    "/api/auth/logout",
-    "/api/auth/me",
-    "/api/subscriptions/request",
-    "/api/subscriptions/current",
-  ];
+const createHttpError = (statusCode, message) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
 
-  const currentPath = req.originalUrl.split("?")[0];
+const requireActiveSubscription = (req, res, next) => {
+  if (!req.auth) {
+    return next(createHttpError(401, "Authentication is required"));
+  }
 
-  if (allowedPaths.includes(currentPath)) {
+  if (!req.auth.subscriptionId || !req.auth.planId) {
+    return next(createHttpError(403, "An active subscription is required"));
+  }
+
+  return next();
+};
+
+const requirePlanFeature = (featureKey) => {
+  return (req, res, next) => {
+    if (!req.auth) {
+      return next(createHttpError(401, "Authentication is required"));
+    }
+
+    const feature = req.auth.planFeatures?.[featureKey];
+
+    if (!feature?.enabled) {
+      return next(
+        createHttpError(
+          403,
+          `Your current subscription does not include ${featureKey}`
+        )
+      );
+    }
+
+    req.planFeature = feature;
     return next();
-  }
+  };
+};
 
-  if (!req.tenant) {
-    return res.status(400).json({
-      success: false,
-      message: "Tenant not resolved",
-    });
-  }
+const requirePlanLimit = (featureKey, getRequestedValue) => {
+  return (req, res, next) => {
+    if (!req.auth) {
+      return next(createHttpError(401, "Authentication is required"));
+    }
 
-  if (req.tenant.subscription_status !== "active") {
-    return res.status(403).json({
-      success: false,
-      message: "Tenant subscription is not active",
-    });
-  }
+    const feature = req.auth.planFeatures?.[featureKey];
 
-  next();
-}
+    if (!feature?.enabled) {
+      return next(
+        createHttpError(
+          403,
+          `Your current subscription does not include ${featureKey}`
+        )
+      );
+    }
 
-module.exports = subscriptionMiddleware;
+    const limit = Number(feature.value);
+    const requestedValue = Number(getRequestedValue(req));
+
+    if (!Number.isFinite(limit) || !Number.isFinite(requestedValue)) {
+      return next(
+        createHttpError(500, `Invalid ${featureKey} configuration`)
+      );
+    }
+
+    if (requestedValue > limit) {
+      return next(
+        createHttpError(
+          403,
+          `Your current plan allows a maximum ${featureKey} of ${limit}`
+        )
+      );
+    }
+
+    req.planLimit = limit;
+    return next();
+  };
+};
+
+module.exports = {
+  requireActiveSubscription,
+  requirePlanFeature,
+  requirePlanLimit,
+};

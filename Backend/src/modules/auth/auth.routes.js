@@ -1,42 +1,35 @@
 const express = require("express");
-
-const validate = require(
-  "../../middleware/validate.middleware"
-);
-
+const authController = require("./auth.controller");
+const {
+  loginSchema,
+  refreshSchema,
+  logoutSchema,
+} = require("./auth.validation");
+const validate = require("../../middleware/validate.middleware");
 const {
   resolveTenantMiddleware,
-} = require(
-  "../../middleware/tenant.middleware"
-);
-
-const {
-  authenticate,
-} = require(
-  "../../middleware/auth.middleware"
-);
-
-const authController = require("./auth.controller");
-
-const {
-  registerSchema,
-  loginSchema,
-} = require("./auth.validation");
+} = require("../../middleware/tenant.middleware");
+const { authenticate } = require("../../middleware/auth.middleware");
 
 const router = express.Router();
-
-router.post(
-  "/register",
-  resolveTenantMiddleware,
-  validate(registerSchema),
-  authController.register
-);
 
 router.post(
   "/login",
   resolveTenantMiddleware,
   validate(loginSchema),
   authController.login
+);
+
+router.post(
+  "/refresh",
+  validate(refreshSchema),
+  authController.refresh
+);
+
+router.post(
+  "/logout",
+  validate(logoutSchema),
+  authController.logout
 );
 
 router.get(
