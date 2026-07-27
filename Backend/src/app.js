@@ -42,6 +42,17 @@ const subscriptionsRoutes = require(
   "./modules/subscriptions/subscriptions.routes"
 );
 
+const cardsRoutes = require(
+  "./modules/cards/cards.routes"
+);
+
+const notificationsRoutes = require(
+  "./modules/notifications/notifications.routes"
+);
+const beneficiariesRoutes = require(
+  "./modules/beneficiaries/beneficiaries.routes"
+);
+
 const app = express();
 
 /*
@@ -188,6 +199,21 @@ app.use(
 app.use(
   `${env.apiPrefix}/subscriptions`,
   subscriptionsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/cards`,
+  cardsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/notifications`,
+  notificationsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/beneficiaries`,
+  beneficiariesRoutes
 );
 
 /*
