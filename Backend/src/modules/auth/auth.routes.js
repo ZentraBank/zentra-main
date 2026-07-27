@@ -11,24 +11,30 @@ const {
 } = require("../../middleware/tenant.middleware");
 const { authenticate } = require("../../middleware/auth.middleware");
 
+const {
+  requireAllPermissions,
+} = require("../../middleware/permission.middleware");
+
+const authTestController = require("./auth.test.controller");
+
 const router = express.Router();
 
 router.post(
   "/login",
   resolveTenantMiddleware,
-  validate(loginSchema),
+  validate(loginSchema.body),
   authController.login
 );
 
 router.post(
   "/refresh",
-  validate(refreshSchema),
+  validate(refreshSchema.body),
   authController.refresh
 );
 
 router.post(
   "/logout",
-  validate(logoutSchema),
+  validate(logoutSchema.body),
   authController.logout
 );
 
@@ -37,6 +43,14 @@ router.get(
   resolveTenantMiddleware,
   authenticate,
   authController.me
+);
+
+router.get(
+  "/test/accounts-read",
+  resolveTenantMiddleware,
+  authenticate,
+  requireAllPermissions("accounts.read"),
+  authTestController.testAccountsRead
 );
 
 module.exports = router;
