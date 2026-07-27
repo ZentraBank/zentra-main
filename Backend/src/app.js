@@ -53,6 +53,62 @@ const beneficiariesRoutes = require(
   "./modules/beneficiaries/beneficiaries.routes"
 );
 
+const auditLogsRoutes = require(
+  "./modules/audit-logs/auditLogs.routes"
+);
+
+const kycRoutes = require(
+  "./modules/kyc/kyc.routes"
+);
+
+const donationsRoutes = require(
+  "./modules/donations/donations.routes"
+);
+
+// const loansRoutes = require(
+//   "./modules/loans/loans.routes"
+// );
+
+const adminDashboardRoutes = require(
+  "./modules/admin-dashboard/admin-dashboard.routes"
+);
+
+const reportsRoutes = require(
+  "./modules/reports/reports.routes"
+);
+
+const ledgerRoutes = require(
+  "./modules/ledger/ledger.routes"
+);
+
+const reconciliationRoutes = require(
+  "./modules/reconciliation/reconciliation.routes"
+);
+
+const fraudRiskRoutes = require(
+  "./modules/fraud-risk/fraud-risk.routes"
+);
+
+const approvalsRoutes = require(
+  "./modules/approvals/approvals.routes"
+);
+
+const treasuryRoutes = require(
+  "./modules/treasury/treasury.routes"
+);
+
+const jobsRoutes = require(
+  "./modules/jobs/jobs.routes"
+);
+
+const eventsRoutes = require(
+  "./modules/events/events.routes"
+);
+
+const webhooksRoutes = require(
+  "./modules/webhooks/webhooks.routes"
+);
+
 const app = express();
 
 /*
@@ -214,6 +270,76 @@ app.use(
 app.use(
   `${env.apiPrefix}/beneficiaries`,
   beneficiariesRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/audit-logs`,
+  auditLogsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/kyc`,
+  kycRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/donations`,
+  donationsRoutes
+);
+
+// app.use(
+//   `${env.apiPrefix}/loans`,
+//   loansRoutes
+// );
+
+app.use(
+  `${env.apiPrefix}/admin/dashboard`,
+  adminDashboardRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/reports`,
+  reportsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/ledger`,
+  ledgerRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/reconciliation`,
+  reconciliationRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/fraud-risk`,
+  fraudRiskRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/approvals`,
+  approvalsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/treasury`,
+  treasuryRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/jobs`,
+  jobsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/events`,
+  eventsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/webhooks`,
+  webhooksRoutes
 );
 
 /*

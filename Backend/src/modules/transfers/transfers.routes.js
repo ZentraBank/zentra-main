@@ -7,6 +7,7 @@ const { authenticate } = require("../../middleware/auth.middleware");
 const { requireAllPermissions } = require("../../middleware/permission.middleware");
 const { requireActiveSubscription } = require("../../middleware/subscription.middleware");
 
+
 router.use(resolveTenantMiddleware);
 router.use(authenticate);
 
