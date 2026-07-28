@@ -109,6 +109,50 @@ const webhooksRoutes = require(
   "./modules/webhooks/webhooks.routes"
 );
 
+const complianceRoutes = require(
+  "./modules/compliance/compliance.routes"
+);
+
+const disputesRoutes = require(
+  "./modules/disputes/disputes.routes"
+);
+
+const paymentsRoutes = require(
+  "./modules/payments/payments.routes"
+);
+
+const fxRoutes = require(
+  "./modules/fx/fx.routes"
+);
+
+const recurringPaymentRoutes = require(
+  "./modules/recurring-payments/recurring.routes"
+);
+
+const virtualAccountRoutes = require(
+  "./modules/virtual-accounts/virtual-accounts.routes"
+);
+
+const openBankingRoutes = require(
+  "./modules/open-banking/open-banking.routes"
+);
+
+const regulatoryReportingRoutes = require(
+  "./modules/regulatory-reporting/regulatory.routes"
+);
+
+const privacyRoutes = require(
+  "./modules/privacy/privacy.routes"
+);
+
+const resilienceRoutes = require(
+  "./modules/operational-resilience/resilience.routes"
+);
+
+const thirdPartyRoutes = require(
+  "./modules/third-party-risk/third-party.routes"
+);
+
 const app = express();
 
 /*
@@ -341,6 +385,62 @@ app.use(
   `${env.apiPrefix}/webhooks`,
   webhooksRoutes
 );
+
+app.use(
+  `${env.apiPrefix}/compliance`,
+  complianceRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/disputes`,
+  disputesRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/payments`,
+  paymentsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/fx`,
+  fxRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/recurring-payments`,
+  recurringPaymentRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/virtual-accounts`,
+  virtualAccountRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/open-banking`,
+  openBankingRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/regulatory-reporting`,
+  regulatoryReportingRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/privacy`,
+  privacyRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/operational-resilience`,
+  resilienceRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/third-parties`,
+  thirdPartyRoutes
+);
+
 
 /*
 |--------------------------------------------------------------------------
