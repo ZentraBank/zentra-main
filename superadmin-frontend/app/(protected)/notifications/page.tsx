@@ -1,17 +1,16 @@
-import PageHeader from "@/components/shared/PageHeader";
-import DataTablePlaceholder from "@/components/shared/DataTablePlaceholder";
+import { ProtectedRoute } from "@/src/components/auth/protected-route";
+import { NotificationList } from "@/src/components/notifications/notification-list";
 
-export default function Page() {
+export default function NotificationsPage() {
   return (
-    <main className="mx-auto max-w-[1500px]">
-      <PageHeader
-        eyebrow="Communication"
-        title="Notifications"
-        description="Send targeted platform, tenant, and security notifications."
-        actionLabel={undefined}
-        actionHref={undefined}
-      />
-      <DataTablePlaceholder columns={["Title", "Audience", "Channels", "Status", "Sent", "Created by", "Actions"]} />
-    </main>
+    <ProtectedRoute permission="platform.notifications.read">
+      <main className="mx-auto max-w-5xl px-6 py-10">
+        <h1 className="mb-8 text-3xl font-semibold">
+          Platform notifications
+        </h1>
+
+        <NotificationList />
+      </main>
+    </ProtectedRoute>
   );
 }

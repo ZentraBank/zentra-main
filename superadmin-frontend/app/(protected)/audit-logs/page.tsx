@@ -1,17 +1,16 @@
-import PageHeader from "@/components/shared/PageHeader";
-import DataTablePlaceholder from "@/components/shared/DataTablePlaceholder";
+import { ProtectedRoute } from "@/src/components/auth/protected-route";
+import { AuditLogList } from "@/src/components/audit/audit-log-list";
 
-export default function Page() {
+export default function AuditLogsPage() {
   return (
-    <main className="mx-auto max-w-[1500px]">
-      <PageHeader
-        eyebrow="Compliance"
-        title="Audit logs"
-        description="Review immutable records of privileged actions."
-        actionLabel={undefined}
-        actionHref={undefined}
-      />
-      <DataTablePlaceholder columns={["Actor", "Action", "Resource", "Tenant", "IP address", "Time", "Severity"]} />
-    </main>
+    <ProtectedRoute permission="platform.audit_logs.read">
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <h1 className="mb-8 text-3xl font-semibold">
+          Platform audit logs
+        </h1>
+
+        <AuditLogList />
+      </main>
+    </ProtectedRoute>
   );
 }

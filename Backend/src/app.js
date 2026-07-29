@@ -153,6 +153,28 @@ const thirdPartyRoutes = require(
   "./modules/third-party-risk/third-party.routes"
 );
 
+const platformAuthRoutes = require(
+  "./modules/platform-auth/platform-auth.routes"
+);
+const superadminRoutes = require(
+  "./modules/superadmin/superadmin.routes"
+);
+const platformAdminRoutes = require(
+  "./modules/platform-admin/platform-admin.routes"
+);
+const platformSubscriptionRoutes = require(
+  "./modules/platform-subscriptions/platform-subscriptions.routes"
+);
+const platformSearchRoutes = require(
+  "./modules/platform-search/platform-search.routes"
+);
+const platformNotificationRoutes = require(
+  "./modules/platform-notifications/platform-notifications.routes"
+);
+const platformSettingsRoutes = require(
+  "./modules/platform-settings/platform-settings.routes"
+);
+
 const app = express();
 
 /*
@@ -441,6 +463,36 @@ app.use(
   thirdPartyRoutes
 );
 
+
+
+app.use(
+  `${env.apiPrefix}/superadmin/auth`,
+  platformAuthRoutes
+);
+app.use(
+  `${env.apiPrefix}/superadmin`,
+  superadminRoutes
+);
+app.use(
+  `${env.apiPrefix}/superadmin/administrators`,
+  platformAdminRoutes
+);
+app.use(
+  `${env.apiPrefix}/superadmin/subscriptions`,
+  platformSubscriptionRoutes
+);
+app.use(
+  `${env.apiPrefix}/superadmin/search`,
+  platformSearchRoutes
+);
+app.use(
+  `${env.apiPrefix}/superadmin/notifications`,
+  platformNotificationRoutes
+);
+app.use(
+  `${env.apiPrefix}/superadmin/settings`,
+  platformSettingsRoutes
+);
 
 /*
 |--------------------------------------------------------------------------

@@ -4,12 +4,21 @@ const createHttpError = (statusCode, message) => {
   return error;
 };
 
+const isPlatformSuperadmin = (auth) => {
+  return auth?.roleCode === "platform_superadmin";
+};
+
 const requireAllPermissions = (...requiredPermissions) => {
   return (req, res, next) => {
     if (!req.auth) {
       return next(
         createHttpError(401, "Authentication is required")
       );
+    }
+
+    // Platform superadmins have unrestricted platform access.
+    if (isPlatformSuperadmin(req.auth)) {
+      return next();
     }
 
     const userPermissions = new Set(
@@ -43,6 +52,11 @@ const requireAnyPermission = (...allowedPermissions) => {
       return next(
         createHttpError(401, "Authentication is required")
       );
+    }
+
+    // Platform superadmins have unrestricted platform access.
+    if (isPlatformSuperadmin(req.auth)) {
+      return next();
     }
 
     const userPermissions = new Set(

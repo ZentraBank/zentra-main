@@ -12,7 +12,8 @@
     "test": "node --test",
     "seed:auth": "node scripts/seedAuthData.js",
     "migrate:legacy-users": "node scripts/migrateLegacyUsers.js",
-    "bootstrap:tenant-admin": "node scripts/bootstrapTenantAdmin.js"
+    "bootstrap:tenant-admin": "node scripts/bootstrapTenantAdmin.js",
+    "bootstrap:superadmin": "node scripts/create-first-superadmin.js"
   },
   "keywords": [],
   "author": "",

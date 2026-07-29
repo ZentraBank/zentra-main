@@ -1,17 +1,16 @@
-import PageHeader from "@/components/shared/PageHeader";
-import DataTablePlaceholder from "@/components/shared/DataTablePlaceholder";
+import { ProtectedRoute } from "@/src/components/auth/protected-route";
+import { CrossTenantTable } from "@/src/components/search/cross-tenant-table";
 
-export default function Page() {
+export default function AccountsPage() {
   return (
-    <main className="mx-auto max-w-[1500px]">
-      <PageHeader
-        eyebrow="Finance"
-        title="Accounts"
-        description="Monitor all customer banking and wallet accounts."
-        actionLabel={undefined}
-        actionHref={undefined}
-      />
-      <DataTablePlaceholder columns={["Account holder", "Account number", "Tenant", "Type", "Balance", "Status", "Actions"]} />
-    </main>
+    <ProtectedRoute permission="platform.accounts.read">
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <h1 className="mb-8 text-3xl font-semibold">
+          Cross-tenant accounts
+        </h1>
+
+        <CrossTenantTable type="accounts" />
+      </main>
+    </ProtectedRoute>
   );
 }

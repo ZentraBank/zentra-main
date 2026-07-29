@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PlatformAuthProvider } from "@/src/context/platform-auth-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body><PlatformAuthProvider>{children}</PlatformAuthProvider></body>
     </html>
   );
 }

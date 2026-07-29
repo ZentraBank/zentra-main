@@ -1,17 +1,16 @@
-import PageHeader from "@/components/shared/PageHeader";
-import DataTablePlaceholder from "@/components/shared/DataTablePlaceholder";
+import { ProtectedRoute } from "@/src/components/auth/protected-route";
+import { CrossTenantTable } from "@/src/components/search/cross-tenant-table";
 
-export default function Page() {
+export default function UsersPage() {
   return (
-    <main className="mx-auto max-w-[1500px]">
-      <PageHeader
-        eyebrow="Platform users"
-        title="Users"
-        description="View customers across every tenant."
-        actionLabel={undefined}
-        actionHref={undefined}
-      />
-      <DataTablePlaceholder columns={["User", "Tenant", "Account", "KYC", "Subscription", "Status", "Actions"]} />
-    </main>
+    <ProtectedRoute permission="platform.users.read">
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <h1 className="mb-8 text-3xl font-semibold">
+          Cross-tenant users
+        </h1>
+
+        <CrossTenantTable type="users" />
+      </main>
+    </ProtectedRoute>
   );
 }

@@ -1,17 +1,16 @@
-import PageHeader from "@/components/shared/PageHeader";
-import DataTablePlaceholder from "@/components/shared/DataTablePlaceholder";
+import { ProtectedRoute } from "@/src/components/auth/protected-route";
+import { CrossTenantTable } from "@/src/components/search/cross-tenant-table";
 
-export default function Page() {
+export default function TransactionsPage() {
   return (
-    <main className="mx-auto max-w-[1500px]">
-      <PageHeader
-        eyebrow="Finance"
-        title="Transactions"
-        description="Review transactions across all tenants."
-        actionLabel={undefined}
-        actionHref={undefined}
-      />
-      <DataTablePlaceholder columns={["Transaction ID", "User", "Tenant", "Type", "Amount", "Status", "Date"]} />
-    </main>
+    <ProtectedRoute permission="platform.transactions.read">
+      <main className="mx-auto max-w-7xl px-6 py-10">
+        <h1 className="mb-8 text-3xl font-semibold">
+          Cross-tenant transactions
+        </h1>
+
+        <CrossTenantTable type="transactions" />
+      </main>
+    </ProtectedRoute>
   );
 }

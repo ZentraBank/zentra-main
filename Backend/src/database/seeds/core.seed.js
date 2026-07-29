@@ -267,10 +267,11 @@ const seedPlatformAdmin = async (connection) => {
         last_name,
         email,
         password_hash,
+        role_code,
         status,
         email_verified_at
       )
-      VALUES (?, ?, ?, ?, ?, 'active', NOW())
+      VALUES (?, ?, ?, ?, ?, 'platform_superadmin', 'active', NOW())
     `,
     [
       id,
@@ -680,10 +681,11 @@ const seedTenantAdminUser = async (
         last_name,
         email,
         password_hash,
+        role_code,
         status,
         email_verified_at
       )
-      VALUES (?, ?, ?, ?, ?, 'active', NOW())
+      VALUES (?, ?, ?, ?, ?, 'platform_superadmin', 'active', NOW())
     `,
     [
       id,
