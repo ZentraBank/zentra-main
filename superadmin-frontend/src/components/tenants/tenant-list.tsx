@@ -95,7 +95,7 @@ export function TenantList() {
             );
             setPage(1);
           }}
-          className="h-11 rounded-xl border border-white/10 bg-neutral-900 px-4 text-sm outline-none"
+          className="h-11 rounded-xl border border-white/10 bg-neutral-900 !text-white focus:border-white/30 px-4 text-sm outline-none"
         >
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
