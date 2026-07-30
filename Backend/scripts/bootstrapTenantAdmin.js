@@ -4,8 +4,10 @@ const db = require("../src/config/db");
 
 const TENANT_SLUG =
   process.env.BOOTSTRAP_TENANT_SLUG || "zentra-bank";
-const ADMIN_NAME =
-  process.env.BOOTSTRAP_ADMIN_NAME || "Tenant Administrator";
+const ADMIN_FIRST_NAME =
+  process.env.BOOTSTRAP_ADMIN_FIRST_NAME || "Tenant";
+const ADMIN_LAST_NAME =
+  process.env.BOOTSTRAP_ADMIN_LAST_NAME || "Administrator";
 const ADMIN_EMAIL = process.env.BOOTSTRAP_ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.BOOTSTRAP_ADMIN_PASSWORD;
 
@@ -53,9 +55,9 @@ async function main() {
 
     await db.query(
       `INSERT INTO users
-       (id, tenant_id, full_name, email, password_hash, role, status, kyc_status)
-       VALUES (?, ?, ?, ?, ?, 'tenant_admin', 'active', 'not_started')`,
-      [id, tenant.id, ADMIN_NAME, email, passwordHash]
+       (id, first_name, last_name, email, password_hash, status, email_verified_at)
+       VALUES (?, ?, ?, ?, ?, 'active', NOW())`,
+      [id, ADMIN_FIRST_NAME, ADMIN_LAST_NAME, email, passwordHash]
     );
 
     user = { id };

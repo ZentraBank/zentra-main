@@ -1,10 +1,10 @@
 const bcrypt = require("bcryptjs");
 const authRepo = require("./auth.repository");
 const {
-  createAccessToken,
   createRefreshToken,
   hashRefreshToken,
 } = require("../../utils/authTokens");
+const { signAccessToken } = require("../../utils/jwt");
 
 const ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
 const REFRESH_TOKEN_TTL_DAYS = 30;
@@ -103,12 +103,11 @@ const issueTokenPair = async ({
   ipAddress,
   userAgent,
 }) => {
-  const accessToken = createAccessToken({
-    sub: user.id,
+  const accessToken = signAccessToken({
     userId: user.id,
     tenantId: user.tenant_id,
     membershipId: user.membership_id,
-    role: user.role_code,
+    roleCode: user.role_code,
   });
 
   const refreshToken = createRefreshToken();
@@ -174,6 +173,22 @@ const login = async ({
   });
 };
 
+const socialLogin = async ({ tenantId, email, ipAddress, userAgent }) => {
+  if (!tenantId || !email) {
+    throw createHttpError(400, "Tenant and social account email are required");
+  }
+
+  const user = await authRepo.findUserByEmailAndTenant(
+    email.trim().toLowerCase(),
+    tenantId
+  );
+
+  validateAccountState(user);
+  const authorization = await loadAuthorizationContext(user);
+
+  return issueTokenPair({ user, authorization, ipAddress, userAgent });
+};
+
 const refreshAccessToken = async ({
   refreshToken,
   ipAddress,
@@ -194,7 +209,6 @@ const refreshAccessToken = async ({
   const user = await authRepo.findAuthContextByIdentity({
     userId: tokenRecord.user_id,
     tenantId: tokenRecord.tenant_id,
-    membershipId: tokenRecord.membership_id,
   });
 
   validateAccountState(user);
@@ -249,6 +263,7 @@ const getCurrentUser = async ({
 
 module.exports = {
   login,
+  socialLogin,
   refreshAccessToken,
   logout,
   getCurrentUser,

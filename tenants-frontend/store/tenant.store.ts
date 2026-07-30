@@ -1,5 +1,7 @@
-import { create } from "zustand";
-import { Tenant } from "@/types/tenant.types";
+"use client";
+
+import type { Tenant } from "@/types/tenant.types";
+import { createStoreHook } from "@/store/create-store";
 
 type TenantStore = {
   tenant: Tenant | null;
@@ -8,7 +10,7 @@ type TenantStore = {
   setTenantLoading: (value: boolean) => void;
 };
 
-export const useTenantStore = create<TenantStore>((set) => ({
+export const useTenantStore = createStoreHook<TenantStore>((set) => ({
   tenant: null,
   isTenantLoading: true,
   setTenant: (tenant) => set({ tenant }),

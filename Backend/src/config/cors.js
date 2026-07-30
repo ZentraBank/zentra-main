@@ -3,6 +3,13 @@ const env = require("./env");
 const allowedOrigins = [
   env.frontendUrl,
   env.superadminFrontendUrl,
+  ...(env.isDevelopment
+    ? [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://192.168.1.188:3000",
+      ]
+    : []),
 ].filter(Boolean);
 
 const corsOptions = {

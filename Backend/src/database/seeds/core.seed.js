@@ -681,11 +681,10 @@ const seedTenantAdminUser = async (
         last_name,
         email,
         password_hash,
-        role_code,
         status,
         email_verified_at
       )
-      VALUES (?, ?, ?, ?, ?, 'platform_superadmin', 'active', NOW())
+      VALUES (?, ?, ?, ?, ?, 'active', NOW())
     `,
     [
       id,

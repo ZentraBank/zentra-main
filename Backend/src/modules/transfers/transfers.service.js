@@ -11,14 +11,28 @@ const httpError = (statusCode, message) => {
 const featureNumber = (auth, key) => {
   const feature = auth.planFeatures?.[key];
   const value = Number(feature?.value);
+
   if (!feature?.enabled || !Number.isFinite(value)) {
-    throw httpError(403, `Your current plan does not include ${key}`);
+    throw httpError(
+      403,
+      `Your current plan does not include ${key}`
+    );
   }
+
   return value;
 };
 
 const makeReference = () =>
-  `ZTR-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
+  `ZTR-${Date.now()}-${crypto
+    .randomBytes(3)
+    .toString("hex")
+    .toUpperCase()}`;
+
+/*
+|--------------------------------------------------------------------------
+| Client transfer services
+|--------------------------------------------------------------------------
+*/
 
 const createInternalTransfer = async ({ auth, body }) => {
   if (!auth.subscriptionId || !auth.planId) {
@@ -30,19 +44,28 @@ const createInternalTransfer = async ({ auth, body }) => {
   const amount = Number(body.amount);
 
   if (amount > transferLimit) {
-    throw httpError(403, `Your current plan allows a maximum of ${transferLimit} per transfer`);
+    throw httpError(
+      403,
+      `Your current plan allows a maximum of ${transferLimit} per transfer`
+    );
   }
 
-  const dailyTotal = await repo.getDailyCompletedTotal({
+  const dailyTotalResult = await repo.getDailyCompletedTotal({
     userId: auth.userId,
     tenantId: auth.tenantId,
   });
 
+  const dailyTotal = Number(dailyTotalResult) || 0;
+
   if (dailyTotal + amount > dailyLimit) {
-    throw httpError(403, `This transfer would exceed your daily transfer limit of ${dailyLimit}`);
+    throw httpError(
+      403,
+      `Your current plan allows a maximum of ${dailyLimit} per day`
+    );
   }
 
   const connection = await db.getConnection();
+
   try {
     await connection.beginTransaction();
 
@@ -62,15 +85,32 @@ const createInternalTransfer = async ({ auth, body }) => {
       tenantId: auth.tenantId,
     });
 
-    if (!destination) throw httpError(404, "Destination account not found");
-    if (source.id === destination.id) {
-      throw httpError(400, "Source and destination accounts cannot be the same");
+    if (!destination) {
+      throw httpError(404, "Destination account not found");
     }
-    if (source.status !== "active" || destination.status !== "active") {
+
+    if (source.id === destination.id) {
+      throw httpError(
+        400,
+        "Source and destination accounts cannot be the same"
+      );
+    }
+
+    if (
+      source.status !== "active" ||
+      destination.status !== "active"
+    ) {
       throw httpError(403, "Both accounts must be active");
     }
-    if (source.currency !== body.currency || destination.currency !== body.currency) {
-      throw httpError(400, "Account currency does not match transfer currency");
+
+    if (
+      source.currency !== body.currency ||
+      destination.currency !== body.currency
+    ) {
+      throw httpError(
+        400,
+        "Account currency does not match transfer currency"
+      );
     }
 
     const debited = await repo.debitAccount({
@@ -79,7 +119,13 @@ const createInternalTransfer = async ({ auth, body }) => {
       tenantId: auth.tenantId,
       amount,
     });
-    if (!debited) throw httpError(400, "Insufficient balance or inactive source account");
+
+    if (!debited) {
+      throw httpError(
+        400,
+        "Insufficient balance or inactive source account"
+      );
+    }
 
     const credited = await repo.creditAccount({
       connection,
@@ -87,7 +133,13 @@ const createInternalTransfer = async ({ auth, body }) => {
       tenantId: auth.tenantId,
       amount,
     });
-    if (!credited) throw httpError(400, "Unable to credit destination account");
+
+    if (!credited) {
+      throw httpError(
+        400,
+        "Unable to credit destination account"
+      );
+    }
 
     const transferId = await repo.createTransfer({
       connection,
@@ -111,7 +163,8 @@ const createInternalTransfer = async ({ auth, body }) => {
       entryType: "debit",
       amount,
       balanceAfter: Number(source.balance) - amount,
-      description: body.description || "Internal transfer debit",
+      description:
+        body.description || "Internal transfer debit",
     });
 
     await repo.createLedgerEntry({
@@ -122,11 +175,16 @@ const createInternalTransfer = async ({ auth, body }) => {
       entryType: "credit",
       amount,
       balanceAfter: Number(destination.balance) + amount,
-      description: body.description || "Internal transfer credit",
+      description:
+        body.description || "Internal transfer credit",
     });
 
     await connection.commit();
-    return repo.findById({ transferId, tenantId: auth.tenantId });
+
+    return repo.findById({
+      transferId,
+      tenantId: auth.tenantId,
+    });
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -135,20 +193,132 @@ const createInternalTransfer = async ({ auth, body }) => {
   }
 };
 
-const listOwn = ({ auth, page, pageSize }) =>
-  repo.findByUser({
+const listOwn = ({ auth, page, pageSize }) => {
+  const limit = Math.min(pageSize, 100);
+  const offset = (page - 1) * limit;
+
+  return repo.findByUser({
     userId: auth.userId,
     tenantId: auth.tenantId,
-    limit: Math.min(pageSize, 100),
-    offset: (page - 1) * Math.min(pageSize, 100),
+    limit,
+    offset,
   });
+};
 
 const getOwn = async ({ auth, transferId }) => {
-  const transfer = await repo.findById({ transferId, tenantId: auth.tenantId });
+  const transfer = await repo.findById({
+    transferId,
+    tenantId: auth.tenantId,
+  });
+
   if (!transfer || transfer.user_id !== auth.userId) {
     throw httpError(404, "Transfer not found");
   }
+
   return transfer;
 };
 
-module.exports = { createInternalTransfer, listOwn, getOwn };
+/*
+|--------------------------------------------------------------------------
+| Tenant administrator services
+|--------------------------------------------------------------------------
+*/
+
+const listTenant = async ({ auth, page, pageSize }) => {
+  const limit = Math.min(pageSize, 100);
+  const offset = (page - 1) * limit;
+
+  const [transfers, total] = await Promise.all([
+    repo.findByTenant({
+      tenantId: auth.tenantId,
+      limit,
+      offset,
+    }),
+
+    repo.countByTenant({
+      tenantId: auth.tenantId,
+    }),
+  ]);
+
+  return {
+    transfers,
+    pagination: {
+      page,
+      pageSize: limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
+
+const getTenant = async ({ auth, transferId }) => {
+  const transfer = await repo.findById({
+    transferId,
+    tenantId: auth.tenantId,
+  });
+
+  if (!transfer) {
+    throw httpError(404, "Transfer not found");
+  }
+
+  return transfer;
+};
+
+const updateTenant = async ({
+  auth,
+  transferId,
+  body,
+}) => {
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const transfer = await repo.findByIdForUpdate({
+      connection,
+      transferId,
+      tenantId: auth.tenantId,
+    });
+
+    if (!transfer) {
+      throw httpError(404, "Transfer not found");
+    }
+
+    const description =
+      typeof body.description === "string"
+        ? body.description.trim() || null
+        : transfer.description;
+
+    const updated = await repo.updateDescription({
+      connection,
+      transferId,
+      tenantId: auth.tenantId,
+      description,
+    });
+
+    if (!updated) {
+      throw httpError(400, "Unable to update transfer");
+    }
+
+    await connection.commit();
+
+    return repo.findById({
+      transferId,
+      tenantId: auth.tenantId,
+    });
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+module.exports = {
+  createInternalTransfer,
+  listOwn,
+  getOwn,
+  listTenant,
+  getTenant,
+  updateTenant,
+};

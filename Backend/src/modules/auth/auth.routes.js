@@ -19,6 +19,22 @@ const authTestController = require("./auth.test.controller");
 
 const router = express.Router();
 
+router.get(
+  "/social/providers",
+  authController.socialProviders
+);
+
+router.get(
+  "/social/:provider/start",
+  resolveTenantMiddleware,
+  authController.socialStart
+);
+
+router.get(
+  "/social/:provider/callback",
+  authController.socialCallback
+);
+
 router.post(
   "/login",
   resolveTenantMiddleware,

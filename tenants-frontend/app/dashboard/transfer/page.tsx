@@ -12,197 +12,228 @@ import {
   MoveUpRight,
   RefreshCw,
 } from "lucide-react";
-import {
-  EDITED_TRANSACTION_KEY,
-  TRANSFER_OVERRIDES_KEY,
-} from "@/app/dashboard/transfer/edit/page";
 
-type TransferType = "in" | "out";
+import { api, getApiErrorMessage } from "@/lib/api";
 
-type Transfer = {
-  id: number | string;
-  type: TransferType;
+type TransferDirection = "in" | "out";
+
+type BackendTransfer = {
+  id: string;
+  tenant_id?: string;
+
+  user_id?: string;
+  created_by?: string;
+
+  source_account_id: string;
+  destination_account_id: string;
+
+  source_account_number?: string | null;
+  destination_account_number?: string | null;
+
+  source_account_name?: string | null;
+  destination_account_name?: string | null;
+
+  amount: string | number;
+  currency: string;
+
+  description?: string | null;
+  reference?: string | null;
+  status?: string | null;
+
+  created_at: string;
+  completed_at?: string | null;
+};
+
+type TransferListResponse = {
+  success: boolean;
+  message?: string;
+  data:
+    | BackendTransfer[]
+    | {
+        transfers?: BackendTransfer[];
+        items?: BackendTransfer[];
+        results?: BackendTransfer[];
+        pagination?: {
+          page?: number;
+          pageSize?: number;
+          total?: number;
+          totalPages?: number;
+        };
+      };
+};
+
+type DisplayTransfer = {
+  id: string;
+  type: TransferDirection;
   title: string;
   bank: string;
   amount: string;
+  status: string;
+  reference: string;
+  createdAt: string;
 };
 
-const API_URL =
-  process.env.NEXT_PUBLIC_TRANSFERS_API_URL || "/api/transfers";
+const formatMoney = (
+  amount: string | number,
+  currency: string,
+  direction: TransferDirection
+) => {
+  const numericAmount = Number(amount);
 
-const demoTransfers: Transfer[] = [
-  {
-    id: 1,
-    type: "in",
-    title: "Transfer from Mar Parkersbur",
-    bank: "ZentraBank",
-    amount: "-$17,000,000",
-  },
-  {
-    id: 2,
-    type: "out",
-    title: "Transfer to Mark Parkersburg",
-    bank: "ZentraBank",
-    amount: "-$100,000",
-  },
-  {
-    id: 3,
-    type: "in",
-    title: "Butcher Maxwell has insured ...",
-    bank: "ZentraBank",
-    amount: "-$150,000",
-  },
-  {
-    id: 4,
-    type: "out",
-    title: "Butcher Maxwell has insured ...",
-    bank: "ZentraBank",
-    amount: "-$13,000,000",
-  },
-  {
-    id: 5,
-    type: "in",
-    title: "Butcher Maxwell has insured ...",
-    bank: "ZentraBank",
-    amount: "-$100,000",
-  },
-  {
-    id: 6,
-    type: "in",
-    title: "Butcher Maxwell has insured ...",
-    bank: "ZentraBank",
-    amount: "-$1,000,000",
-  },
-];
+  if (!Number.isFinite(numericAmount)) {
+    return String(amount);
+  }
 
-function normaliseTransfer(item: Partial<Transfer>): Transfer | null {
-  if (!item.id) return null;
+  const formatted = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency || "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(numericAmount));
+
+  return direction === "out" ? `-${formatted}` : `+${formatted}`;
+};
+
+const getTransferDirection = (
+  transfer: BackendTransfer
+): TransferDirection => {
+  /*
+   * For the tenant-admin list, the backend may not explicitly return whether
+   * the transfer is incoming or outgoing.
+   *
+   * Internal transfers normally represent money leaving the source account,
+   * so we default to "out". If your backend later returns a direction field,
+   * this function can use it directly.
+   */
+  return "out";
+};
+
+const normaliseTransfer = (
+  transfer: BackendTransfer
+): DisplayTransfer => {
+  const type = getTransferDirection(transfer);
+
+  const destination =
+    transfer.destination_account_name ||
+    transfer.destination_account_number ||
+    "Unknown destination";
+
+  const source =
+    transfer.source_account_name ||
+    transfer.source_account_number ||
+    "Unknown source";
 
   return {
-    id: item.id,
-    type: item.type === "out" ? "out" : "in",
-    title: item.title || "Untitled transfer",
-    bank: item.bank || "Unknown bank",
-    amount: item.amount || "$0",
+    id: String(transfer.id),
+    type,
+    title:
+      type === "out"
+        ? `Transfer to ${destination}`
+        : `Transfer from ${source}`,
+    bank: transfer.description || "ZentraBank",
+    amount: formatMoney(
+      transfer.amount,
+      transfer.currency || "USD",
+      type
+    ),
+    status: transfer.status || "unknown",
+    reference: transfer.reference || "No reference",
+    createdAt: transfer.created_at,
   };
-}
+};
 
-function applySavedEdits(items: Transfer[]) {
-  if (typeof window === "undefined") return items;
-
-  const raw = localStorage.getItem(TRANSFER_OVERRIDES_KEY);
-  if (!raw) return items;
-
-  try {
-    const edits = JSON.parse(raw);
-
-    return items.map((item) => {
-      const edited = edits[String(item.id)];
-      if (!edited) return item;
-
-      return {
-        ...item,
-        title: edited.title ?? item.title,
-        bank: edited.bank ?? item.bank,
-        amount: edited.amountDisplay ?? item.amount,
-        type: edited.type ?? item.type,
-      };
-    });
-  } catch {
-    return items;
+const extractTransfers = (
+  data: TransferListResponse["data"]
+): BackendTransfer[] => {
+  if (Array.isArray(data)) {
+    return data;
   }
-}
+
+  if (Array.isArray(data.transfers)) {
+    return data.transfers;
+  }
+
+  if (Array.isArray(data.items)) {
+    return data.items;
+  }
+
+  if (Array.isArray(data.results)) {
+    return data.results;
+  }
+
+  return [];
+};
 
 export default function TransferPage() {
   const router = useRouter();
 
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
+  const [transfers, setTransfers] = useState<DisplayTransfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const recordCount = useMemo(() => transfers.length, [transfers]);
+  const recordCount = useMemo(
+    () => transfers.length,
+    [transfers]
+  );
 
-  const fetchTransfers = useCallback(async () => {
-    setError("");
-    setRefreshing(true);
+  const fetchTransfers = useCallback(
+    async (showRefreshIndicator = false) => {
+      setError("");
 
-    try {
-      const response = await fetch(API_URL, {
-        method: "GET",
-        cache: "no-store",
-        headers: {
-          Accept: "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Transfers request failed");
+      if (showRefreshIndicator) {
+        setRefreshing(true);
       }
 
-      const data = await response.json();
+      try {
+        const response = await api.get<TransferListResponse>(
+          "/transfers/tenant",
+          {
+            params: {
+              page: 1,
+              pageSize: 50,
+            },
+          }
+        );
 
-      const list = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.transfers)
-          ? data.transfers
-          : [];
+        const backendTransfers = extractTransfers(
+          response.data.data
+        );
 
-      const cleanTransfers = list
-        .map(normaliseTransfer)
-        .filter(Boolean) as Transfer[];
+        const normalisedTransfers = backendTransfers.map(
+          normaliseTransfer
+        );
 
-      setTransfers(applySavedEdits(cleanTransfers));
-    } catch {
-      setTransfers(applySavedEdits(demoTransfers));
-      setError("Backend not connected yet. Showing demo transfer records.");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+        setTransfers(normalisedTransfers);
+      } catch (error) {
+        setTransfers([]);
+        setError(getApiErrorMessage(error));
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     fetchTransfers();
   }, [fetchTransfers]);
 
-  useEffect(() => {
-    const raw = sessionStorage.getItem(EDITED_TRANSACTION_KEY);
-    if (!raw) return;
+  const goToEdit = (transferId: string) => {
+    router.push(
+      `/dashboard/transfer/edit?id=${encodeURIComponent(
+        transferId
+      )}`
+    );
+  };
 
-    try {
-      const edited = JSON.parse(raw);
-
-      setTransfers((prev) =>
-        prev.map((item) =>
-          String(item.id) === String(edited.id)
-            ? {
-                ...item,
-                title: edited.title ?? item.title,
-                bank: edited.bank ?? item.bank,
-                amount: edited.amountDisplay ?? item.amount,
-                type: edited.type ?? item.type,
-              }
-            : item
-        )
-      );
-
-      sessionStorage.removeItem(EDITED_TRANSACTION_KEY);
-    } catch {
-      sessionStorage.removeItem(EDITED_TRANSACTION_KEY);
-    }
-  }, []);
-
-  const goToEdit = (item: Transfer) => {
-    const params = new URLSearchParams({
-      id: String(item.id),
-      title: item.title,
-      bank: item.bank,
-      amount: item.amount,
-      type: item.type,
-    });
-
-    router.push(`/dashboard/transfer/edit?${params.toString()}`);
+  const goToTransaction = (transferId: string) => {
+    router.push(
+      `/dashboard/transfer/transaction?id=${encodeURIComponent(
+        transferId
+      )}`
+    );
   };
 
   return (
@@ -222,16 +253,17 @@ export default function TransferPage() {
               <h1 className="text-[13px] font-bold md:text-[28px] md:font-black">
                 Transfer
               </h1>
+
               <p className="mt-1 hidden text-sm text-white/55 md:block">
-                Manage Gregory Winter transfer records
+                Manage tenant transfer records
               </p>
             </div>
 
             <button
               type="button"
-              onClick={fetchTransfers}
+              onClick={() => fetchTransfers(true)}
               disabled={refreshing}
-              className="hidden h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-50 md:flex"
+              className="hidden h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 md:flex"
               aria-label="Refresh transfers"
             >
               <RefreshCw
@@ -260,7 +292,7 @@ export default function TransferPage() {
                 </span>
 
                 <p className="hidden max-w-[220px] text-center text-sm text-white/70 md:block">
-                  Create or prepare a new client transfer record.
+                  Create a new client transfer record.
                 </p>
               </Link>
             </div>
@@ -271,10 +303,11 @@ export default function TransferPage() {
               <div className="md:flex md:items-end md:justify-between">
                 <div>
                   <h2 className="mt-3 text-[13px] font-bold md:mt-0 md:text-[24px] md:font-black">
-                    Gregory Winter Transfer History
+                    Transfer History
                   </h2>
+
                   <p className="hidden text-sm text-white/50 md:block">
-                    Latest incoming and outgoing transfers
+                    Latest tenant transfers
                   </p>
                 </div>
 
@@ -284,25 +317,40 @@ export default function TransferPage() {
               </div>
 
               {error && (
-                <p className="mt-4 rounded-xl bg-yellow-400/10 px-4 py-3 text-xs font-semibold text-yellow-200">
-                  {error}
-                </p>
+                <div className="mt-4 rounded-xl bg-red-500/10 px-4 py-3">
+                  <p className="text-xs font-semibold text-red-200">
+                    {error}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => fetchTransfers(true)}
+                    className="mt-2 text-xs font-bold text-white underline"
+                  >
+                    Try again
+                  </button>
+                </div>
               )}
 
               {loading ? (
                 <div className="mt-6 space-y-4">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="h-[48px] animate-pulse rounded-[8px] bg-white/20 md:h-[82px] md:rounded-[20px]"
-                    />
-                  ))}
+                  {Array.from({ length: 4 }).map(
+                    (_, index) => (
+                      <div
+                        key={index}
+                        className="h-[48px] animate-pulse rounded-[8px] bg-white/20 md:h-[82px] md:rounded-[20px]"
+                      />
+                    )
+                  )}
                 </div>
               ) : transfers.length === 0 ? (
                 <div className="mt-6 rounded-[20px] bg-white p-8 text-center text-black">
-                  <p className="text-lg font-black">No transfers yet</p>
+                  <p className="text-lg font-black">
+                    No transfers yet
+                  </p>
+
                   <p className="mt-1 text-sm text-black/55">
-                    Create a new transfer to see it here.
+                    Transfer records will appear here.
                   </p>
                 </div>
               ) : (
@@ -312,8 +360,21 @@ export default function TransferPage() {
 
                     return (
                       <div
-                        key={String(item.id)}
-                        className="flex h-[48px] w-full items-center gap-2 rounded-[8px] bg-white px-2.5 text-black shadow-[0_1px_5px_rgba(255,255,255,0.15)] md:h-[82px] md:gap-4 md:rounded-[20px] md:px-5 md:shadow-[0_14px_35px_rgba(0,0,0,0.18)]"
+                        key={item.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() =>
+                          goToTransaction(item.id)
+                        }
+                        onKeyDown={(event) => {
+                          if (
+                            event.key === "Enter" ||
+                            event.key === " "
+                          ) {
+                            goToTransaction(item.id);
+                          }
+                        }}
+                        className="flex h-[48px] w-full cursor-pointer items-center gap-2 rounded-[8px] bg-white px-2.5 text-black shadow-[0_1px_5px_rgba(255,255,255,0.15)] transition hover:bg-white/95 md:h-[82px] md:gap-4 md:rounded-[20px] md:px-5 md:shadow-[0_14px_35px_rgba(0,0,0,0.18)]"
                       >
                         <div
                           className={`flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full md:h-[48px] md:w-[48px] ${
@@ -341,14 +402,21 @@ export default function TransferPage() {
                           <p className="truncate text-[11px] font-medium leading-[13px] text-black/55 md:text-[15px] md:leading-5">
                             {item.title}
                           </p>
+
                           <p className="truncate text-[11px] font-bold leading-[13px] text-black/75 md:text-[17px] md:leading-6">
                             {item.bank}
+                          </p>
+
+                          <p className="hidden truncate text-xs text-black/45 md:block">
+                            {item.reference} · {item.status}
                           </p>
                         </div>
 
                         <p
                           className={`flex-none truncate text-right text-[13px] font-bold md:text-[20px] ${
-                            incoming ? "text-emerald-600" : "text-red-600"
+                            incoming
+                              ? "text-emerald-600"
+                              : "text-red-600"
                           }`}
                           style={{ maxWidth: 180 }}
                         >
@@ -357,9 +425,12 @@ export default function TransferPage() {
 
                         <button
                           type="button"
-                          onClick={() => goToEdit(item)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            goToEdit(item.id);
+                          }}
                           className="flex h-[26px] w-[22px] flex-none items-center justify-center active:scale-90 md:h-11 md:w-11 md:rounded-full md:bg-black/5 md:hover:bg-black/10"
-                          aria-label="Edit transfer"
+                          aria-label={`Edit transfer ${item.reference}`}
                         >
                           <SquarePen
                             size={16}

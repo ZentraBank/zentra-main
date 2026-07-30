@@ -1,4 +1,6 @@
-import { create } from "zustand";
+"use client";
+
+import { createStoreHook } from "@/store/create-store";
 
 type UIStore = {
   isSidebarOpen: boolean;
@@ -7,10 +9,9 @@ type UIStore = {
   toggleSidebar: () => void;
 };
 
-export const useUIStore = create<UIStore>((set) => ({
+export const useUIStore = createStoreHook<UIStore>((set) => ({
   isSidebarOpen: false,
   openSidebar: () => set({ isSidebarOpen: true }),
   closeSidebar: () => set({ isSidebarOpen: false }),
-  toggleSidebar: () =>
-    set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
 }));

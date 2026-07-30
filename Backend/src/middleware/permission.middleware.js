@@ -1,43 +1,60 @@
-const createHttpError = (statusCode, message) => {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
-};
+const ApiError = require("../utils/ApiError");
 
 const isPlatformSuperadmin = (auth) => {
   return auth?.roleCode === "platform_superadmin";
+};
+
+const getPermissionCodes = (req) => {
+  const permissions =
+    req.auth?.permissions ||
+    req.user?.permissions ||
+    [];
+
+  return permissions
+    .map((permission) => {
+      if (typeof permission === "string") {
+        return permission;
+      }
+
+      return (
+        permission.code ||
+        permission.permission_code ||
+        null
+      );
+    })
+    .filter(Boolean);
 };
 
 const requireAllPermissions = (...requiredPermissions) => {
   return (req, res, next) => {
     if (!req.auth) {
       return next(
-        createHttpError(401, "Authentication is required")
+        ApiError.unauthorized(
+          "Authentication is required"
+        )
       );
     }
 
-    // Platform superadmins have unrestricted platform access.
     if (isPlatformSuperadmin(req.auth)) {
       return next();
     }
 
-    const userPermissions = new Set(
-      req.auth.permissions || []
-    );
+    const permissionCodes = getPermissionCodes(req);
 
-    const missingPermissions =
-      requiredPermissions.filter(
-        (permission) =>
-          !userPermissions.has(permission)
+    console.log("AUTH PERMISSIONS:", permissionCodes);
+    console.log("REQUIRED:", requiredPermissions);
+
+    const hasAllPermissions =
+      requiredPermissions.every((permission) =>
+        permissionCodes.includes(permission)
       );
 
-    if (missingPermissions.length > 0) {
+    if (!hasAllPermissions) {
       return next(
-        createHttpError(
-          403,
-          `Missing required permission${
-            missingPermissions.length > 1 ? "s" : ""
-          }: ${missingPermissions.join(", ")}`
+        ApiError.forbidden(
+          `Required permissions: ${requiredPermissions.join(
+            ", "
+          )}`
         )
       );
     }
@@ -50,28 +67,26 @@ const requireAnyPermission = (...allowedPermissions) => {
   return (req, res, next) => {
     if (!req.auth) {
       return next(
-        createHttpError(401, "Authentication is required")
+        ApiError.unauthorized(
+          "Authentication is required"
+        )
       );
     }
 
-    // Platform superadmins have unrestricted platform access.
     if (isPlatformSuperadmin(req.auth)) {
       return next();
     }
 
-    const userPermissions = new Set(
-      req.auth.permissions || []
-    );
+    const permissionCodes = getPermissionCodes(req);
 
     const hasPermission =
       allowedPermissions.some((permission) =>
-        userPermissions.has(permission)
+        permissionCodes.includes(permission)
       );
 
     if (!hasPermission) {
       return next(
-        createHttpError(
-          403,
+        ApiError.forbidden(
           `One of these permissions is required: ${allowedPermissions.join(
             ", "
           )}`

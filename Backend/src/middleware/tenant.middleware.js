@@ -72,6 +72,13 @@ const getTenantDomainFromRequest = (req) => {
     return null;
   }
 
+  const isIpAddress =
+    /^(\d{1,3}\.){3}\d{1,3}$/.test(hostname);
+
+  if (isIpAddress && env.isDevelopment) {
+    return null;
+  }
+
   return hostname;
 };
 

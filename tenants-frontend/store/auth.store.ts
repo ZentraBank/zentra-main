@@ -1,29 +1,22 @@
-import { create } from "zustand";
+"use client";
 
-type UserRole = "customer" | "tenant_admin" | "super_admin";
+import type { AuthUser } from "@/types/auth.types";
+import { createStoreHook } from "@/store/create-store";
 
-type User = {
-  id: number;
-  email: string;
-  role: UserRole;
-};
+type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
 type AuthStore = {
-  user: User | null;
-  setUser: (user: User | null) => void;
-  clearUser: () => void;
+  user: AuthUser | null;
+  status: AuthStatus;
+  setSession: (user: AuthUser) => void;
+  setLoading: () => void;
+  clearSession: () => void;
 };
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  // Temporary test user
-  user: {
-    id: 1,
-    email: "admin@test.com",
-    role: "tenant_admin",
-    // role: "customer",
-  },
-
-  setUser: (user) => set({ user }),
-  clearUser: () => set({ user: null }),
+export const useAuthStore = createStoreHook<AuthStore>((set) => ({
+  user: null,
+  status: "loading",
+  setSession: (user) => set({ user, status: "authenticated" }),
+  setLoading: () => set({ status: "loading" }),
+  clearSession: () => set({ user: null, status: "unauthenticated" }),
 }));
-

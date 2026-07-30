@@ -138,12 +138,17 @@ const attachTenantAuthentication = async (
   req,
   payload
 ) => {
-  const authenticationContext =
-    await authRepository.findAuthenticationContext({
-      userId: payload.sub,
-      membershipId: payload.membershipId,
-      tenantId: payload.tenantId,
-    });
+const authenticationContext =
+  await authRepository.findAuthContextByIdentity({
+    userId: payload.sub,
+    tenantId: payload.tenantId,
+  });
+
+  console.log(
+  "AUTHENTICATION CONTEXT:",
+  authenticationContext
+);
+
 
   if (!authenticationContext) {
     throw ApiError.unauthorized(

@@ -3,20 +3,85 @@
 import AuthCard from "@/components/auth/AuthCard";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, X, LogIn } from "lucide-react";
+import { getSocialLoginUrl, getSocialProviders, type SocialProviderAvailability } from "@/services/social-auth.service";
+import { login } from "@/services/auth.service";
+import { getApiErrorMessage } from "@/lib/api";
+import { useAuthStore } from "@/store/auth.store";
+
+const safeNextPath = (value: string | null) =>
+  value && value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
 
 export default function LoginPage() {
-  const [method, setMethod] = useState<"email" | "phone">("email");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const status = useAuthStore((state) => state.status);
+  const setSession = useAuthStore((state) => state.setSession);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [socialProviders, setSocialProviders] = useState<SocialProviderAvailability>({
+    google: false,
+    facebook: false,
+  });
+  const [providersLoading, setProvidersLoading] = useState(true);
+
+  useEffect(() => {
+    const socialError = searchParams.get("social_error");
+    if (socialError) setError(socialError);
+  }, [searchParams]);
+
+  useEffect(() => {
+    getSocialProviders()
+      .then(setSocialProviders)
+      .catch(() => setSocialProviders({ google: false, facebook: false }))
+      .finally(() => setProvidersLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace(safeNextPath(searchParams.get("next")));
+    }
+  }, [router, searchParams, status]);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+
+    if (!email.trim()) {
+      setError("Enter your email address.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password must contain at least 8 characters.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const session = await login(email, password);
+      setSession(session.user);
+      router.replace(safeNextPath(searchParams.get("next")));
+    } catch (requestError) {
+      setError(getApiErrorMessage(requestError));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <main className="relative min-h-screen overflow-hidden"
-    style={{
-    backgroundImage: "url('/images/Background_2.png')",
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "cover",
-    backgroundPosition: "top right",
-  }}
+    <main
+      className="relative min-h-screen overflow-hidden"
+      style={{
+        backgroundImage: "url('/images/Background_2.png')",
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "cover",
+        backgroundPosition: "top right",
+      }}
     >
       <Link href="/" className="absolute left-3 top-5 z-50 !text-white">
         <ArrowLeft size={20} />
@@ -24,177 +89,114 @@ export default function LoginPage() {
 
       <AuthCard>
         <div className="relative mb-4">
-          <h1 className="text-center text-[32px] font-bold leading-none text-white">
-            Log in
-          </h1>
-
-          <Link
-            href="/"
-            className="absolute right-1 top-1/2 -translate-y-1/2 !text-white"
-          >
+          <h1 className="text-center text-[32px] font-bold leading-none text-white">Log in</h1>
+          <Link href="/" className="absolute right-1 top-1/2 -translate-y-1/2 !text-white">
             <X size={20} />
           </Link>
         </div>
 
         <div className="mb-6 overflow-hidden rounded-br-none rounded-tr-[58px] bg-gradient-to-r from-[#246BFF] via-[#2F73FF] to-[#A9A9A9]">
           <div className="flex h-[84px] items-center justify-center">
-            <Image
-              src="/images/register.png"
-              alt="Login illustration"
-              width={108}
-              height={98}
-              className="object-contain"
-              priority
-            />
+            <Image src="/images/register.png" alt="Login illustration" width={108} height={98} className="object-contain" priority />
           </div>
         </div>
 
-        <p className="mb-3 text-[12px] leading-[15px] text-white">
-          Provide your login details...
-        </p>
+        <p className="mb-3 text-[12px] leading-[15px] text-white">Provide your login details...</p>
 
-        <form className="space-y-3">
+        <form className="space-y-3" onSubmit={handleSubmit}>
           <div className="overflow-hidden rounded-t-[10px] border border-[#1647BD]">
             <div className="grid h-[30px] grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setMethod("email")}
-                className={`relative flex items-center justify-center text-[11px] font-bold transition-all ${
-                  method === "email"
-                    ? "bg-white text-black"
-                    : "bg-black text-white"
-                }`}
-              >
-                Email
-                {method === "email" && (
-                  <span className="absolute bottom-0 left-0 h-[3px] w-full bg-[#2458E8]" />
-                )}
+              <button type="button" className="relative flex items-center justify-center bg-white text-[11px] font-bold text-black">
+                Email<span className="absolute bottom-0 left-0 h-[3px] w-full bg-[#2458E8]" />
               </button>
-
-              <button
-                type="button"
-                onClick={() => setMethod("phone")}
-                className={`relative flex items-center justify-center text-[11px] font-bold transition-all ${
-                  method === "phone"
-                    ? "bg-white text-black"
-                    : "bg-black text-white"
-                }`}
-              >
+              <button type="button" disabled title="Phone login is not supported by the backend" className="cursor-not-allowed bg-black text-[11px] font-bold text-white/40">
                 Phone
-                {method === "phone" && (
-                  <span className="absolute bottom-0 left-0 h-[3px] w-full bg-[#2458E8]" />
-                )}
               </button>
             </div>
           </div>
 
-          {method === "email" ? (
-            <input
-              type="email"
-              placeholder="example@gmail.com"
-              className="h-[25px] w-full border-b border-white/70 bg-transparent px-1 text-[13px] text-white outline-none placeholder:text-white"
-            />
-          ) : (
-            <div className="flex h-[25px] w-full items-center border-b border-white/70">
-              <select title="Country code"
-                defaultValue="+44"
-                className="h-full bg-transparent pr-1 text-[13px] text-white outline-none"
-              >
-                <option className="text-black" value="+44">
-                  🇬🇧 +44
-                </option>
-                <option className="text-black" value="+234">
-                  🇳🇬 +234
-                </option>
-                <option className="text-black" value="+1">
-                  🇺🇸 +1
-                </option>
-                <option className="text-black" value="+33">
-                  🇫🇷 +33
-                </option>
-                <option className="text-black" value="+91">
-                  🇮🇳 +91
-                </option>
-              </select>
-
-              <input
-                type="tel"
-                placeholder="Phone number"
-                className="h-full flex-1 bg-transparent px-1 text-[13px] text-white outline-none placeholder:text-white"
-              />
-            </div>
-          )}
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="example@gmail.com"
+            autoComplete="email"
+            className="h-[30px] w-full border-b border-white/70 bg-transparent px-1 text-[13px] text-white outline-none placeholder:text-white/70"
+          />
 
           <div>
-            <label className="text-[11px] font-semibold text-white">
-              Password:
-            </label>
-
-            <div className="mt-1.5 flex justify-center gap-4">
-              {[...Array(5)].map((_, i) => (
-                <input title="Password"
-                  key={i}
-                  type="password"
-                  maxLength={1}
-                  className="h-6 w-7 border-b border-white/70 bg-transparent text-center text-[13px] text-white outline-none"
-                />
-              ))}
-            </div>
+            <label htmlFor="password" className="text-[11px] font-semibold text-white">Password:</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoComplete="current-password"
+              className="mt-1.5 h-[30px] w-full border-b border-white/70 bg-transparent px-1 text-[13px] text-white outline-none"
+            />
           </div>
 
-          <Link
-            href="/forgot-password"
-            className="block text-[12px] font-medium !text-[#2458E8]"
-          >
-            Forgot Password?
-          </Link>
+          {error && <p role="alert" className="rounded-md bg-red-950/60 px-3 py-2 text-[11px] text-red-100">{error}</p>}
 
-          <Link
-            href="/dashboard"
-            className="mt-7 flex w-full items-center justify-center gap-3 rounded-[8px] bg-[#2458E8] py-3 text-center text-[13px] font-semibold !text-white"
+          <Link href="/forgot-password" className="block text-[12px] font-medium !text-[#2458E8]">Forgot Password?</Link>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="mt-7 flex w-full items-center justify-center gap-3 rounded-[8px] bg-[#2458E8] py-3 text-[13px] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Log in
-            <LogIn size={16} className="!text-white" />
-          </Link>
+            {isSubmitting ? "Logging in…" : "Log in"}
+            <LogIn size={16} />
+          </button>
         </form>
 
         <div className="mx-auto mt-4 h-[2px] w-[150px] bg-white/60" />
+        <p className="mt-3 text-center text-[11px] text-white/60">Or continue securely with</p>
 
-        <p className="mt-2 text-center text-[11px] text-white">
-          Or Login with:
-        </p>
-
-        <div className="mt-3 flex justify-center gap-5">
-          <button className="transition hover:scale-110">
-            <Image src="/images/facebook.png" alt="Facebook" width={40} height={40} />
-          </button>
-
-          <button className="transition hover:scale-110">
-            <Image src="/images/instagram.png" alt="Instagram" width={40} height={40} />
-          </button>
-
-          <button className="transition hover:scale-110">
-            <Image src="/images/google.png" alt="Google" width={40} height={40} />
-          </button>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <a
+            href={socialProviders.google ? getSocialLoginUrl("google", safeNextPath(searchParams.get("next"))) : undefined}
+            aria-disabled={!socialProviders.google}
+            onClick={(event) => {
+              if (!socialProviders.google) event.preventDefault();
+            }}
+            className={`flex items-center justify-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-white ${
+              socialProviders.google ? "hover:bg-white/10" : "cursor-not-allowed opacity-40"
+            }`}
+            title={socialProviders.google ? "Continue with Google" : "Google login is not configured"}
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white font-bold text-black">G</span>
+            Google
+          </a>
+          <a
+            href={socialProviders.facebook ? getSocialLoginUrl("facebook", safeNextPath(searchParams.get("next"))) : undefined}
+            aria-disabled={!socialProviders.facebook}
+            onClick={(event) => {
+              if (!socialProviders.facebook) event.preventDefault();
+            }}
+            className={`flex items-center justify-center gap-2 rounded-lg border border-white/20 px-3 py-2 text-xs font-semibold text-white ${
+              socialProviders.facebook ? "hover:bg-white/10" : "cursor-not-allowed opacity-40"
+            }`}
+            title={socialProviders.facebook ? "Continue with Facebook" : "Facebook login is not configured"}
+          >
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1877F2] font-bold text-white">f</span>
+            Facebook
+          </a>
         </div>
+        {!providersLoading && !socialProviders.google && !socialProviders.facebook && (
+          <p className="mt-2 text-center text-[10px] text-amber-200/80">
+            Add provider credentials to the backend environment to enable social login.
+          </p>
+        )}
 
         <div className="mt-5 flex items-center justify-center gap-9 text-[11px] text-white">
           <span>Don&apos;t have an account?</span>
-
-          <Link href="/register" className="flex items-center gap-3 !text-white">
-            Sign up
-            <LogIn size={14} className="text-green-500" />
-          </Link>
+          <Link href="/register" className="flex items-center gap-3 !text-white">Sign up<LogIn size={14} className="text-green-500" /></Link>
         </div>
 
         <div className="mt-7 flex justify-center gap-8 text-[11px] text-white">
-          <Link href="/privacy-policy" className="!text-white">
-            Privacy Policy
-          </Link>
-
-          <Link href="/terms" className="!text-white">
-            Terms and Conditions
-          </Link>
+          <Link href="/privacy-policy" className="!text-white">Privacy Policy</Link>
+          <Link href="/terms" className="!text-white">Terms and Conditions</Link>
         </div>
       </AuthCard>
     </main>

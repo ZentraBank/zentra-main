@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Wallet,
@@ -17,6 +17,7 @@ import {
 import { useTenantStore } from "@/store/tenant.store";
 import { useUIStore } from "@/store/ui.store";
 import { useAuthStore } from "@/store/auth.store";
+import { logout } from "@/services/auth.service";
 
 const customerNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -84,9 +85,18 @@ function SidebarContent() {
   const closeSidebar = useUIStore((state) => state.closeSidebar);
   const user = useAuthStore((state) => state.user);
 
-  const role = user?.role || "customer";
+  const router = useRouter();
+  const clearSession = useAuthStore((state) => state.clearSession);
+  const role = user?.role?.code || "customer";
 
   const isAdmin = role === "tenant_admin" || role === "super_admin";
+
+  const handleLogout = async () => {
+    await logout();
+    clearSession();
+    closeSidebar();
+    router.replace("/login");
+  };
 
   const sidebarItems = isAdmin ? adminNavItems : customerNavItems;
   const sidebarTitle = isAdmin ? "Admin" : "Customer";
@@ -127,7 +137,7 @@ function SidebarContent() {
       </div>
 
       <div className="mt-6 border-t border-gray-100 pt-4">
-        <button className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-600 hover:bg-red-50">
+        <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-red-600 hover:bg-red-50">
           <LogOut size={18} />
           Logout
         </button>

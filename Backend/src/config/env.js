@@ -46,6 +46,12 @@ const environmentSchema = Joi.object({
 
   DEFAULT_TENANT_SLUG: Joi.string().default("zentra-bank"),
 
+  GOOGLE_CLIENT_ID: Joi.string().allow("").optional(),
+  GOOGLE_CLIENT_SECRET: Joi.string().allow("").optional(),
+  FACEBOOK_APP_ID: Joi.string().allow("").optional(),
+  FACEBOOK_APP_SECRET: Joi.string().allow("").optional(),
+  FACEBOOK_API_VERSION: Joi.string().default("v25.0"),
+
   PLATFORM_ADMIN_FIRST_NAME: Joi.string()
     .min(2)
     .max(100)
@@ -148,6 +154,18 @@ const env = Object.freeze({
   },
 
   defaultTenantSlug: value.DEFAULT_TENANT_SLUG,
+
+  socialAuth: {
+    google: {
+      clientId: value.GOOGLE_CLIENT_ID || null,
+      clientSecret: value.GOOGLE_CLIENT_SECRET || null,
+    },
+    facebook: {
+      clientId: value.FACEBOOK_APP_ID || null,
+      clientSecret: value.FACEBOOK_APP_SECRET || null,
+      apiVersion: value.FACEBOOK_API_VERSION,
+    },
+  },
 
   seed: {
     platformAdmin: {
