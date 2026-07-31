@@ -105,6 +105,12 @@ const createTransfer = async ({
   sourceAccountId,
   destinationAccountId,
   destinationAccountNumber,
+  transferType = "internal",
+  destinationAccountName = null,
+  destinationBankName = null,
+  destinationBankCode = null,
+  settlementMode = "internal",
+  isSimulated = false,
   amount,
   currency,
   description,
@@ -122,6 +128,12 @@ const createTransfer = async ({
         source_account_id,
         destination_account_id,
         destination_account_number,
+        transfer_type,
+        destination_account_name,
+        destination_bank_name,
+        destination_bank_code,
+        settlement_mode,
+        is_simulated,
         amount,
         currency,
         description,
@@ -129,7 +141,7 @@ const createTransfer = async ({
         reference,
         completed_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `,
     [
       id,
@@ -138,6 +150,12 @@ const createTransfer = async ({
       sourceAccountId,
       destinationAccountId,
       destinationAccountNumber,
+      transferType,
+      destinationAccountName,
+      destinationBankName,
+      destinationBankCode,
+      settlementMode,
+      isSimulated,
       amount,
       currency,
       description,

@@ -269,3 +269,88 @@ module.exports = {
   findActiveRefreshToken,
   revokeRefreshToken,
 };
+
+const findAnyUserByEmail = async (email) => {
+  const [rows] = await db.query(
+    `SELECT id, email, password_hash, status FROM users WHERE LOWER(email) = LOWER(?) AND deleted_at IS NULL LIMIT 1`,
+    [email]
+  );
+  return rows[0] || null;
+};
+
+const findCustomerRole = async (tenantId) => {
+  const [rows] = await db.query(
+    `SELECT id FROM roles WHERE code = 'customer' AND is_active = TRUE AND (tenant_id = ? OR tenant_id IS NULL) ORDER BY tenant_id IS NULL ASC LIMIT 1`,
+    [tenantId]
+  );
+  return rows[0] || null;
+};
+
+const createVerificationCode = async ({ id, tenantId, userId = null, purpose, destination, codeHash, payloadJson = null, expiresAt }) => {
+  await db.query(
+    `UPDATE auth_verification_codes SET consumed_at = NOW() WHERE tenant_id = ? AND purpose = ? AND destination = ? AND consumed_at IS NULL`,
+    [tenantId, purpose, destination]
+  );
+  await db.query(
+    `INSERT INTO auth_verification_codes (id, tenant_id, user_id, purpose, destination, code_hash, payload_json, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, tenantId, userId, purpose, destination, codeHash, payloadJson ? JSON.stringify(payloadJson) : null, expiresAt]
+  );
+};
+
+const findActiveVerificationCode = async ({ tenantId, purpose, destination }) => {
+  const [rows] = await db.query(
+    `SELECT * FROM auth_verification_codes WHERE tenant_id = ? AND purpose = ? AND destination = ? AND consumed_at IS NULL AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1`,
+    [tenantId, purpose, destination]
+  );
+  const row = rows[0] || null;
+  if (row && typeof row.payload_json === "string") {
+    try { row.payload_json = JSON.parse(row.payload_json); } catch { row.payload_json = null; }
+  }
+  return row;
+};
+
+const incrementVerificationAttempts = async (id) => {
+  await db.query(`UPDATE auth_verification_codes SET attempts = attempts + 1 WHERE id = ?`, [id]);
+};
+
+const consumeVerificationCode = async (id) => {
+  await db.query(`UPDATE auth_verification_codes SET consumed_at = NOW() WHERE id = ?`, [id]);
+};
+
+const createRegisteredCustomer = async ({ tenantId, roleId, firstName, middleName, lastName, email, phone, passwordHash }) => {
+  const connection = await db.pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const userId = randomUUID();
+    const membershipId = randomUUID();
+    await connection.query(
+      `INSERT INTO users (id, first_name, middle_name, last_name, email, phone, password_hash, status, email_verified_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW())`,
+      [userId, firstName, middleName || null, lastName, email, phone || null, passwordHash]
+    );
+    await connection.query(
+      `INSERT INTO tenant_memberships (id, tenant_id, user_id, role_id, status) VALUES (?, ?, ?, ?, 'active')`,
+      [membershipId, tenantId, userId, roleId]
+    );
+    await connection.commit();
+    return { userId, membershipId };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const updatePassword = async ({ userId, passwordHash }) => {
+  await db.query(`UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?`, [passwordHash, userId]);
+  await db.query(`UPDATE refresh_tokens SET revoked_at = COALESCE(revoked_at, NOW()) WHERE user_id = ?`, [userId]);
+};
+
+module.exports.findAnyUserByEmail = findAnyUserByEmail;
+module.exports.findCustomerRole = findCustomerRole;
+module.exports.createVerificationCode = createVerificationCode;
+module.exports.findActiveVerificationCode = findActiveVerificationCode;
+module.exports.incrementVerificationAttempts = incrementVerificationAttempts;
+module.exports.consumeVerificationCode = consumeVerificationCode;
+module.exports.createRegisteredCustomer = createRegisteredCustomer;
+module.exports.updatePassword = updatePassword;

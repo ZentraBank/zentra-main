@@ -78,6 +78,27 @@ const addDocument =
     }
   );
 
+const uploadDocumentFile =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.uploadDocumentFile({
+          auth: req.auth,
+          body: req.body,
+          request: req,
+        });
+
+      return sendSuccess(
+        res,
+        {
+          message: "KYC document uploaded successfully",
+          data,
+        },
+        201
+      );
+    }
+  );
+
 const submit =
   asyncHandler(
     async (req, res) => {
@@ -154,6 +175,7 @@ module.exports = {
   saveProfile,
   getMine,
   addDocument,
+  uploadDocumentFile,
   submit,
   listPending,
   review,

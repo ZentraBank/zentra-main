@@ -21,6 +21,13 @@ module.exports = {
         .length(3)
         .default("USD"),
 
+      transactionPin: Joi.string().pattern(/^\d{4}$/).required(),
+
+      transferType: Joi.string().valid("internal", "external").default("internal"),
+      destinationAccountName: Joi.string().trim().max(150).when("transferType", { is: "external", then: Joi.required(), otherwise: Joi.optional() }),
+      destinationBankName: Joi.string().trim().max(150).when("transferType", { is: "external", then: Joi.required(), otherwise: Joi.optional() }),
+      destinationBankCode: Joi.string().trim().max(50).when("transferType", { is: "external", then: Joi.required(), otherwise: Joi.optional() }),
+
       description: Joi.string()
         .trim()
         .max(255)

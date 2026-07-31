@@ -100,7 +100,7 @@ async function sendMessage(req, res, next) {
       message_id: result.message_id,
       conversation_id: Number(req.params.id),
       sender_id: req.user.id,
-      sender_role: req.user.role,
+      sender_role: req.user.role_code || req.user.role,
       message: req.body.message,
       created_at: new Date(),
     });

@@ -5,6 +5,7 @@ const compression = require("compression");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
+const path = require("path");
 
 const env = require("./config/env");
 const corsOptions = require("./config/cors");
@@ -34,8 +35,14 @@ const tenantRoutes = require(
   "./modules/tenants/tenant.routes"
 );
 
+const transactionPinRoutes = require("./modules/transaction-pin/transaction-pin.routes");
+const demoBanksRoutes = require("./modules/demo-banks/demo-banks.routes");
 const transfersRoutes = require(
   "./modules/transfers/transfers.routes"
+);
+
+const clientTransactionsRoutes = require(
+  "./modules/client-transactions/client-transactions.routes"
 );
 
 const subscriptionsRoutes = require(
@@ -63,6 +70,10 @@ const kycRoutes = require(
 
 const donationsRoutes = require(
   "./modules/donations/donations.routes"
+);
+
+const chatRoutes = require(
+  "./modules/chats/chat.routes"
 );
 
 // const loansRoutes = require(
@@ -230,10 +241,11 @@ app.options(
 
 app.use(compression());
 app.use(cookieParser());
+app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads"), { fallthrough: false, maxAge: "1h" }));
 
 app.use(
   express.json({
-    limit: "2mb",
+    limit: "8mb",
   })
 );
 
@@ -318,6 +330,15 @@ app.use(
   transfersRoutes
 );
 
+app.use(`${env.apiPrefix}/demo-banks`, demoBanksRoutes);
+
+app.use(`${env.apiPrefix}/transaction-pin`, transactionPinRoutes);
+
+app.use(
+  `${env.apiPrefix}/transactions`,
+  clientTransactionsRoutes
+);
+
 app.use(
   `${env.apiPrefix}/subscriptions`,
   subscriptionsRoutes
@@ -351,6 +372,11 @@ app.use(
 app.use(
   `${env.apiPrefix}/donations`,
   donationsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/chats`,
+  chatRoutes
 );
 
 // app.use(

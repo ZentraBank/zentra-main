@@ -22,6 +22,38 @@ const getRefreshTokenFromRequest = (req) =>
   req.body?.refreshToken ||
   null;
 
+
+const register = asyncHandler(async (req, res) => {
+  const data = await authService.requestRegistration({ tenantId: req.tenant.id, ...req.body });
+  return sendSuccess(res, { statusCode: 202, message: "Verification code sent", data });
+});
+
+const verifyRegistration = asyncHandler(async (req, res) => {
+  const data = await authService.verifyRegistration({ tenantId: req.tenant.id, ...req.body });
+  return sendSuccess(res, { statusCode: 201, message: "Registration completed successfully", data });
+});
+
+const resendRegistration = asyncHandler(async (req, res) => {
+  const data = await authService.resendRegistrationCode({ tenantId: req.tenant.id, email: req.body.email });
+  return sendSuccess(res, { message: "Verification code resent", data });
+});
+
+const forgotPassword = asyncHandler(async (req, res) => {
+  const data = await authService.requestPasswordReset({ tenantId: req.tenant.id, email: req.body.email });
+  return sendSuccess(res, { message: "If the account exists, a reset code has been sent", data });
+});
+
+const resetPassword = asyncHandler(async (req, res) => {
+  await authService.resetPassword({ tenantId: req.tenant.id, ...req.body });
+  return sendSuccess(res, { message: "Password reset successfully", data: null });
+});
+
+const changePassword = asyncHandler(async (req, res) => {
+  await authService.changePassword({ userId: req.auth.userId, tenantId: req.auth.tenantId, ...req.body });
+  res.clearCookie(REFRESH_COOKIE_NAME, { httpOnly: true, secure: env.cookies.secure, sameSite: env.cookies.sameSite, path: `${env.apiPrefix}/auth` });
+  return sendSuccess(res, { message: "Password changed successfully. Please log in again.", data: null });
+});
+
 const login = asyncHandler(async (req, res) => {
   const result = await authService.login({
     tenantId: req.tenant.id,
@@ -162,6 +194,12 @@ const me = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
+  register,
+  verifyRegistration,
+  resendRegistration,
+  forgotPassword,
+  resetPassword,
+  changePassword,
   login,
   socialProviders,
   socialStart,

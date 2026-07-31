@@ -1,4 +1,6 @@
 const bcrypt = require("bcryptjs");
+const { randomInt, randomUUID } = require("crypto");
+const env = require("../../config/env");
 const authRepo = require("./auth.repository");
 const {
   createRefreshToken,
@@ -261,7 +263,87 @@ const getCurrentUser = async ({
   return buildPublicUser(user, authorization);
 };
 
+
+const generateOtp = () => String(randomInt(100000, 1000000));
+const codeExpiry = () => new Date(Date.now() + 10 * 60 * 1000);
+const publicDeliveryData = (code) => env.isProduction ? {} : { developmentCode: code };
+
+const requestRegistration = async ({ tenantId, firstName, middleName, lastName, email, phone, password }) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const existing = await authRepo.findAnyUserByEmail(normalizedEmail);
+  if (existing) throw createHttpError(409, "An account already exists with this email");
+  const role = await authRepo.findCustomerRole(tenantId);
+  if (!role) throw createHttpError(500, "Customer role is not configured for this tenant");
+  const code = generateOtp();
+  await authRepo.createVerificationCode({
+    id: randomUUID(), tenantId, purpose: "registration", destination: normalizedEmail,
+    codeHash: await bcrypt.hash(code, 10), expiresAt: codeExpiry(),
+    payloadJson: { firstName, middleName: middleName || null, lastName, email: normalizedEmail, phone: phone || null, passwordHash: await bcrypt.hash(password, 12), roleId: role.id },
+  });
+  return { email: normalizedEmail, expiresIn: 600, ...publicDeliveryData(code) };
+};
+
+const verifyRegistration = async ({ tenantId, email, code }) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const record = await authRepo.findActiveVerificationCode({ tenantId, purpose: "registration", destination: normalizedEmail });
+  if (!record || record.attempts >= 5) throw createHttpError(400, "Verification code is invalid or expired");
+  if (!(await bcrypt.compare(code, record.code_hash))) {
+    await authRepo.incrementVerificationAttempts(record.id);
+    throw createHttpError(400, "Verification code is invalid or expired");
+  }
+  const payload = record.payload_json;
+  if (!payload) throw createHttpError(400, "Registration details are unavailable");
+  const existing = await authRepo.findAnyUserByEmail(normalizedEmail);
+  if (existing) throw createHttpError(409, "An account already exists with this email");
+  await authRepo.createRegisteredCustomer({ tenantId, roleId: payload.roleId, firstName: payload.firstName, middleName: payload.middleName, lastName: payload.lastName, email: normalizedEmail, phone: payload.phone, passwordHash: payload.passwordHash });
+  await authRepo.consumeVerificationCode(record.id);
+  return { email: normalizedEmail };
+};
+
+const resendRegistrationCode = async ({ tenantId, email }) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const current = await authRepo.findActiveVerificationCode({ tenantId, purpose: "registration", destination: normalizedEmail });
+  if (!current?.payload_json) throw createHttpError(400, "Start registration again to request a new code");
+  const code = generateOtp();
+  await authRepo.createVerificationCode({ id: randomUUID(), tenantId, purpose: "registration", destination: normalizedEmail, codeHash: await bcrypt.hash(code, 10), expiresAt: codeExpiry(), payloadJson: current.payload_json });
+  return { email: normalizedEmail, expiresIn: 600, ...publicDeliveryData(code) };
+};
+
+const requestPasswordReset = async ({ tenantId, email }) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const user = await authRepo.findUserByEmailAndTenant(normalizedEmail, tenantId);
+  if (!user) return { email: normalizedEmail, expiresIn: 600 };
+  const code = generateOtp();
+  await authRepo.createVerificationCode({ id: randomUUID(), tenantId, userId: user.id, purpose: "password_reset", destination: normalizedEmail, codeHash: await bcrypt.hash(code, 10), expiresAt: codeExpiry() });
+  return { email: normalizedEmail, expiresIn: 600, ...publicDeliveryData(code) };
+};
+
+const resetPassword = async ({ tenantId, email, code, newPassword }) => {
+  const normalizedEmail = email.trim().toLowerCase();
+  const record = await authRepo.findActiveVerificationCode({ tenantId, purpose: "password_reset", destination: normalizedEmail });
+  if (!record || record.attempts >= 5 || !record.user_id) throw createHttpError(400, "Reset code is invalid or expired");
+  if (!(await bcrypt.compare(code, record.code_hash))) {
+    await authRepo.incrementVerificationAttempts(record.id);
+    throw createHttpError(400, "Reset code is invalid or expired");
+  }
+  await authRepo.updatePassword({ userId: record.user_id, passwordHash: await bcrypt.hash(newPassword, 12) });
+  await authRepo.consumeVerificationCode(record.id);
+};
+
+const changePassword = async ({ userId, tenantId, currentPassword, newPassword }) => {
+  const user = await authRepo.findAuthContextByIdentity({ userId, tenantId });
+  const credentials = await authRepo.findUserByEmailAndTenant(user.email, tenantId);
+  if (!credentials || !(await bcrypt.compare(currentPassword, credentials.password_hash))) throw createHttpError(400, "Current password is incorrect");
+  await authRepo.updatePassword({ userId, passwordHash: await bcrypt.hash(newPassword, 12) });
+};
+
 module.exports = {
+  requestRegistration,
+  verifyRegistration,
+  resendRegistrationCode,
+  requestPasswordReset,
+  resetPassword,
+  changePassword,
   login,
   socialLogin,
   refreshAccessToken,

@@ -1,6 +1,7 @@
 const express = require("express");
 const chatController = require("./chat.controller");
-const authMiddleware = require("../../middleware/auth.middleware");
+const { authenticate } = require("../../middleware/auth.middleware");
+const { resolveTenantMiddleware } = require("../../middleware/tenant.middleware");
 const validate = require("../../middleware/validate.middleware");
 
 const {
@@ -10,7 +11,8 @@ const {
 
 const router = express.Router();
 
-router.use(authMiddleware);
+router.use(resolveTenantMiddleware);
+router.use(authenticate);
 
 
 router.post(

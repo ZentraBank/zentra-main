@@ -137,6 +137,21 @@ const documentSchema = {
     }),
 };
 
+
+const uploadFileSchema = {
+  body: Joi.object({
+    documentType: Joi.string().valid(
+      "identity_front", "identity_back", "selfie",
+      "proof_of_address", "supporting_document"
+    ).required(),
+    fileName: Joi.string().trim().max(255).required(),
+    mimeType: Joi.string().valid(
+      "image/jpeg", "image/png", "image/webp", "application/pdf"
+    ).required(),
+    base64Data: Joi.string().min(16).required(),
+  }),
+};
+
 const listSchema = {
   query:
     Joi.object({
@@ -210,6 +225,7 @@ module.exports = {
   },
 
   documentSchema,
+  uploadFileSchema,
   listSchema,
   reviewSchema,
 };

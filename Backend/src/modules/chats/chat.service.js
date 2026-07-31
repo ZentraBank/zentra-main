@@ -1,12 +1,13 @@
 const chatRepo = require("./chat.repository");
+const ApiError = require("../../utils/ApiError");
 
 function isAdmin(user) {
-  return ["tenant_admin", "super_admin"].includes(user.role);
+  return ["tenant_admin", "super_admin"].includes(user.role_code || user.role);
 }
 
 async function startConversation({ tenantId, user, subject, message }) {
   if (!message) {
-    throw new Error("Message is required");
+    throw ApiError.badRequest("Message is required");
   }
 
   const conversationId = await chatRepo.createConversation({
@@ -59,11 +60,11 @@ async function getConversationMessages({
   });
 
   if (!conversation) {
-    throw new Error("Conversation not found");
+    throw ApiError.notFound("Conversation not found");
   }
 
   if (!isAdmin(user) && conversation.user_id !== user.id) {
-    throw new Error("You do not have permission to view this conversation");
+    throw ApiError.forbidden("You do not have permission to view this conversation");
   }
 
   return chatRepo.getMessages({
@@ -76,7 +77,7 @@ async function getConversationMessages({
 
 async function sendMessage({ tenantId, user, conversationId, message }) {
   if (!message) {
-    throw new Error("Message is required");
+    throw ApiError.badRequest("Message is required");
   }
 
   const conversation = await chatRepo.findConversationById({
@@ -85,15 +86,15 @@ async function sendMessage({ tenantId, user, conversationId, message }) {
   });
 
   if (!conversation) {
-    throw new Error("Conversation not found");
+    throw ApiError.notFound("Conversation not found");
   }
 
   if (conversation.status === "closed") {
-    throw new Error("Conversation is closed");
+    throw ApiError.badRequest("Conversation is closed");
   }
 
   if (!isAdmin(user) && conversation.user_id !== user.id) {
-    throw new Error("You do not have permission to send message here");
+    throw ApiError.forbidden("You do not have permission to send messages here");
   }
 
   const messageId = await chatRepo.createMessage({
@@ -110,7 +111,7 @@ async function sendMessage({ tenantId, user, conversationId, message }) {
 
 async function closeConversation({ tenantId, user, conversationId }) {
   if (!isAdmin(user)) {
-    throw new Error("Only admins can close conversations");
+    throw ApiError.forbidden("Only tenant administrators can close conversations");
   }
 
   const closed = await chatRepo.closeConversation({
@@ -119,7 +120,7 @@ async function closeConversation({ tenantId, user, conversationId }) {
   });
 
   if (!closed) {
-    throw new Error("Conversation not found");
+    throw ApiError.notFound("Conversation not found");
   }
 
   return true;

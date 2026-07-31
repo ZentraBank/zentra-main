@@ -1,3 +1,6 @@
+const fs = require("fs/promises");
+const path = require("path");
+const crypto = require("crypto");
 const repo =
   require("./kyc.repository");
 
@@ -219,6 +222,58 @@ const addDocument = async ({
   };
 };
 
+const uploadDocumentFile = async ({ auth, body, request }) => {
+  const profile = await repo.findByUser({
+    tenantId: auth.tenantId,
+    userId: auth.userId,
+  });
+
+  if (!profile) {
+    throw httpError(404, "Create your KYC profile before uploading documents");
+  }
+
+  if (["submitted", "under_review", "approved"].includes(profile.status)) {
+    throw httpError(409, `Documents cannot be changed while KYC status is ${profile.status}`);
+  }
+
+  const raw = body.base64Data.includes(",")
+    ? body.base64Data.split(",").pop()
+    : body.base64Data;
+  const buffer = Buffer.from(raw, "base64");
+  if (!buffer.length || buffer.length > 5 * 1024 * 1024) {
+    throw httpError(413, "KYC documents must be 5 MB or smaller");
+  }
+
+  const extByMime = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "application/pdf": "pdf",
+  };
+  const extension = extByMime[body.mimeType];
+  const storedName = `${crypto.randomUUID()}.${extension}`;
+  const relativeDir = path.join("kyc", String(auth.tenantId), String(auth.userId));
+  const uploadRoot = path.resolve(process.cwd(), "uploads");
+  const targetDir = path.join(uploadRoot, relativeDir);
+  await fs.mkdir(targetDir, { recursive: true });
+  await fs.writeFile(path.join(targetDir, storedName), buffer, { flag: "wx" });
+
+  const baseUrl = `${request.protocol}://${request.get("host")}`;
+  const fileUrl = `${baseUrl}/uploads/${relativeDir.split(path.sep).join("/")}/${storedName}`;
+
+  const result = await addDocument({
+    auth,
+    body: {
+      documentType: body.documentType,
+      fileUrl,
+      fileName: body.fileName,
+      mimeType: body.mimeType,
+    },
+  });
+
+  return { ...result, fileUrl, fileName: body.fileName, mimeType: body.mimeType };
+};
+
 const submit = async ({
   auth,
 }) => {
@@ -432,6 +487,7 @@ module.exports = {
   createOrUpdate,
   getMine,
   addDocument,
+  uploadDocumentFile,
   submit,
   listPending,
   review,

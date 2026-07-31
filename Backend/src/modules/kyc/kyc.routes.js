@@ -69,6 +69,17 @@ router.post(
 );
 
 router.post(
+  "/me/document-files",
+  validate(
+    schemas.uploadFileSchema
+  ),
+  requireAllPermissions(
+    "kyc.write"
+  ),
+  controller.uploadDocumentFile
+);
+
+router.post(
   "/me/submit",
   requireAllPermissions(
     "kyc.submit"
