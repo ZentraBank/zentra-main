@@ -6,15 +6,24 @@ const httpError = (statusCode,message) => {
   return e;
 };
 
-const listMine = ({auth,query}) =>
-  repo.listByUser({
-    tenantId:auth.tenantId,
-    userId:auth.userId,
-    unreadOnly:query.unreadOnly,
-    includeArchived:query.includeArchived,
-    limit:Math.min(Number(query.pageSize),100),
-    offset:(Number(query.page)-1)*Math.min(Number(query.pageSize),100)
+const listMine = ({ auth, page = 1, pageSize = 20 }) => {
+  const safePage =
+    Number.isInteger(page) && page > 0 ? page : 1;
+
+  const safePageSize =
+    Number.isInteger(pageSize) && pageSize > 0
+      ? Math.min(pageSize, 100)
+      : 20;
+
+  const offset = (safePage - 1) * safePageSize;
+
+  return repo.listByUser({
+    tenantId: auth.tenantId,
+    userId: auth.userId,
+    limit: safePageSize,
+    offset,
   });
+};
 
 const unreadCount = ({auth}) =>
   repo.countUnread({tenantId:auth.tenantId,userId:auth.userId});

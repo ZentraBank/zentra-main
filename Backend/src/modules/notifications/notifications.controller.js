@@ -1,35 +1,104 @@
 const asyncHandler = require("../../utils/asyncHandler");
-const { sendSuccess } = require("../../utils/response");
 const service = require("./notifications.service");
 
-const listMine = asyncHandler(async (req,res) =>
-  sendSuccess(res,{message:"Notifications retrieved successfully",
-    data:await service.listMine({auth:req.auth,query:req.query})})
-);
+const listMine = asyncHandler(async (req, res) => {
+  const parsedPage = Number.parseInt(req.query.page, 10);
+  const parsedPageSize = Number.parseInt(
+    req.query.pageSize || req.query.limit,
+    10
+  );
 
-const unreadCount = asyncHandler(async (req,res) =>
-  sendSuccess(res,{message:"Unread count retrieved successfully",
-    data:{count:await service.unreadCount({auth:req.auth})}})
-);
+  const page =
+    Number.isInteger(parsedPage) && parsedPage > 0
+      ? parsedPage
+      : 1;
 
-const markRead = asyncHandler(async (req,res) =>
-  sendSuccess(res,{message:"Notification marked as read",
-    data:await service.markRead({auth:req.auth,notificationId:req.params.notificationId})})
-);
+  const pageSize =
+    Number.isInteger(parsedPageSize) && parsedPageSize > 0
+      ? Math.min(parsedPageSize, 100)
+      : 20;
 
-const markAllRead = asyncHandler(async (req,res) =>
-  sendSuccess(res,{message:"All notifications marked as read",
-    data:await service.markAllRead({auth:req.auth})})
-);
+  const data = await service.listMine({
+    auth: req.auth,
+    page,
+    pageSize,
+  });
 
-const archive = asyncHandler(async (req,res) =>
-  sendSuccess(res,{message:"Notification archived successfully",
-    data:await service.archive({auth:req.auth,notificationId:req.params.notificationId})})
-);
+  res.status(200).json({
+    success: true,
+    message: "Notifications retrieved successfully",
+    data,
+  });
+});
 
-const broadcast = asyncHandler(async (req,res) =>
-  sendSuccess(res,{message:"Broadcast created successfully",
-    data:await service.broadcast({auth:req.auth,body:req.body})},201)
-);
+const unreadCount = asyncHandler(async (req, res) => {
+  const data = await service.unreadCount({
+    auth: req.auth,
+  });
 
-module.exports = {listMine,unreadCount,markRead,markAllRead,archive,broadcast};
+  res.status(200).json({
+    success: true,
+    message: "Unread notification count retrieved successfully",
+    data,
+  });
+});
+
+const markAllRead = asyncHandler(async (req, res) => {
+  const data = await service.markAllRead({
+    auth: req.auth,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "All notifications marked as read",
+    data,
+  });
+});
+
+const markRead = asyncHandler(async (req, res) => {
+  const data = await service.markRead({
+    auth: req.auth,
+    notificationId: req.params.notificationId,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Notification marked as read",
+    data,
+  });
+});
+
+const archive = asyncHandler(async (req, res) => {
+  const data = await service.archive({
+    auth: req.auth,
+    notificationId: req.params.notificationId,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Notification archived",
+    data,
+  });
+});
+
+const broadcast = asyncHandler(async (req, res) => {
+  const data = await service.broadcast({
+    auth: req.auth,
+    body: req.body,
+  });
+
+  res.status(201).json({
+    success: true,
+    message: "Notification broadcast created successfully",
+    data,
+  });
+});
+
+module.exports = {
+  listMine,
+  unreadCount,
+  markAllRead,
+  markRead,
+  archive,
+  broadcast,
+};

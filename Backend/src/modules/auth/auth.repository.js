@@ -145,7 +145,7 @@ const findAuthContextByIdentity = async ({
 const findPermissionsByRoleId = async (roleId) => {
   const [rows] = await db.query(
     `
-      SELECT p.id, p.name, p.code, p.module
+      SELECT DISTINCT p.id, p.name, p.code, p.module
       FROM role_permissions rp
       INNER JOIN permissions p
         ON p.id = rp.permission_id

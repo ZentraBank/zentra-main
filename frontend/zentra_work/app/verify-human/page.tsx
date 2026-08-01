@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function Page(){return <main className="min-h-screen bg-[#E7EBF0] px-5 py-12"><section className="mx-auto max-w-3xl rounded-[28px] bg-white p-7 shadow-sm"><Link href="/" className="text-sm font-semibold text-[#2458E8]">← Back</Link><h1 className="mt-6 text-3xl font-black">Human Verification</h1><p className="mt-5 leading-7 text-black/65">No verification challenge is currently required. Security-sensitive actions are protected through authentication, session checks and transaction-PIN verification.</p></section></main>}

@@ -91,13 +91,14 @@ export default function WelcomePage() {
           />
 
           <div className="flex items-center gap-3">
-            <button
+            <Link
+              href="/login"
               type="button"
-              onClick={openLogin}
+              
               className="flex items-center gap-2 rounded-xl bg-[#E7EBF0] px-5 py-2 text-sm font-semibold shadow-sm"
             >
               Login <ArrowRight size={17} className="text-[#2E8B57]" />
-            </button>
+            </Link>
 
             <button title="Open menu"
               type="button"
