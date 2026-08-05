@@ -94,7 +94,7 @@ export default function NotificationsPage() {
     <main className="min-h-screen bg-[#E8EDF3] pb-[90px]">
       <section className="mx-auto max-w-[430px] px-5 pt-11 lg:max-w-[900px]">
         <header className="relative mb-4 flex items-center justify-center">
-          <Link href="/profile" className="absolute left-0 top-1/2 -translate-y-1/2">
+          <Link href="/dashboard" className="absolute left-0 top-1/2 -translate-y-1/2">
             <ArrowLeft size={20} className="text-[#666]" />
           </Link>
           <div className="text-center">

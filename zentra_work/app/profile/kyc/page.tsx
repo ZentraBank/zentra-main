@@ -173,59 +173,103 @@ export default function ProfileSettingsPage() {
     setSelectedDocuments({});
   };
 
-  const handleSave = async () => {
-    setSaving(true);
-    setError("");
-    setMessage("");
+ const saveProfileData = async (): Promise<KycProfile> => {
+  const [cityPart, ...stateParts] = form.cityState
+    .split(",")
+    .map((part) => part.trim());
 
-    const [cityPart, ...stateParts] = form.cityState.split(",").map((part) => part.trim());
-    const phoneNumber = form.mobilePhone.trim() || form.homePhone.trim();
-    const residentialAddress = [form.houseNo, form.street || form.mailingAddress]
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .join(" ");
+  const phoneNumber =
+    form.mobilePhone.trim() || form.homePhone.trim();
 
-    try {
-      const saved = await kycService.saveProfile({
-        firstName: form.firstName.trim(),
-        middleName: form.middleName.trim(),
-        lastName: form.lastName.trim(),
-        dateOfBirth: form.dateOfBirth,
-        nationality: form.nationality,
-        phoneNumber,
-        residentialAddress,
-        city: cityPart || form.cityState.trim(),
-        stateRegion: stateParts.join(", "),
-        country: form.contactCountry,
-        identityType: toIdentityType(form.idType),
-        identityNumber: form.idNumber.trim(),
-        identityExpiryDate: form.documentExpiryDate || undefined,
-      });
-      setStatus(saved.status);
+  const residentialAddress = [
+    form.houseNo.trim(),
+    (form.street || form.mailingAddress).trim(),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return kycService.saveProfile({
+    firstName: form.firstName.trim(),
+    middleName: form.middleName.trim() || undefined,
+    lastName: form.lastName.trim(),
+    dateOfBirth: form.dateOfBirth,
+    nationality: form.nationality.trim(),
+    phoneNumber,
+    residentialAddress,
+    city: cityPart || form.cityState.trim(),
+    stateRegion: stateParts.join(", ").trim() || undefined,
+    country: form.contactCountry.trim(),
+    identityType: toIdentityType(form.idType),
+    identityNumber: form.idNumber.trim(),
+    identityExpiryDate:
+      form.documentExpiryDate || undefined,
+  });
+};
+
+const handleSave = async () => {
+  setSaving(true);
+  setError("");
+  setMessage("");
+
+  try {
+    const saved = await saveProfileData();
+    setStatus(saved.status);
+
+    const documentCount =
+      Object.keys(selectedDocuments).length;
+
+    if (documentCount > 0) {
       await uploadSelectedDocuments();
-      setMessage("KYC profile and selected documents saved successfully.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong while saving your KYC profile.");
-    } finally {
-      setSaving(false);
-    }
-  };
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    setError("");
-    setMessage("");
-    try {
-      await handleSave();
-      const submitted = await kycService.submit();
-      setStatus(submitted.status);
-      setMessage("KYC submitted successfully for review.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to submit your KYC application.");
-    } finally {
-      setSubmitting(false);
+      setMessage(
+        `KYC profile saved and ${documentCount} document(s) uploaded successfully.`,
+      );
+    } else {
+      setMessage("KYC profile saved successfully.");
     }
-  };
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Unable to save your KYC profile.",
+    );
+  } finally {
+    setSaving(false);
+  }
+};
+
+const handleSubmit = async () => {
+  setSubmitting(true);
+  setError("");
+  setMessage("");
+
+  try {
+    const saved = await saveProfileData();
+    setStatus(saved.status);
+
+    const documentCount =
+      Object.keys(selectedDocuments).length;
+
+    if (documentCount > 0) {
+      await uploadSelectedDocuments();
+    }
+
+    const submitted = await kycService.submit();
+
+    setStatus(submitted.status);
+    setMessage(
+      "KYC submitted successfully for review.",
+    );
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Unable to submit your KYC application.",
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <main className="min-h-screen bg-[#E7EBF0] px-2 pb-10 text-[#555] lg:px-8 lg:py-10">

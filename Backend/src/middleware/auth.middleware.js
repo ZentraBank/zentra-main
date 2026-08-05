@@ -16,16 +16,43 @@ const platformAuthRepository = require(
   "../modules/platform-auth/platform-auth.repository"
 );
 
+// const extractBearerToken = (req) => {
+//   const authorizationHeader =
+//     req.get("authorization");
+
+//   if (!authorizationHeader) {
+//     return null;
+//   }
+
+//   const [scheme, token] =
+//     authorizationHeader.split(" ");
+
+//   if (
+//     scheme?.toLowerCase() !== "bearer" ||
+//     !token
+//   ) {
+//     return null;
+//   }
+
+//   return token;
+// };
+
+
 const extractBearerToken = (req) => {
+  console.log("========== AUTH DEBUG ==========");
+  console.log("req.headers.authorization:", req.headers.authorization);
+  console.log("req.get('authorization'):", req.get("authorization"));
+  console.log("req.get('Authorization'):", req.get("Authorization"));
+  console.log("================================");
+
   const authorizationHeader =
-    req.get("authorization");
+    req.headers.authorization || req.get("authorization");
 
   if (!authorizationHeader) {
     return null;
   }
 
-  const [scheme, token] =
-    authorizationHeader.split(" ");
+  const [scheme, token] = authorizationHeader.split(" ");
 
   if (
     scheme?.toLowerCase() !== "bearer" ||
@@ -36,7 +63,6 @@ const extractBearerToken = (req) => {
 
   return token;
 };
-
 const convertJwtError = (error) => {
   if (
     error?.name === "TokenExpiredError" ||

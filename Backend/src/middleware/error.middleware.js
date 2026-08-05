@@ -48,9 +48,12 @@ const errorMiddleware = (
     message,
   };
 
-  if (error.details) {
-    response.errors = error.details;
-  }
+const validationErrors =
+  error.errors || error.details || null;
+
+if (validationErrors) {
+  response.errors = validationErrors;
+}
 
   if (env.isDevelopment) {
     response.stack = error.stack;

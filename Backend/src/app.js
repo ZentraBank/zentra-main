@@ -245,14 +245,14 @@ app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads"), { fal
 
 app.use(
   express.json({
-    limit: "8mb",
+    limit: "10mb",
   })
 );
 
 app.use(
   express.urlencoded({
     extended: true,
-    limit: "2mb",
+    limit: "10mb",
   })
 );
 

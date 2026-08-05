@@ -33,14 +33,21 @@ export const authService = {
   },
 
   async login(email: string, password: string): Promise<AuthSession> {
-    const session = await apiRequest<AuthSession>("/auth/login", {
-      method: "POST",
-      skipAuth: true,
-      body: JSON.stringify({ email, password }),
-    });
-    authToken.set(session.accessToken);
-    return session;
-  },
+  const session = await apiRequest<AuthSession>("/auth/login", {
+    method: "POST",
+    skipAuth: true,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
+
+  authToken.set(session.accessToken);
+  return session;
+},
 
   async restore(): Promise<AuthSession | null> {
     try {

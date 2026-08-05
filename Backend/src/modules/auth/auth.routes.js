@@ -1,5 +1,6 @@
 const express = require("express");
 const authController = require("./auth.controller");
+
 const {
   loginSchema,
   registerSchema,
@@ -11,17 +12,32 @@ const {
   refreshSchema,
   logoutSchema,
 } = require("./auth.validation");
-const validate = require("../../middleware/validate.middleware");
+
+const validate = require(
+  "../../middleware/validate.middleware"
+);
+
 const {
   resolveTenantMiddleware,
-} = require("../../middleware/tenant.middleware");
-const { authenticate } = require("../../middleware/auth.middleware");
+} = require(
+  "../../middleware/tenant.middleware"
+);
+
+const {
+  authenticate,
+} = require(
+  "../../middleware/auth.middleware"
+);
 
 const {
   requireAllPermissions,
-} = require("../../middleware/permission.middleware");
+} = require(
+  "../../middleware/permission.middleware"
+);
 
-const authTestController = require("./auth.test.controller");
+const authTestController = require(
+  "./auth.test.controller"
+);
 
 const router = express.Router();
 
@@ -41,30 +57,65 @@ router.get(
   authController.socialCallback
 );
 
+router.post(
+  "/register",
+  resolveTenantMiddleware,
+  validate(registerSchema),
+  authController.register
+);
 
-router.post("/register", resolveTenantMiddleware, validate(registerSchema.body), authController.register);
-router.post("/register/verify", resolveTenantMiddleware, validate(verifyRegistrationSchema.body), authController.verifyRegistration);
-router.post("/register/resend", resolveTenantMiddleware, validate(resendRegistrationSchema.body), authController.resendRegistration);
-router.post("/forgot-password", resolveTenantMiddleware, validate(forgotPasswordSchema.body), authController.forgotPassword);
-router.post("/reset-password", resolveTenantMiddleware, validate(resetPasswordSchema.body), authController.resetPassword);
-router.post("/change-password", resolveTenantMiddleware, authenticate, validate(changePasswordSchema.body), authController.changePassword);
+router.post(
+  "/register/verify",
+  resolveTenantMiddleware,
+  validate(verifyRegistrationSchema),
+  authController.verifyRegistration
+);
+
+router.post(
+  "/register/resend",
+  resolveTenantMiddleware,
+  validate(resendRegistrationSchema),
+  authController.resendRegistration
+);
+
+router.post(
+  "/forgot-password",
+  resolveTenantMiddleware,
+  validate(forgotPasswordSchema),
+  authController.forgotPassword
+);
+
+router.post(
+  "/reset-password",
+  resolveTenantMiddleware,
+  validate(resetPasswordSchema),
+  authController.resetPassword
+);
+
+router.post(
+  "/change-password",
+  resolveTenantMiddleware,
+  authenticate,
+  validate(changePasswordSchema),
+  authController.changePassword
+);
 
 router.post(
   "/login",
   resolveTenantMiddleware,
-  validate(loginSchema.body),
+  validate(loginSchema),
   authController.login
 );
 
 router.post(
   "/refresh",
-  validate(refreshSchema.body),
+  validate(refreshSchema),
   authController.refresh
 );
 
 router.post(
   "/logout",
-  validate(logoutSchema.body),
+  validate(logoutSchema),
   authController.logout
 );
 
