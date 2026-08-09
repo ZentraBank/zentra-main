@@ -83,6 +83,27 @@ const updateDonor =
       );
     }
   );
+  
+  const getDonor =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.getDonor({
+          auth: req.auth,
+          donorId:
+            req.params.donorId,
+        });
+
+      return sendSuccess(
+        res,
+        {
+          message:
+            "Donor retrieved successfully",
+          data,
+        }
+      );
+    }
+  );
 
 const createRequest =
   asyncHandler(
@@ -267,6 +288,7 @@ module.exports = {
   createDonor,
   listDonors,
   updateDonor,
+  getDonor,
   createRequest,
   listMine,
   listAdmin,

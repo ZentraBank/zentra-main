@@ -125,6 +125,31 @@ const updateStatus = async ({ tenantId, cardId, status }) => {
   return findById({ tenantId, cardId });
 };
 
+const updateDailySpendLimit = async ({
+  tenantId,
+  cardId,
+  dailySpendLimit,
+}) => {
+  await db.query(
+    `
+      UPDATE cards
+      SET daily_spend_limit = ?
+      WHERE id = ?
+        AND tenant_id = ?
+    `,
+    [
+      dailySpendLimit,
+      cardId,
+      tenantId,
+    ]
+  );
+
+  return findById({
+    tenantId,
+    cardId,
+  });
+};
+
 const createEvent = ({
   connection = null,
   tenantId,
@@ -465,7 +490,9 @@ module.exports = {
   findById,
   findByUser,
   create,
-  updateStatus,
+   updateStatus,
+    updateDailySpendLimit,
+    createEvent,
   createEvent,
 
   createPurchaseRequest,

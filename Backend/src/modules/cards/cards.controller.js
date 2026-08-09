@@ -52,6 +52,17 @@ const changeOwnStatus = asyncHandler(async (req, res) =>
   })
 );
 
+const changeOwnLimit = asyncHandler(async (req, res) =>
+  sendSuccess(res, {
+    message: "Card daily spend limit updated successfully",
+    data: await service.changeOwnLimit({
+      auth: req.auth,
+      cardId: req.params.cardId,
+      dailySpendLimit: req.body.dailySpendLimit,
+    }),
+  })
+);
+
 const changeStatusAsAdmin = asyncHandler(async (req, res) =>
   sendSuccess(res, {
     message: "Card status updated successfully",
@@ -212,6 +223,7 @@ module.exports = {
   listOwnCards,
   getOwnCard,
   changeOwnStatus,
+  changeOwnLimit,
   changeStatusAsAdmin,
 
   submitPurchaseRequest,

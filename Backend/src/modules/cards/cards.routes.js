@@ -115,6 +115,12 @@ router.patch(
   requireAllPermissions("cards.manage"),
   controller.changeOwnStatus
 );
+router.patch(
+  "/me/:cardId/limit",
+  validate(schema.ownLimit),
+  requireAllPermissions("cards.manage"),
+  controller.changeOwnLimit
+);
 
 router.patch(
   "/admin/:cardId/status",
@@ -122,5 +128,6 @@ router.patch(
   requireAllPermissions("cards.manage"),
   controller.changeStatusAsAdmin
 );
+
 
 module.exports = router;

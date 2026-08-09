@@ -67,6 +67,7 @@ const listDonors = async ({
   tenantId,
   status,
   search,
+  excludeDonorId = null,
   limit,
   offset,
 }) => {
@@ -82,7 +83,16 @@ const listDonors = async ({
     conditions.push(
       "status = ?"
     );
+
     values.push(status);
+  }
+
+  if (excludeDonorId) {
+    conditions.push(
+      "id <> ?"
+    );
+
+    values.push(excludeDonorId);
   }
 
   if (search) {
@@ -188,6 +198,7 @@ const createDonationRequest = async ({
   amount,
   currency,
   purpose,
+  appreciation,
 }) => {
   const id = randomUUID();
 
@@ -201,8 +212,9 @@ const createDonationRequest = async ({
         account_id,
         amount,
         currency,
-        purpose
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        purpose,
+        appreciation
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       id,
@@ -213,6 +225,7 @@ const createDonationRequest = async ({
       amount,
       currency,
       purpose || null,
+      appreciation || null,
     ]
   );
 

@@ -5,9 +5,9 @@ export const notificationService = {
   list(page = 1, pageSize = 50) {
     return apiRequest<ClientNotification[]>(`/notifications/me?page=${page}&pageSize=${pageSize}`);
   },
-  unreadCount() {
-    return apiRequest<{ count: number }>("/notifications/me/unread-count");
-  },
+unreadCount() {
+  return apiRequest<number>("/notifications/me/unread-count");
+},
   markRead(notificationId: string) {
     return apiRequest<ClientNotification>(`/notifications/me/${notificationId}/read`, { method: "PATCH" });
   },

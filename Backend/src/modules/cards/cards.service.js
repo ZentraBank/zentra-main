@@ -771,6 +771,68 @@ const changeOwnStatus = async ({
   return updated;
 };
 
+const changeOwnLimit = async ({
+  auth,
+  cardId,
+  dailySpendLimit,
+}) => {
+  const card = await getOwnCard({
+    auth,
+    cardId,
+  });
+
+  if (
+    ["blocked", "inactive", "expired"].includes(
+      card.status
+    )
+  ) {
+    throw httpError(
+      409,
+      `A ${card.status} card cannot be modified`
+    );
+  }
+
+  const maximumLimit = featureNumber(
+    auth,
+    "card_daily_spend_limit",
+    500
+  );
+
+  const requestedLimit =
+    Number(dailySpendLimit);
+
+  if (
+    requestedLimit > maximumLimit
+  ) {
+    throw httpError(
+      403,
+      `Your maximum permitted daily spend limit is ${maximumLimit}`
+    );
+  }
+
+  const updated =
+    await repo.updateDailySpendLimit({
+      tenantId: auth.tenantId,
+      cardId,
+      dailySpendLimit: requestedLimit,
+    });
+
+  await repo.createEvent({
+    tenantId: auth.tenantId,
+    cardId,
+    userId: card.user_id,
+    actorUserId: auth.userId,
+    eventType: "card_limit_changed",
+    metadata: {
+      previousLimit:
+        card.daily_spend_limit,
+      newLimit: requestedLimit,
+    },
+  });
+
+  return updated;
+};
+
 const changeStatusAsAdmin = async ({
   auth,
   cardId,
@@ -833,5 +895,6 @@ module.exports = {
   listOwnCards,
   getOwnCard,
   changeOwnStatus,
+  changeOwnLimit,
   changeStatusAsAdmin,
 };

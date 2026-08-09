@@ -10,48 +10,99 @@ import {
   SendHorizontal,
   CreditCard,
   Gift,
-  HeartHandshake,
-  Wallet,
-  Landmark,
-  ArrowDownLeft,
-  ArrowUpRight,
   Info,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  BadgeDollarSign,
-  Users,
-  History,
+  ArrowDownLeft,
+  ArrowUpRight,
   X,
 } from "lucide-react";
+
 import BottomNav from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/store/auth.store";
 import { useClientOverview } from "@/hooks/use-client-overview";
 import { formatMoney } from "@/lib/formatters";
 import type { ClientTransfer } from "@/types/transfer";
+import type { ClientNotification } from "@/types/notification";
 
 const quickActions = [
-  { title: "Airtime", icon: "/images/airtime-3.png", href: "/airtime" },
-  { title: "Data", icon: "/images/data-3.png", href: "/data" },
-  { title: "Transfer", icon: "/images/transfer-2.png", href: "/transfers" },
-  { title: "Card Lock", icon: "/images/card-lock-2.png", href: "/card-lock" },
+  {
+    title: "Airtime",
+    icon: "/images/airtime-3.png",
+    href: "/airtime",
+  },
+  {
+    title: "Data",
+    icon: "/images/data-3.png",
+    href: "/data",
+  },
+  {
+    title: "Transfer",
+    icon: "/images/transfer-2.png",
+    href: "/transfers",
+  },
+  {
+    title: "Card Lock",
+    icon: "/images/card-lock-2.png",
+    href: "/cards/active-cards",
+  },
 ];
 
 const services = [
-  { title: "Gift", icon: "/images/gifts-3.png", href: "/donations-gift/gifts" },
-  { title: "Donations", icon: "/images/donations-2.png", href: "/donations-gift/donations" },
-  { title: "Admin. services", icon: "/images/admin-services-2.png", href: "/admin-services" },
-  { title: "Investment", icon: "/images/admin-services-2.png", href: "/investment" },
-  { title: "Cards", icon: "/images/cards-2.png", href: "/cards" },
-  { title: "Bill Pay", icon: "/images/send-money-2.png", href: "/bill-pay" },
+  {
+    title: "Gift",
+    icon: "/images/gifts-3.png",
+    href: "/donations-gift/gifts",
+  },
+  {
+    title: "Donations",
+    icon: "/images/donations-2.png",
+    href: "/donations-gift/donations",
+  },
+  {
+    title: "Admin. services",
+    icon: "/images/admin-services-2.png",
+    href: "/admin-services",
+  },
+  {
+    title: "Investment",
+    icon: "/images/admin-services-2.png",
+    href: "/investment",
+  },
+  {
+    title: "Cards",
+    icon: "/images/cards-2.png",
+    href: "/cards/active-cards",
+  },
+  {
+    title: "Bill Pay",
+    icon: "/images/send-money-2.png",
+    href: "/bill-pay",
+  },
 ];
 
 const allServices = [
-  { title: "Airtime", icon: "/images/airtime-3.png", href: "/airtime" },
-  { title: "Send money", icon: "/images/send-money-2.png", href: "/send-money" },
-  { title: "Pay Bill", icon: "/images/bill-pay.png", href: "/pay-bill" },
-  { title: "Gift", icon: "/images/gifts-2.png", href: "/gift" },
-
+  {
+    title: "Airtime",
+    icon: "/images/airtime-3.png",
+    href: "/airtime",
+  },
+  {
+    title: "Send money",
+    icon: "/images/send-money-2.png",
+    href: "/transfers",
+  },
+  {
+    title: "Pay Bill",
+    icon: "/images/bill-pay.png",
+    href: "/pay-bill",
+  },
+  {
+    title: "Gift",
+    icon: "/images/gifts-2.png",
+    href: "/gift",
+  },
   {
     title: "Donations",
     icon: "/images/donations-2.png",
@@ -64,93 +115,194 @@ const allServices = [
     href: "/admin-services",
     className: "col-span-2",
   },
-
-  { title: "Investment", icon: "/images/admin-services-2.png", href: "/investment" },
-  { title: "Cards", icon: "/images/cards-2.png", href: "/cards" },
-  { title: "Bill Pay", icon: "/images/bill-pay.png", href: "/bill-pay" },
-  { title: "Subscription", icon: "/images/admin-services-2.png", href: "/subscribe" },
-
-  { title: "Card setting", icon: "/images/card-lock-2.png", href: "/cards" },
+  {
+    title: "Investment",
+    icon: "/images/admin-services-2.png",
+    href: "/investment",
+  },
+  {
+    title: "Cards",
+    icon: "/images/cards-2.png",
+    href: "/cards/active-cards",
+  },
+  {
+    title: "Bill Pay",
+    icon: "/images/bill-pay.png",
+    href: "/bill-pay",
+  },
+  {
+    title: "Subscription",
+    icon: "/images/admin-services-2.png",
+    href: "/subscribe",
+  },
+  {
+    title: "Card setting",
+    icon: "/images/card-lock-2.png",
+    href: "/cards/active-cards",
+  },
   {
     title: "Next-of-kin funds",
     icon: "/images/card-settings-2.png",
     href: "/nok",
     className: "col-span-2",
   },
-  { title: "Trans. History", icon: "/images/transfer-2.png", href: "/transactions" },
-];
-
-const updates = [
   {
-    icon: Info,
-    title: "Up to $7m now convertible",
-    text: "Congratulations! You have just upgraded your ZentraBa...",
-  },
-  {
-    icon: Gift,
-    title: "Charity Donation from Mark...",
-    text: "Congratulations! You have just upgraded your ZentraBa...",
+    title: "Trans. History",
+    icon: "/images/transfer-2.png",
+    href: "/transactions",
   },
 ];
 
 export default function DashboardPage() {
   const [showMoreServices, setShowMoreServices] = useState(false);
+
   const user = useAuthStore((state) => state.user);
-  const { accounts, transfers, isLoading, error, reload } = useClientOverview();
+
+  const {
+    accounts,
+    transfers,
+    cards,
+    notifications,
+    unreadNotificationCount,
+    cardPurchaseRequests,
+    isLoading,
+    error,
+    reload,
+  } = useClientOverview();
+
   const activeAccounts = useMemo(
     () => accounts.filter((account) => account.status === "active"),
     [accounts],
   );
-  const primaryCurrency = activeAccounts[0]?.currency ?? accounts[0]?.currency ?? "NGN";
+
+  const primaryCurrency =
+    activeAccounts[0]?.currency ??
+    accounts[0]?.currency ??
+    "GBP";
+
   const totalBalance = useMemo(
-    () => accounts
-      .filter((account) => account.currency === primaryCurrency)
-      .reduce((total, account) => total + (Number(account.balance) || 0), 0),
+    () =>
+      accounts
+        .filter(
+          (account) =>
+            account.currency === primaryCurrency,
+        )
+        .reduce(
+          (total, account) =>
+            total + (Number(account.balance) || 0),
+          0,
+        ),
     [accounts, primaryCurrency],
   );
-  const displayName = user?.full_name || user?.email || "ZentraBank client";
+
+  const displayName =
+    user?.full_name ||
+    user?.email ||
+    "ZentraBank client";
+
+  const pendingCardRequest =
+    cardPurchaseRequests.find(
+      (request) => request.status === "pending",
+    );
+
+  const cardSummary = useMemo(() => {
+    if (cards.length > 0) {
+      const activeCount = cards.filter(
+        (card) => card.status === "active",
+      ).length;
+
+      const frozenCount = cards.filter(
+        (card) => card.status === "frozen",
+      ).length;
+
+      return {
+        title: `${cards.length} issued card${
+          cards.length === 1 ? "" : "s"
+        }`,
+        description:
+          frozenCount > 0
+            ? `${activeCount} active · ${frozenCount} frozen`
+            : `${activeCount} active`,
+        href: "/cards/active-cards",
+      };
+    }
+
+    if (pendingCardRequest) {
+      return {
+        title: "Card request pending",
+        description: `${pendingCardRequest.card_type.replaceAll(
+          "_",
+          " ",
+        )} card awaiting verification`,
+        href: `/cards/purchase-status/${pendingCardRequest.id}`,
+      };
+    }
+
+    return {
+      title: "No issued cards",
+      description: "Create your first ZentraBank card",
+      href: "/cards/cards-purchase",
+    };
+  }, [cards, pendingCardRequest]);
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#E7EBF0] pb-[92px] text-[#333]">
       <section className="mx-auto w-full max-w-[390px] px-5 pt-12">
-<header className="flex items-center justify-between rounded-[12px]">
-  <Link
-    href="/profile"
-    className="flex items-center gap-3 transition-opacity hover:opacity-80"
-  >
-    <div className="relative h-11 w-11 overflow-hidden rounded-full border border-white bg-[#B7D8FF] shadow-sm">
-      <Image
-        src="/images/profile-avatar.png"
-        alt={displayName}
-        fill
-        className="object-cover"
-      />
-    </div>
+        <header className="flex items-center justify-between rounded-[12px]">
+          <Link
+            href="/profile"
+            className="flex items-center gap-3 transition-opacity hover:opacity-80"
+          >
+            <div className="relative h-11 w-11 overflow-hidden rounded-full border border-white bg-[#B7D8FF] shadow-sm">
+              <Image
+                src="/images/profile-avatar.png"
+                alt={displayName}
+                fill
+                className="object-cover"
+              />
+            </div>
 
-    <div>
-      <h1 className="font-lato text-[13px] font-semibold">
-        {displayName}
-      </h1>
+            <div>
+              <h1 className="font-lato text-[13px] font-semibold">
+                {displayName}
+              </h1>
 
-      <p className="font-lato text-[12px] font-medium">
-        <span className="text-[#333333]">{accounts[0]?.account_type || "Client"}</span>{" "}
-        <span className="text-[#2B945D]">
-          {user?.kyc_status === "verified" ? "Verified!" : "KYC pending"}
-        </span>
-      </p>
-    </div>
-  </Link>
+              <p className="font-lato text-[12px] font-medium">
+                <span className="text-[#333333]">
+                  {accounts[0]?.account_type || "Client"}
+                </span>{" "}
+                <span className="text-[#2B945D]">
+                  {formatKycStatus(user?.kyc_status)}
+                </span>
+              </p>
+            </div>
+          </Link>
 
-  <div className="flex items-center gap-2 text-[#2B945D]">
-    <Link href="/notifications" aria-label="Notifications">
-      <Bell size={17} />
-    </Link>
+          <div className="flex items-center gap-3 text-[#2B945D]">
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              className="relative"
+            >
+              <Bell size={18} />
 
-    <Link href="/settings" aria-label="Settings">
-      <Settings size={17} />
-    </Link>
-  </div>
-</header>
+              {unreadNotificationCount > 0 && (
+                <span className="absolute -right-2 -top-2 grid min-h-[16px] min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
+                  {unreadNotificationCount > 99
+                    ? "99+"
+                    : unreadNotificationCount}
+                </span>
+              )}
+            </Link>
+
+            <Link
+              href="/settings"
+              aria-label="Settings"
+            >
+              <Settings size={18} />
+            </Link>
+          </div>
+        </header>
 
         <section className="mt-4 rounded-[9px] bg-[#2F9158] px-3 py-3 text-white shadow-sm">
           <div className="flex items-center gap-2 text-[12px]">
@@ -160,13 +312,17 @@ export default function DashboardPage() {
 
           <div className="mt-2 flex items-end justify-between">
             <h2 className="text-[30px] font-semibold tracking-wide">
-              {isLoading ? "Loading…" : formatMoney(totalBalance, primaryCurrency)}
+              {isLoading
+                ? "Loading…"
+                : formatMoney(
+                    totalBalance,
+                    primaryCurrency,
+                  )}
             </h2>
-            {/* <p className="text-[11px] text-black/55">Nonbank</p> */}
           </div>
         </section>
 
-        <section className="mt-4 grid grid-cols-4 gap-4 rounded-[8px]  ">
+        <section className="mt-4 grid grid-cols-4 gap-4 rounded-[8px]">
           {quickActions.map((item) => (
             <SmallActionCard
               key={item.title}
@@ -178,7 +334,9 @@ export default function DashboardPage() {
         </section>
 
         <div className="mt-4 flex items-center justify-between">
-          <h3 className="text-[13px] font-bold tracking-wide">Services</h3>
+          <h3 className="text-[13px] font-bold tracking-wide">
+            Services
+          </h3>
 
           <button
             type="button"
@@ -200,12 +358,46 @@ export default function DashboardPage() {
           ))}
         </section>
 
+        <section className="mt-4 rounded-[10px] bg-white px-3 py-3 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[#E8F0FF] text-[#2458E8]">
+                <CreditCard size={19} />
+              </span>
+
+              <div className="min-w-0">
+                <p className="text-[12px] font-semibold text-black/40">
+                  Cards
+                </p>
+
+                <p className="truncate text-[14px] font-bold">
+                  {cardSummary.title}
+                </p>
+
+                <p className="truncate text-[11px] text-black/45">
+                  {cardSummary.description}
+                </p>
+              </div>
+            </div>
+
+            <Link
+              href={cardSummary.href}
+              className="shrink-0 text-[12px] font-bold text-[#2458E8]"
+            >
+              View
+            </Link>
+          </div>
+        </section>
+
         <div className="mt-4 flex items-center justify-between">
           <h3 className="text-[13px] font-bold tracking-wide">
             Transaction History
           </h3>
 
-          <Link href="/transactions" className="text-[12px] text-black/50">
+          <Link
+            href="/transactions"
+            className="text-[12px] text-black/50"
+          >
             View all
           </Link>
         </div>
@@ -214,7 +406,12 @@ export default function DashboardPage() {
           {error ? (
             <div className="rounded-[7px] border border-red-200 bg-red-50 px-3 py-3 text-[12px] text-red-700">
               <p>{error}</p>
-              <button type="button" onClick={() => void reload()} className="mt-2 font-semibold underline">
+
+              <button
+                type="button"
+                onClick={() => void reload()}
+                className="mt-2 font-semibold underline"
+              >
                 Try again
               </button>
             </div>
@@ -224,12 +421,18 @@ export default function DashboardPage() {
             </div>
           ) : transfers.length === 0 ? (
             <div className="rounded-[7px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
-              No transfers yet. Your recent activity will appear here.
+              No transfers yet. Your recent activity will
+              appear here.
             </div>
           ) : (
-            transfers.slice(0, 2).map((transfer) => (
-              <LiveTransactionCard key={transfer.id} transfer={transfer} />
-            ))
+            transfers
+              .slice(0, 3)
+              .map((transfer) => (
+                <LiveTransactionCard
+                  key={transfer.id}
+                  transfer={transfer}
+                />
+              ))
           )}
         </section>
 
@@ -245,10 +448,11 @@ export default function DashboardPage() {
             </div>
 
             <div className="flex flex-1 flex-col justify-center px-3 text-center">
-              <h2 className="text-[22px] font-black font-sf-condensed leading-[22px] text-[#2E8B57]">
+              <h2 className="font-sf-condensed text-[22px] font-black leading-[22px] text-[#2E8B57]">
                 Register to Redeem Funds!
               </h2>
-              <p className="mt-2 text-[12px] text-black/55 font-lato">
+
+              <p className="mt-2 font-lato text-[12px] text-black/55">
                 Get redemption code for gifts, donations
               </p>
             </div>
@@ -259,24 +463,41 @@ export default function DashboardPage() {
           <h3 className="text-[13px] font-bold tracking-wide">
             Recent Updates
           </h3>
-          <Link href="" className="text-[12px] text-black/50">
+
+          <Link
+            href="/notifications"
+            className="text-[12px] text-black/50"
+          >
             View all
           </Link>
         </div>
 
         <section className="mt-3 space-y-2">
-          {updates.map((item) => (
-            <UpdateCard
-              key={item.title}
-              title={item.title}
-              text={item.text}
-              icon={item.icon}
-            />
-          ))}
+          {isLoading ? (
+            <div className="rounded-[10px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
+              Loading updates…
+            </div>
+          ) : notifications.length === 0 ? (
+            <div className="rounded-[10px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
+              No recent updates.
+            </div>
+          ) : (
+            notifications
+              .slice(0, 3)
+              .map((notification) => (
+                <LiveUpdateCard
+                  key={notification.id}
+                  notification={notification}
+                />
+              ))
+          )}
         </section>
 
         <section className="mt-8">
-          <svg viewBox="0 0 330 150" className="h-[150px] w-full">
+          <svg
+            viewBox="0 0 330 150"
+            className="h-[150px] w-full"
+          >
             {[0, 1, 2, 3, 4, 5, 6].map((y) => (
               <line
                 key={y}
@@ -289,17 +510,19 @@ export default function DashboardPage() {
               />
             ))}
 
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((x) => (
-              <line
-                key={x}
-                x1={30 + x * 32}
-                x2={30 + x * 32}
-                y1="20"
-                y2="140"
-                stroke="#cbd2da"
-                strokeWidth="1"
-              />
-            ))}
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(
+              (x) => (
+                <line
+                  key={x}
+                  x1={30 + x * 32}
+                  x2={30 + x * 32}
+                  y1="20"
+                  y2="140"
+                  stroke="#cbd2da"
+                  strokeWidth="1"
+                />
+              ),
+            )}
 
             {[
               "40,55 70,42 102,50 135,92 168,68 200,72 230,38 265,70 300,44 320,62",
@@ -313,7 +536,12 @@ export default function DashboardPage() {
                 fill="none"
                 strokeWidth="1.2"
                 stroke={
-                  ["#2B945D", "#FF6EA8", "#7E39FF", "#3E53D9"][index]
+                  [
+                    "#2B945D",
+                    "#FF6EA8",
+                    "#7E39FF",
+                    "#3E53D9",
+                  ][index]
                 }
               />
             ))}
@@ -322,12 +550,15 @@ export default function DashboardPage() {
 
         <section className="mt-7">
           <div className="flex items-center justify-between">
-            <h3 className="text-[13px] font-bold fot-sf-condensed tracking-wide">
-              Recent Updates
+            <h3 className="font-sf-condensed text-[13px] font-bold tracking-wide">
+              Offers
             </h3>
 
             <div className="flex gap-4">
-              <ChevronLeft size={18} className="text-black/30" />
+              <ChevronLeft
+                size={18}
+                className="text-black/30"
+              />
               <ChevronRight size={18} />
             </div>
           </div>
@@ -341,7 +572,11 @@ export default function DashboardPage() {
       </section>
 
       {showMoreServices && (
-        <MoreServicesOverlay onClose={() => setShowMoreServices(false)} />
+        <MoreServicesOverlay
+          onClose={() =>
+            setShowMoreServices(false)
+          }
+        />
       )}
 
       <BottomNav />
@@ -359,7 +594,10 @@ function SmallActionCard({
   href: string;
 }) {
   return (
-    <Link href={href} className="block text-center">
+    <Link
+      href={href}
+      className="block text-center"
+    >
       <div className="mx-auto grid h-12 w-12 place-items-center rounded-md bg-white shadow-md">
         <Image
           src={icon}
@@ -369,7 +607,10 @@ function SmallActionCard({
           className="object-contain"
         />
       </div>
-      <p className="mt-2 text-[12px] text-[#2B945D]">{title}</p>
+
+      <p className="mt-2 text-[12px] text-[#2B945D]">
+        {title}
+      </p>
     </Link>
   );
 }
@@ -398,12 +639,18 @@ function DashboardServiceCard({
         />
       </div>
 
-      <p className="mt-1 text-[12px] leading-none">{title}</p>
+      <p className="mt-1 text-[12px] leading-none">
+        {title}
+      </p>
     </Link>
   );
 }
 
-function MoreServicesOverlay({ onClose }: { onClose: () => void }) {
+function MoreServicesOverlay({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-[999] overflow-y-auto bg-[#E7EBF0] px-6 pb-[100px] pt-5">
       <section className="mx-auto max-w-[390px]">
@@ -462,19 +709,35 @@ function MoreServiceCard({
         />
       </div>
 
-      <p className="mt-1 text-[11px] leading-tight">{title}</p>
+      <p className="mt-1 text-[11px] leading-tight">
+        {title}
+      </p>
     </Link>
   );
 }
 
-function LiveTransactionCard({ transfer }: { transfer: ClientTransfer }) {
-  const destination = transfer.destination_account_name || transfer.destination_account_number || "Recipient";
+function LiveTransactionCard({
+  transfer,
+}: {
+  transfer: ClientTransfer;
+}) {
+  const destination =
+    transfer.destination_account_name ||
+    transfer.destination_account_number ||
+    "Recipient";
+
   return (
     <TransactionCard
       type="out"
-      name={transfer.description || `Transfer to ${destination}`}
+      name={
+        transfer.description ||
+        `Transfer to ${destination}`
+      }
       bank={destination}
-      amount={`-${formatMoney(transfer.amount, transfer.currency)}`}
+      amount={`-${formatMoney(
+        transfer.amount,
+        transfer.currency,
+      )}`}
     />
   );
 }
@@ -496,9 +759,15 @@ function TransactionCard({
     <div className="flex items-center justify-between rounded-[7px] border border-black/10 bg-[#F2F5F8] px-3 py-2 shadow-sm">
       <div className="flex items-center gap-3">
         {isIn ? (
-          <ArrowDownLeft size={14} className="text-[#2B945D]" />
+          <ArrowDownLeft
+            size={14}
+            className="text-[#2B945D]"
+          />
         ) : (
-          <ArrowUpRight size={14} className="text-[#E0443E]" />
+          <ArrowUpRight
+            size={14}
+            className="text-[#E0443E]"
+          />
         )}
 
         <div>
@@ -514,7 +783,9 @@ function TransactionCard({
 
       <p
         className={`font-sf text-[14px] font-semibold ${
-          isIn ? "text-[#2E8B57]/80" : "text-[#C0392B]/80"
+          isIn
+            ? "text-[#2E8B57]/80"
+            : "text-[#C0392B]/80"
         }`}
       >
         {amount}
@@ -523,29 +794,60 @@ function TransactionCard({
   );
 }
 
-function UpdateCard({
-  title,
-  text,
-  icon: Icon,
+function LiveUpdateCard({
+  notification,
 }: {
-  title: string;
-  text: string;
-  icon: React.ElementType;
+  notification: ClientNotification;
 }) {
+  const Icon =
+    notification.notification_type?.includes(
+      "card",
+    )
+      ? CreditCard
+      : notification.notification_type?.includes(
+            "transfer",
+          )
+        ? SendHorizontal
+        : notification.notification_type?.includes(
+              "donation",
+            )
+          ? Gift
+          : Info;
+
   return (
-    <button
-      type="button"
+    <Link
+      href={
+        notification.action_url ||
+        "/notifications"
+      }
       className="flex w-full items-center gap-3 rounded-[10px] border border-black/10 bg-[#F3F6FA] px-3 py-2 text-left shadow-sm"
     >
-      <Icon size={20} className="text-[#2B945D]" />
+      <Icon
+        size={20}
+        className="shrink-0 text-[#2B945D]"
+      />
 
       <div className="min-w-0 flex-1">
-        <h4 className="truncate text-[13px] font-semibold">{title}</h4>
-        <p className="truncate text-[11px] text-black/55">{text}</p>
+        <div className="flex items-center gap-2">
+          <h4 className="truncate text-[13px] font-semibold">
+            {notification.title}
+          </h4>
+
+          {!notification.read_at && (
+            <span className="h-2 w-2 shrink-0 rounded-full bg-[#2458E8]" />
+          )}
+        </div>
+
+        <p className="truncate text-[11px] text-black/55">
+          {notification.message}
+        </p>
       </div>
 
-      <ChevronDown size={17} className="text-black/45" />
-    </button>
+      <ChevronDown
+        size={17}
+        className="shrink-0 text-black/45"
+      />
+    </Link>
   );
 }
 
@@ -566,11 +868,36 @@ function AdvertCard() {
         Advert Card
       </h4>
 
-      <p className="mt-2 text-[9px] font-semibold">Lorem ipsum dolor sit</p>
+      <p className="mt-2 text-[9px] font-semibold">
+        More offers coming soon
+      </p>
+
       <p className="mt-1 text-[8px] leading-[10px] text-black/70">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate
-        libero et velit interdum, ac aliquet odio mattis.
+        Promotions and personalised offers will appear
+        here when available.
       </p>
     </article>
   );
+}
+
+function formatKycStatus(
+  status?: string,
+): string {
+  switch (status) {
+    case "approved":
+    case "verified":
+      return "Verified!";
+
+    case "submitted":
+      return "KYC submitted";
+
+    case "under_review":
+      return "KYC in review";
+
+    case "rejected":
+      return "KYC needs attention";
+
+    default:
+      return "KYC pending";
+  }
 }

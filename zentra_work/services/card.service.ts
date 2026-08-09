@@ -33,12 +33,24 @@ export const cardService = {
     return apiRequest<ClientCard>("/cards", { method: "POST", body: JSON.stringify(input) });
   },
   changeStatus(cardId: string, status: "active" | "frozen") {
-    return apiRequest<ClientCard>(`/cards/me/${encodeURIComponent(cardId)}/status`, {
+  return apiRequest<ClientCard>(
+    `/cards/me/${encodeURIComponent(cardId)}/status`,
+    {
       method: "PATCH",
       body: JSON.stringify({ status }),
-    });
-  },
+    },
+  );
+},
 
+changeLimit(cardId: string, dailySpendLimit: number) {
+  return apiRequest<ClientCard>(
+    `/cards/me/${encodeURIComponent(cardId)}/limit`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ dailySpendLimit }),
+    },
+  );
+},
   submitPurchaseRequest(input: {
   accountId: string;
   cardType: string;

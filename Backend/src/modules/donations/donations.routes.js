@@ -66,6 +66,17 @@ router.get(
   controller.listDonors
 );
 
+router.get(
+  "/donors/:donorId",
+  validate(
+    schemas.donorId
+  ),
+  requireAllPermissions(
+    "donations.donors.read"
+  ),
+  controller.getDonor
+);
+
 router.patch(
   "/donors/:donorId",
   validate(

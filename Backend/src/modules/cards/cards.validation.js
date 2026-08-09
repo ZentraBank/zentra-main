@@ -46,10 +46,29 @@ module.exports = {
 
     body: Joi.object({
       status: Joi.string()
-        .valid("active", "frozen")
+        .valid(
+          "active",
+          "frozen",
+          "blocked",
+          "inactive"
+        )
         .required(),
     }),
   },
+
+ownLimit: {
+  params: Joi.object({
+    cardId: Joi.string().uuid().required(),
+  }),
+
+  body: Joi.object({
+    dailySpendLimit: Joi.number()
+      .positive()
+      .precision(2)
+      .required(),
+  }),
+},
+
 
   adminStatus: {
     params: Joi.object({

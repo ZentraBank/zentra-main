@@ -39,13 +39,17 @@ const listDonors = ({
   query,
 }) => {
   const page =
-    Number(query.page);
+    Number(query.page) > 0
+      ? Number(query.page)
+      : 1;
 
   const limit =
-    Math.min(
-      Number(query.pageSize),
-      100
-    );
+    Number(query.pageSize) > 0
+      ? Math.min(
+          Number(query.pageSize),
+          100
+        )
+      : 20;
 
   return repo.listDonors({
     tenantId:
@@ -57,11 +61,37 @@ const listDonors = ({
     search:
       query.search || null,
 
+    excludeDonorId:
+      query.excludeDonorId || null,
+
     limit,
 
     offset:
       (page - 1) * limit,
   });
+};
+
+const getDonor = async ({
+  auth,
+  donorId,
+}) => {
+  const donor =
+    await repo.findDonorById({
+      tenantId: auth.tenantId,
+      donorId,
+    });
+
+  if (
+    !donor ||
+    donor.status !== "active"
+  ) {
+    throw httpError(
+      404,
+      "Active donor not found"
+    );
+  }
+
+  return donor;
 };
 
 const updateDonor = async ({
@@ -178,7 +208,10 @@ const createDonationRequest =
           body.currency,
 
         purpose:
-          body.purpose,
+        body.purpose,
+
+      appreciation:
+        body.appreciation,
       });
 
     await repo.createEvent({
@@ -608,6 +641,13 @@ module.exports = {
   createDonor,
   listDonors,
   updateDonor,
+  getDonor,
+  createDonationRequest,
+  listRequests,
+  reviewRequest,
+  requestRedemption,
+  verifyRedemptionOtp,
+  completeRedemption,
   createDonationRequest,
   listRequests,
   reviewRequest,
