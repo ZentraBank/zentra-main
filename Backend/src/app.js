@@ -186,6 +186,13 @@ const platformSettingsRoutes = require(
   "./modules/platform-settings/platform-settings.routes"
 );
 
+const nextOfKinRoutes =
+  require(
+    "./modules/nextOfKin/nextOfKin.routes"
+  );
+
+
+
 const app = express();
 
 /*
@@ -518,6 +525,11 @@ app.use(
 app.use(
   `${env.apiPrefix}/superadmin/settings`,
   platformSettingsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/next-of-kin`,
+  nextOfKinRoutes
 );
 
 /*

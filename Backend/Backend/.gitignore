@@ -15,6 +15,8 @@ pnpm-debug.log*
 .env.development
 .env.test
 .env.production
+/storage/private/*
+!/storage/private/.gitkeep
 
 # =========================
 # Logs

@@ -239,6 +239,27 @@ const verifyOtp =
     }
   );
 
+  const getMine =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.getOwnRequest({
+          auth: req.auth,
+          requestId:
+            req.params.requestId,
+        });
+
+      return sendSuccess(
+        res,
+        {
+          message:
+            "Donation request retrieved successfully",
+          data,
+        }
+      );
+    }
+  );
+
 const complete =
   asyncHandler(
     async (req, res) => {
@@ -274,4 +295,5 @@ module.exports = {
   requestRedemption,
   verifyOtp,
   complete,
+  getMine,
 };

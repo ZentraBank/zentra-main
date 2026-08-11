@@ -246,14 +246,14 @@ export default function DashboardPage() {
   }, [cards, pendingCardRequest]);
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#E7EBF0] pb-[92px] text-[#333]">
-      <section className="mx-auto w-full max-w-[390px] px-5 pt-12">
-        <header className="flex items-center justify-between rounded-[12px]">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#E7EBF0] pb-[92px] text-[#333] md:pb-10">
+      <section className="mx-auto w-full max-w-[390px] px-5 pt-12 md:max-w-[1180px] md:px-8 md:pt-8 xl:max-w-[1320px]">
+        <header className="flex items-center justify-between rounded-[12px] md:rounded-[18px] md:bg-white/55 md:px-5 md:py-4 md:shadow-sm md:backdrop-blur-sm">
           <Link
             href="/profile"
             className="flex items-center gap-3 transition-opacity hover:opacity-80"
           >
-            <div className="relative h-11 w-11 overflow-hidden rounded-full border border-white bg-[#B7D8FF] shadow-sm">
+            <div className="relative h-11 w-11 overflow-hidden rounded-full border border-white bg-[#B7D8FF] shadow-sm md:h-12 md:w-12">
               <Image
                 src="/images/profile-avatar.png"
                 alt={displayName}
@@ -263,11 +263,11 @@ export default function DashboardPage() {
             </div>
 
             <div>
-              <h1 className="font-lato text-[13px] font-semibold">
+              <h1 className="font-lato text-[13px] font-semibold md:text-[15px]">
                 {displayName}
               </h1>
 
-              <p className="font-lato text-[12px] font-medium">
+              <p className="font-lato text-[12px] font-medium md:text-[13px]">
                 <span className="text-[#333333]">
                   {accounts[0]?.account_type || "Client"}
                 </span>{" "}
@@ -278,7 +278,7 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-3 text-[#2B945D]">
+          <div className="flex items-center gap-3 text-[#2B945D] md:gap-5">
             <Link
               href="/notifications"
               aria-label="Notifications"
@@ -304,14 +304,14 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <section className="mt-4 rounded-[9px] bg-[#2F9158] px-3 py-3 text-white shadow-sm">
-          <div className="flex items-center gap-2 text-[12px]">
+        <section className="mt-4 rounded-[9px] bg-[#2F9158] px-3 py-3 text-white shadow-sm md:mt-6 md:rounded-[18px] md:px-7 md:py-6 md:shadow-md">
+          <div className="flex items-center gap-2 text-[12px] md:text-[14px]">
             <span>Balance</span>
             <EyeOff size={16} />
           </div>
 
           <div className="mt-2 flex items-end justify-between">
-            <h2 className="text-[30px] font-semibold tracking-wide">
+            <h2 className="text-[30px] font-semibold tracking-wide md:text-[42px]">
               {isLoading
                 ? "Loading…"
                 : formatMoney(
@@ -322,7 +322,7 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="mt-4 grid grid-cols-4 gap-4 rounded-[8px]">
+        <section className="mt-4 grid grid-cols-4 gap-4 rounded-[8px] md:mt-6 md:grid-cols-4 md:gap-5">
           {quickActions.map((item) => (
             <SmallActionCard
               key={item.title}
@@ -333,21 +333,21 @@ export default function DashboardPage() {
           ))}
         </section>
 
-        <div className="mt-4 flex items-center justify-between">
-          <h3 className="text-[13px] font-bold tracking-wide">
+        <div className="mt-4 flex items-center justify-between md:mt-7">
+          <h3 className="text-[13px] font-bold tracking-wide md:text-[16px]">
             Services
           </h3>
 
           <button
             type="button"
             onClick={() => setShowMoreServices(true)}
-            className="text-[12px] text-black/50"
+            className="text-[12px] text-black/50 md:text-[13px]"
           >
             View all
           </button>
         </div>
 
-        <section className="mt-3 grid grid-cols-3 gap-4 font-lato">
+        <section className="mt-3 grid grid-cols-3 gap-4 font-lato md:grid-cols-6 md:gap-5">
           {services.map((item) => (
             <DashboardServiceCard
               key={item.title}
@@ -358,7 +358,7 @@ export default function DashboardPage() {
           ))}
         </section>
 
-        <section className="mt-4 rounded-[10px] bg-white px-3 py-3 shadow-sm">
+        <section className="mt-4 rounded-[10px] bg-white px-3 py-3 shadow-sm md:mt-6 md:rounded-[16px] md:px-5 md:py-5">
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[#E8F0FF] text-[#2458E8]">
@@ -389,20 +389,20 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <div className="mt-4 flex items-center justify-between">
-          <h3 className="text-[13px] font-bold tracking-wide">
+        <div className="mt-4 flex items-center justify-between md:mt-7">
+          <h3 className="text-[13px] font-bold tracking-wide md:text-[16px]">
             Transaction History
           </h3>
 
           <Link
             href="/transactions"
-            className="text-[12px] text-black/50"
+            className="text-[12px] text-black/50 md:text-[13px]"
           >
             View all
           </Link>
         </div>
 
-        <section className="mt-2 space-y-2 font-lato">
+        <section className="mt-2 space-y-2 font-lato md:grid md:grid-cols-3 md:gap-4 md:space-y-0">
           {error ? (
             <div className="rounded-[7px] border border-red-200 bg-red-50 px-3 py-3 text-[12px] text-red-700">
               <p>{error}</p>
@@ -436,9 +436,9 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="mt-4 overflow-hidden rounded-[8px] border border-[#55AE62] bg-white shadow-[0_0_8px_rgba(47,145,88,0.8)]">
+        <section className="mt-4 overflow-hidden rounded-[8px] border border-[#55AE62] bg-white shadow-[0_0_8px_rgba(47,145,88,0.8)] md:mt-7 md:rounded-[16px]">
           <div className="flex">
-            <div className="relative h-[96px] w-[96px] shrink-0">
+            <div className="relative h-[96px] w-[96px] shrink-0 md:h-[132px] md:w-[150px]">
               <Image
                 src="/images/donations-avatar-2.png"
                 alt="Redeem"
@@ -447,32 +447,32 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="flex flex-1 flex-col justify-center px-3 text-center">
-              <h2 className="font-sf-condensed text-[22px] font-black leading-[22px] text-[#2E8B57]">
+            <div className="flex flex-1 flex-col justify-center px-3 text-center md:px-8 md:text-left">
+              <h2 className="font-sf-condensed text-[22px] font-black leading-[22px] text-[#2E8B57] md:text-[30px] md:leading-[32px]">
                 Register to Redeem Funds!
               </h2>
 
-              <p className="mt-2 font-lato text-[12px] text-black/55">
+              <p className="mt-2 font-lato text-[12px] text-black/55 md:text-[14px]">
                 Get redemption code for gifts, donations
               </p>
             </div>
           </div>
         </section>
 
-        <div className="mt-5 flex items-center justify-between">
-          <h3 className="text-[13px] font-bold tracking-wide">
+        <div className="mt-5 flex items-center justify-between md:mt-7">
+          <h3 className="text-[13px] font-bold tracking-wide md:text-[16px]">
             Recent Updates
           </h3>
 
           <Link
             href="/notifications"
-            className="text-[12px] text-black/50"
+            className="text-[12px] text-black/50 md:text-[13px]"
           >
             View all
           </Link>
         </div>
 
-        <section className="mt-3 space-y-2">
+        <section className="mt-3 space-y-2 md:grid md:grid-cols-3 md:gap-4 md:space-y-0">
           {isLoading ? (
             <div className="rounded-[10px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
               Loading updates…
@@ -493,10 +493,10 @@ export default function DashboardPage() {
           )}
         </section>
 
-        <section className="mt-8">
+        <section className="mt-8 md:mt-10 md:rounded-[18px] md:bg-white/60 md:p-5 md:shadow-sm">
           <svg
             viewBox="0 0 330 150"
-            className="h-[150px] w-full"
+            className="h-[150px] w-full md:h-[220px]"
           >
             {[0, 1, 2, 3, 4, 5, 6].map((y) => (
               <line
@@ -548,7 +548,7 @@ export default function DashboardPage() {
           </svg>
         </section>
 
-        <section className="mt-7">
+        <section className="mt-7 md:mt-10">
           <div className="flex items-center justify-between">
             <h3 className="font-sf-condensed text-[13px] font-bold tracking-wide">
               Offers
@@ -563,7 +563,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-3 flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
+          <div className="mt-3 flex gap-3 overflow-x-auto pb-3 scrollbar-hide md:grid md:grid-cols-4 md:gap-5 md:overflow-visible">
             {[1, 2, 3, 4].map((item) => (
               <AdvertCard key={item} />
             ))}
@@ -579,7 +579,9 @@ export default function DashboardPage() {
         />
       )}
 
-      <BottomNav />
+      <div className="md:hidden">
+        <BottomNav />
+      </div>
     </main>
   );
 }
@@ -596,9 +598,9 @@ function SmallActionCard({
   return (
     <Link
       href={href}
-      className="block text-center"
+      className="block text-center md:rounded-[14px] md:bg-white/50 md:px-3 md:py-4 md:shadow-sm md:transition md:hover:-translate-y-0.5 md:hover:shadow-md"
     >
-      <div className="mx-auto grid h-12 w-12 place-items-center rounded-md bg-white shadow-md">
+      <div className="mx-auto grid h-12 w-12 place-items-center rounded-md bg-white shadow-md md:h-14 md:w-14">
         <Image
           src={icon}
           alt={title}
@@ -608,7 +610,7 @@ function SmallActionCard({
         />
       </div>
 
-      <p className="mt-2 text-[12px] text-[#2B945D]">
+      <p className="mt-2 text-[12px] text-[#2B945D] md:text-[13px] md:font-semibold">
         {title}
       </p>
     </Link>
@@ -627,9 +629,9 @@ function DashboardServiceCard({
   return (
     <Link
       href={href}
-      className="block h-[70px] rounded-[5px] border border-black/10 bg-gradient-to-br from-white via-[#B8E6D1] to-[#A7D0EF] text-center shadow-md"
+      className="block h-[70px] rounded-[5px] border border-black/10 bg-gradient-to-br from-white via-[#B8E6D1] to-[#A7D0EF] text-center shadow-md md:h-[96px] md:rounded-[14px] md:pt-2 md:transition md:hover:-translate-y-0.5 md:hover:shadow-lg"
     >
-      <div className="mx-auto mt-1 grid h-11 w-11 place-items-center rounded-md bg-white shadow-md">
+      <div className="mx-auto mt-1 grid h-11 w-11 place-items-center rounded-md bg-white shadow-md md:h-12 md:w-12">
         <Image
           src={icon}
           alt={title}
@@ -639,7 +641,7 @@ function DashboardServiceCard({
         />
       </div>
 
-      <p className="mt-1 text-[12px] leading-none">
+      <p className="mt-1 text-[12px] leading-none md:mt-2 md:text-[13px] md:font-semibold">
         {title}
       </p>
     </Link>
@@ -652,8 +654,8 @@ function MoreServicesOverlay({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[999] overflow-y-auto bg-[#E7EBF0] px-6 pb-[100px] pt-5">
-      <section className="mx-auto max-w-[390px]">
+    <div className="fixed inset-0 z-[999] overflow-y-auto bg-[#E7EBF0] px-6 pb-[100px] pt-5 md:bg-black/35 md:px-8 md:py-10 md:backdrop-blur-sm">
+      <section className="mx-auto max-w-[390px] md:max-w-[980px] md:rounded-[22px] md:bg-[#E7EBF0] md:p-7 md:shadow-2xl">
         <div className="mb-3 flex items-center gap-3">
           <div className="h-px flex-1 bg-black/30" />
 
@@ -667,7 +669,7 @@ function MoreServicesOverlay({
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-3 md:grid-cols-6 md:gap-5">
           {allServices.map((item) => (
             <MoreServiceCard
               key={item.title}
@@ -697,7 +699,7 @@ function MoreServiceCard({
   return (
     <Link
       href={href}
-      className={`block h-[74px] rounded-[5px] border border-black/10 bg-gradient-to-br from-white via-[#B8E6D1] to-[#A7D0EF] text-center shadow-md ${className}`}
+      className={`block h-[74px] rounded-[5px] border border-black/10 bg-gradient-to-br from-white via-[#B8E6D1] to-[#A7D0EF] text-center shadow-md md:h-[96px] md:rounded-[14px] md:pt-2 md:transition md:hover:-translate-y-0.5 md:hover:shadow-lg ${className}`}
     >
       <div className="mx-auto mt-2 grid h-10 w-10 place-items-center rounded-md bg-white shadow-md">
         <Image
@@ -756,7 +758,7 @@ function TransactionCard({
   const isIn = type === "in";
 
   return (
-    <div className="flex items-center justify-between rounded-[7px] border border-black/10 bg-[#F2F5F8] px-3 py-2 shadow-sm">
+    <div className="flex items-center justify-between rounded-[7px] border border-black/10 bg-[#F2F5F8] px-3 py-2 shadow-sm md:min-h-[78px] md:rounded-[14px] md:bg-white md:px-4 md:py-3">
       <div className="flex items-center gap-3">
         {isIn ? (
           <ArrowDownLeft
@@ -820,7 +822,7 @@ function LiveUpdateCard({
         notification.action_url ||
         "/notifications"
       }
-      className="flex w-full items-center gap-3 rounded-[10px] border border-black/10 bg-[#F3F6FA] px-3 py-2 text-left shadow-sm"
+      className="flex w-full items-center gap-3 rounded-[10px] border border-black/10 bg-[#F3F6FA] px-3 py-2 text-left shadow-sm md:min-h-[86px] md:rounded-[14px] md:bg-white md:px-4 md:py-3"
     >
       <Icon
         size={20}
@@ -853,8 +855,8 @@ function LiveUpdateCard({
 
 function AdvertCard() {
   return (
-    <article className="min-w-[108px] rounded-[5px] bg-white p-2 shadow-md">
-      <div className="grid h-[68px] place-items-center rounded-md bg-white shadow-md">
+    <article className="min-w-[108px] rounded-[5px] bg-white p-2 shadow-md md:min-w-0 md:rounded-[14px] md:p-4">
+      <div className="grid h-[68px] place-items-center rounded-md bg-white shadow-md md:h-[110px] md:bg-[#F6F8FA]">
         <Image
           src="/images/update-avatar-2.png"
           alt="Advert"

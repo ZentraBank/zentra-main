@@ -76,6 +76,8 @@ uploads/
 # =========================
 *.sql
 *.sqlite
+/storage/private/*
+!/storage/private/.gitkeep
 
 # =========================
 # PM2

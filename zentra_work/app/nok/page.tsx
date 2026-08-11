@@ -78,7 +78,14 @@ export default function PodRedemptionPage() {
             </div>
           ))}
         </div>
+          <Link
+  href="/nok/claims"
+  className="mt-4 flex h-[42px] w-full items-center justify-center rounded-[10px] bg-white text-[13px] font-bold text-[#2458E8] shadow-sm"
+>
+  View my POD claims
+</Link>
         <div className="mt-10 rounded-[6px] border border-[#D8DEE8] bg-white px-4 py-4">
+          
   <Link
     href="/nok/death-certificate"
     type="button"
@@ -101,6 +108,7 @@ export default function PodRedemptionPage() {
   >
     Proceed
   </Link>
+
 </div>
       </section>
     </main>

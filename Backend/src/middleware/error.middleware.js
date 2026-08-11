@@ -44,22 +44,27 @@ const errorMiddleware = (
   }
 
   const response = {
-    success: false,
-    message,
-  };
+  success: false,
+  message,
+};
 
-const validationErrors =
-  error.errors || error.details || null;
-
-if (validationErrors) {
-  response.errors = validationErrors;
+if (
+  error.errors ||
+  error.details
+) {
+  response.errors =
+    error.errors ||
+    error.details;
 }
 
-  if (env.isDevelopment) {
-    response.stack = error.stack;
-  }
+if (env.isDevelopment) {
+  response.stack =
+    error.stack;
+}
 
-  return res.status(statusCode).json(response);
+return res
+  .status(statusCode)
+  .json(response);
 };
 
 module.exports = errorMiddleware;

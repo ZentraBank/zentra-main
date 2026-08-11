@@ -101,6 +101,17 @@ router.get(
 );
 
 router.get(
+  "/requests/me/:requestId",
+  validate(
+    schemas.requestId
+  ),
+  requireAllPermissions(
+    "donations.requests.read"
+  ),
+  controller.getMine
+);
+
+router.get(
   "/admin/requests",
   validate(
     schemas.list

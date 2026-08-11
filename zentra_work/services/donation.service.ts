@@ -148,6 +148,14 @@ export const donationService = {
     );
   },
 
+getMine(requestId: string) {
+  return apiRequest<DonationRequest>(
+    `/donations/requests/me/${encodeURIComponent(
+      requestId,
+    )}`,
+  );
+},
+
   verifyRedemptionOtp(
     redemptionId: string,
     otp: string,

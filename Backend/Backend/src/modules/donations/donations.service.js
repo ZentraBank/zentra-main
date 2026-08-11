@@ -523,6 +523,33 @@ const verifyRedemptionOtp =
     return verified;
   };
 
+const getOwnRequest = async ({
+  auth,
+  requestId,
+}) => {
+  const request =
+    await repo.findDonationRequestById({
+      tenantId:
+        auth.tenantId,
+
+      requestId,
+    });
+
+  if (
+    !request ||
+    request.beneficiary_user_id !==
+      auth.userId
+  ) {
+    throw httpError(
+      404,
+      "Donation request not found"
+    );
+  }
+
+  return request;
+};
+
+
 const completeRedemption =
   async ({
     auth,
@@ -613,5 +640,6 @@ module.exports = {
   reviewRequest,
   requestRedemption,
   verifyRedemptionOtp,
+  getOwnRequest,
   completeRedemption,
 };
