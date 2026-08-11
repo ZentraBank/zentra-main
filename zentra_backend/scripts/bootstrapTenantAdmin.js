@@ -49,19 +49,42 @@ async function main() {
     [email]
   );
 
-  if (!user) {
-    const id = randomUUID();
-    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
+  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 12);
 
-    await db.query(
-      `INSERT INTO users
-       (id, first_name, last_name, email, password_hash, status, email_verified_at)
-       VALUES (?, ?, ?, ?, ?, 'active', NOW())`,
-      [id, ADMIN_FIRST_NAME, ADMIN_LAST_NAME, email, passwordHash]
-    );
+if (!user) {
+  const id = randomUUID();
 
-    user = { id };
-  }
+  await db.query(
+    `INSERT INTO users
+     (id, first_name, last_name, email, password_hash, status, email_verified_at)
+     VALUES (?, ?, ?, ?, ?, 'active', NOW())`,
+    [
+      id,
+      ADMIN_FIRST_NAME,
+      ADMIN_LAST_NAME,
+      email,
+      passwordHash,
+    ]
+  );
+
+  user = { id };
+} else {
+  await db.query(
+    `UPDATE users
+     SET password_hash = ?,
+         first_name = ?,
+         last_name = ?,
+         status = 'active',
+         email_verified_at = COALESCE(email_verified_at, NOW())
+     WHERE id = ?`,
+    [
+      passwordHash,
+      ADMIN_FIRST_NAME,
+      ADMIN_LAST_NAME,
+      user.id,
+    ]
+  );
+}
 
   await db.query(
     `INSERT INTO tenant_memberships
