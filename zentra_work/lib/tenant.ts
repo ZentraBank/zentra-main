@@ -33,5 +33,5 @@ export function getTenantSlug(): string {
     }
   }
 
-  return "zentrabank";
+  return "zentra-bank";
 }

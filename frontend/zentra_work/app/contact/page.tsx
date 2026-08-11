@@ -1,2 +1,0 @@
-import Link from "next/link";
-export default function Page(){return <main className="min-h-screen bg-[#E7EBF0] px-5 py-12"><section className="mx-auto max-w-3xl rounded-[28px] bg-white p-7 shadow-sm"><Link href="/" className="text-sm font-semibold text-[#2458E8]">← Back</Link><h1 className="mt-6 text-3xl font-black">Contact Us</h1><p className="mt-5 leading-7 text-black/65">For account-specific help, use the secure in-app support chat. Do not send passwords, one-time codes, full card details or transaction PINs through ordinary messages.</p></section></main>}
