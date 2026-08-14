@@ -169,6 +169,7 @@ const handleSave = async () => {
   }
 
   const firstName = names[0];
+
   const lastName =
     names[names.length - 1];
 
@@ -182,10 +183,6 @@ const handleSave = async () => {
   setCreatedCredentials(null);
 
   try {
-    /*
-     * Step 1:
-     * Create the client and account.
-     */
     const result = await createClient({
       firstName,
       middleName,
@@ -263,9 +260,8 @@ const handleSave = async () => {
     });
 
     /*
-     * Step 2:
-     * Upload the selected profile picture
-     * after we have the new client's ID.
+     * Upload profile photo if one
+     * was selected.
      */
     if (profilePhoto) {
       try {
@@ -275,50 +271,72 @@ const handleSave = async () => {
         );
       } catch (avatarError) {
         /*
-         * The client already exists at this
-         * point, so don't report the entire
-         * client creation as failed.
+         * The client has already been
+         * created at this point.
          */
         setSaveError(
-          `Client created, but the profile picture could not be uploaded: ${getApiErrorMessage(
+          `Client was created, but the profile picture could not be uploaded: ${getApiErrorMessage(
             avatarError,
           )}`,
         );
+
+        /*
+         * If a temporary password was
+         * generated, still show it.
+         */
+        if (result.temporaryPassword) {
+          setCreatedCredentials({
+            email:
+              result.client.email,
+
+            temporaryPassword:
+              result.temporaryPassword,
+
+            accountNumber:
+              result.account
+                ?.account_number,
+          });
+        }
+
+        return;
       }
     }
 
-    /*
-     * Step 3:
-     * Show the credentials returned by
-     * the backend.
-     */
-    setCreatedCredentials({
-      email:
-        result.client.email,
-
-      temporaryPassword:
-        result.temporaryPassword,
-
-      accountNumber:
-        result.account
-          ?.account_number,
-    });
-
-    /*
-     * Step 4:
-     * Put the generated account number
-     * into the existing account-number field.
-     */
     if (
       result.account
         ?.account_number
     ) {
       update(
         "accountNumber",
-        result.account
-          .account_number,
+        result.account.account_number,
       );
     }
+
+    /*
+     * Generated password:
+     * stay on page so admin can copy it.
+     */
+    if (result.temporaryPassword) {
+      setCreatedCredentials({
+        email:
+          result.client.email,
+
+        temporaryPassword:
+          result.temporaryPassword,
+
+        accountNumber:
+          result.account
+            ?.account_number,
+      });
+
+      return;
+    }
+
+    /*
+     * Admin supplied the password:
+     * nothing sensitive needs displaying,
+     * so go directly back to clients.
+     */
     router.push("/clients");
     router.refresh();
   } catch (error) {
@@ -519,40 +537,16 @@ const handleSave = async () => {
                   </p>
                 )}
 
-                {createdCredentials && (
-                  <div className="mt-3 rounded-xl bg-emerald-500/15 px-3 py-3 text-xs text-emerald-100">
-                    <p className="font-bold">
-                      Client created
-                      successfully.
-                    </p>
-
-                    <p className="mt-1">
-                      Email:{" "}
-                      {
-                        createdCredentials.email
-                      }
-                    </p>
-
-                    {createdCredentials.accountNumber && (
-                      <p>
-                        Account:{" "}
-                        {
-                          createdCredentials.accountNumber
-                        }
-                      </p>
-                    )}
-
-                    {createdCredentials.temporaryPassword && (
-                      <p className="mt-1 break-all">
-                        Temporary
-                        password:{" "}
-                        {
-                          createdCredentials.temporaryPassword
-                        }
-                      </p>
-                    )}
-                  </div>
-                )}
+                <button
+  type="button"
+  onClick={() => {
+    router.push("/clients");
+    router.refresh();
+  }}
+  className="mt-3 w-full rounded-lg bg-white px-3 py-2 text-xs font-bold text-black"
+>
+  Continue to Clients
+</button>
               </section>
             </aside>
 
