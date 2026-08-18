@@ -385,10 +385,56 @@ const getAvatar = async ({
   };
 };
 
+const resetPassword = async ({
+  tenantId,
+  clientId,
+  password,
+}) => {
+  const client =
+    await repo.findById({
+      tenantId,
+      clientId,
+    });
+
+  if (!client) {
+    throw httpError(
+      404,
+      "Client not found"
+    );
+  }
+
+  const passwordHash =
+    await bcrypt.hash(
+      password,
+      12
+    );
+
+  const updated =
+    await repo.updatePassword({
+      tenantId,
+      clientId,
+      passwordHash,
+    });
+
+  if (!updated) {
+    throw httpError(
+      500,
+      "Unable to reset client password"
+    );
+  }
+
+  return {
+    clientId,
+    email: client.email,
+  };
+};
+
+
 module.exports = {
   create,
   list,
   get,
   uploadAvatar,
   getAvatar,
+  resetPassword,
 };

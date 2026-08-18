@@ -101,45 +101,72 @@ module.exports = {
         .required(),
     }),
   },
-  updateTenantTransferSchema: {
+updateTenantTransferSchema: {
   params: Joi.object({
-    transferId: Joi.string().uuid().required(),
+    transferId: Joi.string()
+      .uuid()
+      .required(),
   }),
 
   body: Joi.object({
-    sourceAccountId: Joi.string().uuid().optional(),
-
-    destinationAccountNumber: Joi.string()
-      .trim()
-      .pattern(/^\d{8,20}$/)
-      .optional(),
-
-    amount: Joi.number()
-      .positive()
-      .precision(2)
-      .optional(),
-
-    currency: Joi.string()
-      .trim()
-      .uppercase()
-      .length(3)
-      .optional(),
-
+    /*
+     * Genuine transfer metadata.
+     */
     description: Joi.string()
       .trim()
       .max(255)
       .allow("")
       .optional(),
 
-    status: Joi.string()
-      .valid(
-        "pending",
-        "processing",
-        "completed",
-        "failed",
-        "cancelled",
-        "reversed"
+    /*
+     * Tenant-controlled display/admin metadata.
+     */
+    transactionType: Joi.string()
+      .trim()
+      .max(50)
+      .allow("")
+      .optional(),
+
+    displayStatus: Joi.string()
+      .trim()
+      .max(50)
+      .allow("")
+      .optional(),
+
+    contactLabel: Joi.string()
+      .trim()
+      .max(50)
+      .allow("")
+      .optional(),
+
+    contactName: Joi.string()
+      .trim()
+      .max(150)
+      .allow("")
+      .optional(),
+
+    bankType: Joi.string()
+      .trim()
+      .max(50)
+      .allow("")
+      .optional(),
+
+    displayDate: Joi.date()
+      .iso()
+      .allow(null)
+      .optional(),
+
+    displayTime: Joi.string()
+      .pattern(
+        /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/,
       )
+      .allow("", null)
+      .optional(),
+
+    fee: Joi.number()
+      .min(0)
+      .precision(2)
+      .allow(null)
       .optional(),
 
     authorizationCode: Joi.string()
@@ -150,7 +177,25 @@ module.exports = {
 
     bankAddress: Joi.string()
       .trim()
-      .max(255)
+      .max(500)
+      .allow("")
+      .optional(),
+
+    customerCareLine: Joi.string()
+      .trim()
+      .max(100)
+      .allow("")
+      .optional(),
+
+    customerCareCountry: Joi.string()
+      .trim()
+      .max(100)
+      .allow("")
+      .optional(),
+
+    customerCarePhone: Joi.string()
+      .trim()
+      .max(50)
       .allow("")
       .optional(),
   }).min(1),

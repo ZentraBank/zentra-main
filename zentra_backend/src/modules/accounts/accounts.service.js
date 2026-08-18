@@ -75,4 +75,31 @@ const setStatus = async ({ accountId, tenantId, status }) => {
   return repo.updateStatus({ accountId, tenantId, status });
 };
 
-module.exports = { listOwn, getOwn, createOwn, setStatus };
+const listTenantAccounts = ({ tenantId }) =>
+  repo.findByTenant({ tenantId });
+
+const getTenantAccount = async ({
+  tenantId,
+  accountId,
+}) => {
+  const account =
+    await repo.findTenantAccountById({
+      tenantId,
+      accountId,
+    });
+
+  if (!account) {
+    const error =
+      new Error(
+        "Account not found"
+      );
+
+    error.statusCode = 404;
+
+    throw error;
+  }
+
+  return account;
+};
+
+module.exports = { listOwn, getOwn, createOwn, setStatus, listTenantAccounts, getTenantAccount };

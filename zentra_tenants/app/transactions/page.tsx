@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
 import { getApiErrorMessage } from "@/lib/api";
-import { getMyTransfers } from "@/services/banking.service";
+// import { getMyTransfers } from "@/services/banking.service";
+import { getTenantTransfers } from "@/services/banking.service";
 import type { Transfer } from "@/types/banking.types";
 import { ArrowUpRight, RefreshCw, Search } from "lucide-react";
 
@@ -22,7 +23,7 @@ export default function TransactionsPage() {
     setLoading(true);
     setError("");
     try {
-      setTransactions(await getMyTransfers({ page: 1, pageSize: 100 }));
+      setTransactions(await getTenantTransfers({ page: 1, pageSize: 100 }));
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
     } finally {
@@ -56,7 +57,9 @@ export default function TransactionsPage() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Transactions</h1>
-          <p className="text-sm text-white/70">Track your real transfer activity.</p>
+          <p className="text-sm text-white/70">
+  Track transfer activity across your tenant clients.
+</p>
         </div>
         <button type="button" onClick={() => void load()} disabled={loading} className="rounded-xl border border-white/20 bg-black/30 p-3 text-white disabled:opacity-50" aria-label="Refresh transactions">
           <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
@@ -91,12 +94,28 @@ export default function TransactionsPage() {
         ) : filtered.length === 0 ? (
           <div className="p-8 text-center text-gray-500">No transactions match your current filters.</div>
         ) : filtered.map((tx) => (
-          <Link key={tx.id} href={`/dashboard/transfer/transaction?id=${tx.id}`} className="flex items-center justify-between gap-4 border-b border-gray-100 p-4 transition hover:bg-gray-50 last:border-b-0">
+          <Link key={tx.id} href={`/transactions/${tx.id}`} className="flex items-center justify-between gap-4 border-b border-gray-100 p-4 transition hover:bg-gray-50 last:border-b-0">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><ArrowUpRight size={20} /></div>
               <div className="min-w-0">
-                <p className="truncate font-semibold">{tx.destination_account_name || tx.description || "Transfer sent"}</p>
-                <p className="truncate text-xs text-gray-500">{tx.reference} · {new Date(tx.created_at).toLocaleString()}</p>
+                <p className="truncate font-semibold">
+      {tx.client_name || "Unknown client"}
+    </p>
+
+    <p className="truncate text-xs text-gray-500">
+      {tx.client_email || tx.source_account_number || "—"}
+    </p>
+
+      <p className="mt-1 truncate text-xs text-gray-400">
+        →{" "}
+        {tx.destination_account_name ||
+          tx.destination_account_name_resolved ||
+          tx.destination_account_number}
+        {" · "}
+        {tx.reference}
+        {" · "}
+        {new Date(tx.created_at).toLocaleString()}
+      </p>
               </div>
             </div>
             <div className="shrink-0 text-right">

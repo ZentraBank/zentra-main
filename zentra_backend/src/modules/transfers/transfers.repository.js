@@ -211,28 +211,43 @@ const createLedgerEntry = async ({
 */
 
 const transferSelect = `
-  SELECT
-    t.*,
+SELECT
+  t.*,
 
-    sa.account_number AS source_account_number,
-    sa.account_name AS source_account_name,
-    sa.currency AS source_account_currency,
-    sa.status AS source_account_status,
+  sa.account_number AS source_account_number,
+  sa.account_name AS source_account_name,
+  sa.currency AS source_account_currency,
+  sa.status AS source_account_status,
 
-    da.account_number AS destination_account_number_resolved,
-    da.account_name AS destination_account_name,
-    da.currency AS destination_account_currency,
-    da.status AS destination_account_status
+  da.account_number AS destination_account_number_resolved,
+  da.account_name AS destination_account_name_resolved,
+  da.currency AS destination_account_currency,
+  da.status AS destination_account_status,
 
-  FROM transfers t
+  u.id AS client_id,
+  CONCAT_WS(
+    ' ',
+    u.first_name,
+    u.middle_name,
+    u.last_name
+  ) AS client_name,
+  u.email AS client_email,
+  u.phone AS client_phone,
+  u.avatar_url AS client_avatar_url
 
-  LEFT JOIN accounts sa
-    ON sa.id = t.source_account_id
-   AND sa.tenant_id = t.tenant_id
+FROM transfers t
 
-  LEFT JOIN accounts da
-    ON da.id = t.destination_account_id
-   AND da.tenant_id = t.tenant_id
+LEFT JOIN accounts sa
+  ON sa.id = t.source_account_id
+ AND sa.tenant_id = t.tenant_id
+
+LEFT JOIN accounts da
+  ON da.id = t.destination_account_id
+ AND da.tenant_id = t.tenant_id
+
+LEFT JOIN users u
+  ON u.id = t.user_id
+ AND u.deleted_at IS NULL
 `;
 
 const findById = async ({

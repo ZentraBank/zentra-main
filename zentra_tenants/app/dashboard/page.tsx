@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
 import { getApiErrorMessage } from "@/lib/api";
-import { getMyAccounts, getMyTransfers } from "@/services/banking.service";
+// import { getMyAccounts, getMyTransfers } from "@/services/banking.service";
+import {
+  getTenantAccounts,
+  getTenantTransfers,
+} from "@/services/banking.service";
 import { useAuthStore } from "@/store/auth.store";
 import type { BankAccount, Transfer } from "@/types/banking.types";
 import {
@@ -31,7 +35,7 @@ const mainServices = [
 const accountServices = [
   { title: "My Clients", icon: UsersRound, href: "/clients" },
   { title: "Me as Agent", icon: UserCog, href: "/agent" },
-  { title: "Account info.", icon: ArrowRightLeft, href: "/accounts" },
+  { title: "Client Accounts", icon: ArrowRightLeft, href: "/accounts" },
 ];
 
 function ServiceCard({ title, icon: Icon, href }: { title: string; icon: React.ElementType; href: string }) {
@@ -55,11 +59,13 @@ export default function ServicesPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([getMyAccounts(), getMyTransfers({ page: 1, pageSize: 5 })])
-      .then(([accountRows, transferRows]) => {
-        setAccounts(accountRows);
-        setTransfers(transferRows);
-      })
+    Promise.all([
+  getTenantAccounts(),
+  getTenantTransfers({
+    page: 1,
+    pageSize: 5,
+  }),
+])
       .catch((requestError) => setError(getApiErrorMessage(requestError)));
   }, []);
 
@@ -78,8 +84,8 @@ export default function ServicesPage() {
             <p className="text-sm text-white/70">Welcome back</p>
             <h1 className="mt-1 text-2xl font-bold">{user?.full_name || user?.email}</h1>
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-black/35 p-3"><p className="text-xs text-white/55">Accounts</p><p className="mt-1 text-xl font-bold">{accounts.length}</p></div>
-              <div className="rounded-xl bg-black/35 p-3"><p className="text-xs text-white/55">Recent transfers</p><p className="mt-1 text-xl font-bold">{transfers.length}</p></div>
+              <div className="rounded-xl bg-black/35 p-3"><p className="text-xs text-white/55">Clients Accounts</p><p className="mt-1 text-xl font-bold">{accounts.length}</p></div>
+              <div className="rounded-xl bg-black/35 p-3"><p className="text-xs text-white/55">Recent Client transfers</p><p className="mt-1 text-xl font-bold">{transfers.length}</p></div>
               <div className="rounded-xl bg-black/35 p-3"><p className="text-xs text-white/55">Balance</p><p className="mt-1 text-base font-bold">{balances.length ? balances.map(([currency, value]) => `${currency} ${value.toLocaleString()}`).join(" · ") : "No accounts"}</p></div>
             </div>
             {error ? <p className="mt-3 rounded-lg bg-red-950/80 p-3 text-sm text-red-100">{error}</p> : null}

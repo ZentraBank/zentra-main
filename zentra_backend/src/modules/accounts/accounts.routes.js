@@ -21,6 +21,20 @@ router.get(
 );
 
 router.get(
+  "/tenant",
+  requireAllPermissions("accounts.read"),
+  controller.listTenantAccounts
+);
+
+router.get(
+  "/tenant/:accountId",
+  requireAllPermissions(
+    "accounts.read"
+  ),
+  controller.getTenantAccount
+);
+
+router.get(
   "/me/:accountId",
   validate(schemas.accountIdSchema),
   requireAllPermissions("accounts.read"),
@@ -41,5 +55,7 @@ router.patch(
   requireAllPermissions("accounts.manage"),
   controller.setStatus
 );
+
+
 
 module.exports = router;

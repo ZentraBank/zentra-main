@@ -145,8 +145,40 @@ const updateAvatar = async ({
   return result.affectedRows > 0;
 };
 
+const updatePassword = async ({
+  tenantId,
+  clientId,
+  passwordHash,
+}) => {
+  const [result] = await db.query(
+    `UPDATE users u
+
+     INNER JOIN tenant_memberships tm
+       ON tm.user_id = u.id
+      AND tm.tenant_id = ?
+
+     INNER JOIN roles r
+       ON r.id = tm.role_id
+      AND r.code = 'customer'
+
+     SET u.password_hash = ?,
+         u.updated_at = NOW()
+
+     WHERE u.id = ?
+       AND u.deleted_at IS NULL`,
+    [
+      tenantId,
+      passwordHash,
+      clientId,
+    ]
+  );
+
+  return result.affectedRows > 0;
+};
+
 module.exports = {
   listByTenant,
   findById,
   updateAvatar,
+  updatePassword,
 };

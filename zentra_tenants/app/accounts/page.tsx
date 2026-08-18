@@ -1,10 +1,12 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
 import { getApiErrorMessage } from "@/lib/api";
-import { getMyAccounts } from "@/services/banking.service";
+// import { getMyAccounts } from "@/services/banking.service";
+import { getTenantAccounts} from "@/services/banking.service";
 import type { BankAccount } from "@/types/banking.types";
 import { ArrowRight, RefreshCw, Wallet } from "lucide-react";
 
@@ -24,7 +26,7 @@ export default function AccountsPage() {
     setLoading(true);
     setError("");
     try {
-      setAccounts(await getMyAccounts());
+      setAccounts(await getTenantAccounts());
     } catch (requestError) {
       setError(getApiErrorMessage(requestError));
     } finally {
@@ -52,7 +54,9 @@ export default function AccountsPage() {
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Accounts</h1>
-          <p className="text-sm text-white/70">View your live account balances and details.</p>
+         <p className="text-sm text-white/70">
+  View and manage client accounts for this tenant.
+</p>
         </div>
         <button
           type="button"
@@ -89,8 +93,13 @@ export default function AccountsPage() {
       ) : accounts.length === 0 ? (
         <div className="rounded-2xl border border-white/15 bg-black/45 p-8 text-center text-white">
           <Wallet className="mx-auto mb-3 text-white/60" size={34} />
-          <p className="font-semibold">No account has been created for you yet.</p>
-          <p className="mt-1 text-sm text-white/60">Contact your tenant administrator if you expected an account.</p>
+          <p className="font-semibold">
+  No client accounts have been created yet.
+</p>
+
+<p className="mt-1 text-sm text-white/60">
+  Accounts created for clients under this tenant will appear here.
+</p>
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -108,6 +117,21 @@ export default function AccountsPage() {
                   {account.status}
                 </span>
               </div>
+              <div className="mt-5">
+              <p className="text-xs uppercase tracking-[0.16em] text-gray-400">
+                Client
+              </p>
+
+              <p className="mt-1 font-semibold text-gray-900">
+                {account.client_name || account.account_name}
+              </p>
+
+              {account.client_email ? (
+                <p className="mt-0.5 text-xs text-gray-500">
+                  {account.client_email}
+                </p>
+              ) : null}
+            </div>
               <p className="mt-5 text-sm text-gray-500">Available balance</p>
               <h2 className="mt-1 text-3xl font-bold text-gray-900">{money(account.balance, account.currency)}</h2>
               <div className="mt-6 grid grid-cols-2 gap-4 text-sm">

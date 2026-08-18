@@ -139,7 +139,27 @@ const clientIdSchema = {
   }).required(),
 };
 
+const resetPasswordSchema = {
+  params: Joi.object({
+    clientId: Joi.string()
+      .guid({
+        version: ["uuidv4"],
+      })
+      .required(),
+  }).required(),
+
+  body: Joi.object({
+    password: Joi.string()
+      .min(8)
+      .max(128)
+      .pattern(/[A-Za-z]/)
+      .pattern(/[0-9]/)
+      .required(),
+  }).required(),
+};
+
 module.exports = {
   createClientSchema,
   clientIdSchema,
+  resetPasswordSchema,
 };

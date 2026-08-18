@@ -95,6 +95,24 @@ export type UploadClientAvatarResult = {
   };
 };
 
+export async function resetClientPassword(
+  clientId: string,
+  password: string,
+) {
+  const response = await api.patch<{
+    data: {
+      clientId: string;
+      email: string;
+    };
+  }>(
+    `/clients/${clientId}/password`,
+    {
+      password,
+    },
+  );
+
+  return response.data.data;
+}
 export async function createClient(
   input: CreateClientInput,
 ) {
@@ -152,6 +170,8 @@ export async function uploadClientAvatar(
       ],
     },
   );
+
+
 
   return response.data.data;
 }

@@ -63,4 +63,11 @@ router.patch(
   controller.uploadAvatar
 );
 
+router.patch(
+  "/:clientId/password",
+  validate(schemas.resetPasswordSchema),
+  requireAllPermissions("users.update"),
+  controller.resetPassword
+);
+
 module.exports = router;

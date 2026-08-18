@@ -48,4 +48,33 @@ const setStatus = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { listOwn, getOwn, createOwn, setStatus };
+const listTenantAccounts = asyncHandler(async (req, res) => {
+  const data = await service.listTenantAccounts({
+    tenantId: req.auth.tenantId,
+  });
+
+  return sendSuccess(res, {
+    message: "Tenant accounts retrieved successfully",
+    data,
+  });
+});
+
+const getTenantAccount = asyncHandler(
+  async (req, res) => {
+    const data =
+      await service.getTenantAccount({
+        tenantId:
+          req.auth.tenantId,
+        accountId:
+          req.params.accountId,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Tenant account retrieved successfully",
+      data,
+    });
+  }
+);
+
+module.exports = { listOwn, getOwn, createOwn, setStatus, listTenantAccounts, getTenantAccount };

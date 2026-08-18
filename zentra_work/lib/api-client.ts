@@ -188,6 +188,21 @@ export async function apiRequest<T>(
   return result.data;
 }
 
+export function getApiErrorMessage(
+  error: unknown,
+  fallback = "Something went wrong. Please try again.",
+): string {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export {
   API_BASE_URL,
   refreshSession,

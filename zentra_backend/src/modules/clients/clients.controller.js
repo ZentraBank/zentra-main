@@ -83,10 +83,24 @@ const getAvatar = asyncHandler(async (req, res) => {
   );
 });
 
+const resetPassword = asyncHandler(async (req, res) => {
+  const data = await service.resetPassword({
+    tenantId: req.auth.tenantId,
+    clientId: req.params.clientId,
+    password: req.body.password,
+  });
+
+  return sendSuccess(res, {
+    message: "Client password reset successfully",
+    data,
+  });
+});
+
 module.exports = {
   create,
   list,
   get,
   uploadAvatar,
   getAvatar,
+  resetPassword,
 };

@@ -59,7 +59,117 @@ const updateStatus = async ({ accountId, tenantId, status }) => {
   return findById({ accountId, tenantId });
 };
 
+const findByTenant = async ({ tenantId }) => {
+  const [rows] = await db.query(
+    `SELECT
+       a.id,
+       a.user_id,
+       a.tenant_id,
+       a.account_number,
+       a.account_name,
+       a.account_type,
+       a.currency,
+       a.balance,
+       a.status,
+       a.created_at,
+       a.updated_at,
+
+       u.first_name,
+       u.middle_name,
+       u.last_name,
+       CONCAT_WS(
+         ' ',
+         u.first_name,
+         u.middle_name,
+         u.last_name
+       ) AS client_name,
+       u.email AS client_email,
+       u.phone AS client_phone,
+       u.avatar_url AS client_avatar_url
+
+     FROM accounts a
+
+     INNER JOIN users u
+       ON u.id = a.user_id
+
+     INNER JOIN tenant_memberships tm
+       ON tm.user_id = u.id
+      AND tm.tenant_id = a.tenant_id
+
+     INNER JOIN roles r
+       ON r.id = tm.role_id
+      AND r.code = 'customer'
+
+     WHERE a.tenant_id = ?
+       AND u.deleted_at IS NULL
+
+     ORDER BY a.created_at DESC`,
+    [tenantId]
+  );
+
+  return rows;
+};
+
+const findTenantAccountById = async ({
+  tenantId,
+  accountId,
+}) => {
+  const [rows] = await db.query(
+    `SELECT
+       a.id,
+       a.user_id,
+       a.tenant_id,
+       a.account_number,
+       a.account_name,
+       a.account_type,
+       a.currency,
+       a.balance,
+       a.status,
+       a.created_at,
+       a.updated_at,
+
+       u.first_name,
+       u.middle_name,
+       u.last_name,
+       CONCAT_WS(
+         ' ',
+         u.first_name,
+         u.middle_name,
+         u.last_name
+       ) AS client_name,
+       u.email AS client_email,
+       u.phone AS client_phone,
+       u.avatar_url AS client_avatar_url
+
+     FROM accounts a
+
+     INNER JOIN users u
+       ON u.id = a.user_id
+
+     INNER JOIN tenant_memberships tm
+       ON tm.user_id = u.id
+      AND tm.tenant_id = a.tenant_id
+
+     INNER JOIN roles r
+       ON r.id = tm.role_id
+      AND r.code = 'customer'
+
+     WHERE a.id = ?
+       AND a.tenant_id = ?
+       AND u.deleted_at IS NULL
+
+     LIMIT 1`,
+    [
+      accountId,
+      tenantId,
+    ]
+  );
+
+  return rows[0] || null;
+};
+
 module.exports = {
   findById, findByUser, countByUser,
-  existsByNumber, create, updateStatus
+  existsByNumber, create, updateStatus,
+  findByTenant, findTenantAccountById
 };

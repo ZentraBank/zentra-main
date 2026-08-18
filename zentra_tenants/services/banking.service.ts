@@ -24,6 +24,46 @@ export async function getMyTransfers(params?: {
   return response.data.data;
 }
 
+export async function getTenantAccounts() {
+  const response = await api.get<{
+    data: BankAccount[];
+  }>("/accounts/tenant");
+
+  return response.data.data;
+}
+
+export async function getTenantTransfers(
+  params?: {
+    page?: number;
+    pageSize?: number;
+    status?: string;
+  },
+) {
+  const response = await api.get<{
+    data:
+      | Transfer[]
+      | {
+          transfers: Transfer[];
+          pagination?: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+          };
+        };
+  }>("/transfers/tenant", {
+    params,
+  });
+
+  const data = response.data.data;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  return data.transfers || [];
+}
+
 export async function getMyTransfer(transferId: string): Promise<Transfer> {
   const response = await api.get<ApiEnvelope<Transfer>>(`/transfers/me/${transferId}`);
   return response.data.data;

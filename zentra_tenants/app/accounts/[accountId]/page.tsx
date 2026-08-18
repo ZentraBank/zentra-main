@@ -42,9 +42,9 @@ export default function AccountDetailsPage() {
             <Detail label="Account type" value={account.account_type} />
             <Detail label="Currency" value={account.currency} />
           </div>
-          <Link href={`/dashboard/transfer?sourceAccount=${account.id}`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-tenant px-5 py-3 font-semibold text-white">
+          {/* <Link href={`/dashboard/transfer?sourceAccount=${account.id}`} className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-tenant px-5 py-3 font-semibold text-white">
             <ArrowRightLeft size={18} /> Make a transfer
-          </Link>
+          </Link> */}
         </div>
       )}
     </AppShell>
