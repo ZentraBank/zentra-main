@@ -1,43 +1,38 @@
 import { apiRequest } from "@/lib/api-client";
 import type { ClientAccount } from "@/types/account";
 
-
 export type CreateAccountInput = {
   accountName: string;
   accountType:
     | "wallet"
     | "savings"
-    | "current"
-    | "investment";
+    | "current";
+  currency: string;
+};
+export type CreateAccountPayload = {
+  accountName: string;
+  accountType: "wallet" | "savings" | "current";
   currency: string;
 };
 
 export const accountService = {
   listMine(): Promise<ClientAccount[]> {
-    return apiRequest<ClientAccount[]>(
-      "/accounts/me",
-    );
+    return apiRequest<ClientAccount[]>("/accounts/me");
   },
 
-  getMine(
-    accountId: string,
-  ): Promise<ClientAccount> {
+  getMine(accountId: string): Promise<ClientAccount> {
     return apiRequest<ClientAccount>(
-      `/accounts/me/${encodeURIComponent(
-        accountId,
-      )}`,
+      `/accounts/me/${encodeURIComponent(accountId)}`
     );
   },
 
   createMine(
-    input: CreateAccountInput,
+    payload: CreateAccountPayload
   ): Promise<ClientAccount> {
-    return apiRequest<ClientAccount>(
-      "/accounts",
-      {
-        method: "POST",
-        body: JSON.stringify(input),
-      },
-    );
+    return apiRequest<ClientAccount>("/accounts", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
   },
 };
+

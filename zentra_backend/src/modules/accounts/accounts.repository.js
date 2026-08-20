@@ -110,6 +110,25 @@ const findByTenant = async ({ tenantId }) => {
   return rows;
 };
 
+const updateBalance = async ({
+  accountId,
+  tenantId,
+  balance,
+}) => {
+  await db.query(
+    `UPDATE accounts
+     SET balance = ?, updated_at = NOW()
+     WHERE id = ? AND tenant_id = ?`,
+    [balance, accountId, tenantId]
+  );
+
+  return findById({
+    accountId,
+    tenantId,
+  });
+};
+
+
 const findTenantAccountById = async ({
   tenantId,
   accountId,
@@ -168,8 +187,89 @@ const findTenantAccountById = async ({
   return rows[0] || null;
 };
 
+const findByIdForUpdate = async ({
+  connection,
+  accountId,
+  tenantId,
+}) => {
+  const [rows] = await connection.query(
+    `SELECT *
+     FROM accounts
+     WHERE id = ?
+       AND tenant_id = ?
+     LIMIT 1
+     FOR UPDATE`,
+    [accountId, tenantId]
+  );
+
+  return rows[0] || null;
+};
+
+const adjustBalance = async ({
+  connection,
+  accountId,
+  tenantId,
+  amount,
+}) => {
+  const [result] = await connection.query(
+    `UPDATE accounts
+     SET
+       balance = balance + ?,
+       updated_at = NOW()
+     WHERE id = ?
+       AND tenant_id = ?`,
+    [
+      amount,
+      accountId,
+      tenantId,
+    ]
+  );
+
+  return result.affectedRows === 1;
+};
+
+const createAdjustmentLedgerEntry = async ({
+  connection,
+  tenantId,
+  accountId,
+  entryType,
+  amount,
+  balanceAfter,
+  description,
+}) => {
+  const id = randomUUID();
+
+  await connection.query(
+    `INSERT INTO account_ledger_entries (
+       id,
+       tenant_id,
+       account_id,
+       transfer_id,
+       entry_type,
+       amount,
+       balance_after,
+       description
+     )
+     VALUES (?, ?, ?, NULL, ?, ?, ?, ?)`,
+    [
+      id,
+      tenantId,
+      accountId,
+      entryType,
+      amount,
+      balanceAfter,
+      description,
+    ]
+  );
+
+  return id;
+};
+
 module.exports = {
   findById, findByUser, countByUser,
   existsByNumber, create, updateStatus,
-  findByTenant, findTenantAccountById
+  findByTenant, findTenantAccountById,
+  findByIdForUpdate, adjustBalance,
+  updateBalance,
+  createAdjustmentLedgerEntry,
 };

@@ -77,4 +77,49 @@ const getTenantAccount = asyncHandler(
   }
 );
 
-module.exports = { listOwn, getOwn, createOwn, setStatus, listTenantAccounts, getTenantAccount };
+const setBalance = asyncHandler(
+  async (req, res) => {
+    const data =
+      await service.setBalance({
+        accountId:
+          req.params.accountId,
+
+        tenantId:
+          req.auth.tenantId,
+
+        balance:
+          req.body.balance,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Account balance updated successfully",
+      data,
+    });
+  }
+);
+
+const adjustTenantBalance =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.adjustTenantBalance({
+          accountId:
+            req.params.accountId,
+
+          tenantId:
+            req.auth.tenantId,
+
+          body:
+            req.body,
+        });
+
+      return sendSuccess(res, {
+        message:
+          "Account balance adjusted successfully",
+        data,
+      });
+    }
+  );
+
+module.exports = { listOwn, getOwn, createOwn, setStatus, listTenantAccounts, getTenantAccount, setBalance, adjustTenantBalance };

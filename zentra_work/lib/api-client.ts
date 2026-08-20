@@ -66,8 +66,9 @@ async function refreshSession(): Promise<boolean> {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "application/json",
+          Accept: "application/json",
           "X-Tenant-Slug": getTenantSlug(),
+          "X-Zentra-App": "client",
         },
         body: JSON.stringify({}),
       },
@@ -110,15 +111,20 @@ export async function apiRequest<T>(
   const token = authToken.get();
   const requestHeaders = new Headers(headers);
 
-  requestHeaders.set(
-    "X-Tenant-Slug",
-    getTenantSlug(),
-  );
+ requestHeaders.set(
+  "X-Tenant-Slug",
+  getTenantSlug(),
+);
 
-  requestHeaders.set(
-    "Accept",
-    "application/json",
-  );
+requestHeaders.set(
+  "X-Zentra-App",
+  "client",
+);
+
+requestHeaders.set(
+  "Accept",
+  "application/json",
+);
 
   const hasBody =
     requestInit.body !== undefined &&

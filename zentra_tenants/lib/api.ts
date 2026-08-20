@@ -26,7 +26,10 @@ export const setSessionListener = (
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
-  headers: { "Content-Type": "application/json" },
+  headers: {
+  "Content-Type": "application/json",
+  "X-Zentra-App": "tenant",
+},
 });
 
 api.interceptors.request.use((config) => {
@@ -43,7 +46,10 @@ const refreshSession = async (): Promise<AuthSessionResponse> => {
         {},
         {
           withCredentials: true,
-          headers: { "X-Tenant-Slug": TENANT_SLUG },
+          headers: {
+  "X-Tenant-Slug": TENANT_SLUG,
+  "X-Zentra-App": "tenant",
+},
         }
       )
       .then((response) => response.data.data as AuthSessionResponse)

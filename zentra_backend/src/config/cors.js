@@ -78,6 +78,7 @@ const corsOptions = {
     "Authorization",
     "X-Tenant-Slug",
     "X-Request-Id",
+    "X-Zentra-App",
   ],
 
   exposedHeaders: [

@@ -68,3 +68,41 @@ export async function getMyTransfer(transferId: string): Promise<Transfer> {
   const response = await api.get<ApiEnvelope<Transfer>>(`/transfers/me/${transferId}`);
   return response.data.data;
 }
+
+export type AccountBalanceAdjustmentInput = {
+  type: "credit" | "debit";
+  amount: number;
+  description?: string;
+};
+
+export async function getTenantAccount(
+  accountId: string,
+): Promise<BankAccount> {
+  const response =
+    await api.get<
+      ApiEnvelope<BankAccount>
+    >(
+      `/accounts/tenant/${encodeURIComponent(
+        accountId,
+      )}`,
+    );
+
+  return response.data.data;
+}
+
+export async function adjustTenantAccountBalance(
+  accountId: string,
+  input: AccountBalanceAdjustmentInput,
+): Promise<BankAccount> {
+  const response =
+    await api.post<
+      ApiEnvelope<BankAccount>
+    >(
+      `/accounts/tenant/${encodeURIComponent(
+        accountId,
+      )}/adjustment`,
+      input,
+    );
+
+  return response.data.data;
+}

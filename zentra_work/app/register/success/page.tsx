@@ -61,22 +61,24 @@ export default function RegisterSuccessPage() {
 
         <div className="mt-8 space-y-3">
           <Link
-            href="/profile"
-            className="flex h-[48px] w-full items-center justify-center gap-3 rounded-[10px] border border-[#2458E8] font-sf text-[14px] font-bold text-white bg-[#2458E8]"
+            href="/login?next=/profile"
+            className="flex h-[48px] w-full items-center justify-center gap-3 rounded-[10px] border border-[#2458E8] bg-[#2458E8] font-sf text-[14px] font-bold text-white"
           >
             Continue
-            <LogIn size={16}
-            className="text-green-500"
+            <LogIn
+              size={16}
+              className="text-green-500"
             />
           </Link>
 
           <Link
-            href="/dashboard"
+            href="/login?next=/dashboard"
             className="flex h-[48px] w-full items-center justify-center gap-3 rounded-[10px] border border-[#2458E8] bg-white font-sf text-[14px] font-bold text-black"
           >
             Skip
-            <LogIn size={16}
-            className="text-green-500"
+            <LogIn
+              size={16}
+              className="text-green-500"
             />
           </Link>
         </div>

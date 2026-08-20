@@ -1,11 +1,17 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
 import Link from "next/link";
+
+import {
+  useMemo,
+  useState,
+} from "react";
+
 import {
   Bell,
   Settings,
+  Eye,
   EyeOff,
   SendHorizontal,
   CreditCard,
@@ -17,14 +23,39 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   X,
+  Wallet,
+  Plus,
 } from "lucide-react";
 
 import BottomNav from "@/components/layout/BottomNav";
-import { useAuthStore } from "@/store/auth.store";
-import { useClientOverview } from "@/hooks/use-client-overview";
-import { formatMoney } from "@/lib/formatters";
-import type { ClientTransfer } from "@/types/transfer";
-import type { ClientNotification } from "@/types/notification";
+
+import {
+  useAuthStore,
+} from "@/store/auth.store";
+
+import {
+  useClientOverview,
+} from "@/hooks/use-client-overview";
+
+import {
+  accountService,
+} from "@/services/account.service";
+
+import {
+  getApiErrorMessage,
+} from "@/lib/api-client";
+
+import {
+  formatMoney,
+} from "@/lib/formatters";
+
+import type {
+  ClientTransfer,
+} from "@/types/transfer";
+
+import type {
+  ClientNotification,
+} from "@/types/notification";
 
 const quickActions = [
   {
@@ -153,10 +184,57 @@ const allServices = [
   },
 ];
 
-export default function DashboardPage() {
-  const [showMoreServices, setShowMoreServices] = useState(false);
+type AccountType =
+  | "wallet"
+  | "savings"
+  | "current";
 
-  const user = useAuthStore((state) => state.user);
+type AccountFormState = {
+  accountName: string;
+  accountType: AccountType;
+  currency: string;
+};
+
+export default function DashboardPage() {
+  const [
+    showMoreServices,
+    setShowMoreServices,
+  ] = useState(false);
+
+  const [
+    openAccountModal,
+    setOpenAccountModal,
+  ] = useState(false);
+
+  const [
+    creatingAccount,
+    setCreatingAccount,
+  ] = useState(false);
+
+  const [
+    accountError,
+    setAccountError,
+  ] = useState("");
+
+  const [
+    accountSuccess,
+    setAccountSuccess,
+  ] = useState("");
+
+  const [
+    accountForm,
+    setAccountForm,
+  ] = useState<AccountFormState>({
+    accountName: "",
+    accountType: "savings",
+    currency: "GBP",
+  });
+
+    const [showBalance, setShowBalance] = useState(true);
+  const user =
+    useAuthStore(
+      (state) => state.user,
+    );
 
   const {
     accounts,
@@ -170,30 +248,49 @@ export default function DashboardPage() {
     reload,
   } = useClientOverview();
 
-  const activeAccounts = useMemo(
-    () => accounts.filter((account) => account.status === "active"),
-    [accounts],
-  );
+  const activeAccounts =
+    useMemo(
+      () =>
+        accounts.filter(
+          (account) =>
+            account.status ===
+            "active",
+        ),
+      [accounts],
+    );
 
   const primaryCurrency =
-    activeAccounts[0]?.currency ??
-    accounts[0]?.currency ??
+    activeAccounts[0]
+      ?.currency ??
+    accounts[0]
+      ?.currency ??
     "GBP";
 
-  const totalBalance = useMemo(
-    () =>
-      accounts
-        .filter(
-          (account) =>
-            account.currency === primaryCurrency,
-        )
-        .reduce(
-          (total, account) =>
-            total + (Number(account.balance) || 0),
-          0,
-        ),
-    [accounts, primaryCurrency],
-  );
+  const totalBalance =
+    useMemo(
+      () =>
+        accounts
+          .filter(
+            (account) =>
+              account.currency ===
+              primaryCurrency,
+          )
+          .reduce(
+            (
+              total,
+              account,
+            ) =>
+              total +
+              (Number(
+                account.balance,
+              ) || 0),
+            0,
+          ),
+      [
+        accounts,
+        primaryCurrency,
+      ],
+    );
 
   const displayName =
     user?.full_name ||
@@ -202,48 +299,191 @@ export default function DashboardPage() {
 
   const pendingCardRequest =
     cardPurchaseRequests.find(
-      (request) => request.status === "pending",
+      (request) =>
+        request.status ===
+        "pending",
     );
 
-  const cardSummary = useMemo(() => {
-    if (cards.length > 0) {
-      const activeCount = cards.filter(
-        (card) => card.status === "active",
-      ).length;
+  const cardSummary =
+    useMemo(() => {
+      if (
+        cards.length >
+        0
+      ) {
+        const activeCount =
+          cards.filter(
+            (card) =>
+              card.status ===
+              "active",
+          ).length;
 
-      const frozenCount = cards.filter(
-        (card) => card.status === "frozen",
-      ).length;
+        const frozenCount =
+          cards.filter(
+            (card) =>
+              card.status ===
+              "frozen",
+          ).length;
+
+        return {
+          title: `${
+            cards.length
+          } issued card${
+            cards.length ===
+            1
+              ? ""
+              : "s"
+          }`,
+
+          description:
+            frozenCount > 0
+              ? `${activeCount} active · ${frozenCount} frozen`
+              : `${activeCount} active`,
+
+          href:
+            "/cards/active-cards",
+        };
+      }
+
+      if (
+        pendingCardRequest
+      ) {
+        return {
+          title:
+            "Card request pending",
+
+          description: `${pendingCardRequest.card_type.replaceAll(
+            "_",
+            " ",
+          )} card awaiting verification`,
+
+          href:
+            `/cards/purchase-status/${pendingCardRequest.id}`,
+        };
+      }
 
       return {
-        title: `${cards.length} issued card${
-          cards.length === 1 ? "" : "s"
-        }`,
+        title:
+          "No issued cards",
+
         description:
-          frozenCount > 0
-            ? `${activeCount} active · ${frozenCount} frozen`
-            : `${activeCount} active`,
-        href: "/cards/active-cards",
-      };
-    }
+          "Create your first ZentraBank card",
 
-    if (pendingCardRequest) {
-      return {
-        title: "Card request pending",
-        description: `${pendingCardRequest.card_type.replaceAll(
-          "_",
-          " ",
-        )} card awaiting verification`,
-        href: `/cards/purchase-status/${pendingCardRequest.id}`,
+        href:
+          "/cards/cards-purchase",
       };
-    }
+    }, [
+      cards,
+      pendingCardRequest,
+    ]);
 
-    return {
-      title: "No issued cards",
-      description: "Create your first ZentraBank card",
-      href: "/cards/cards-purchase",
+  const openCreateAccount =
+    () => {
+      setAccountError("");
+      setAccountSuccess("");
+
+      setAccountForm(
+        (current) => ({
+          ...current,
+
+          accountName:
+            current
+              .accountName ||
+            `${
+              user?.full_name ||
+              "My"
+            } Account`,
+        }),
+      );
+
+      setOpenAccountModal(
+        true,
+      );
     };
-  }, [cards, pendingCardRequest]);
+
+  const closeCreateAccount =
+    () => {
+      if (
+        creatingAccount
+      ) {
+        return;
+      }
+
+      setOpenAccountModal(
+        false,
+      );
+
+      setAccountError("");
+    };
+
+  const handleCreateAccount =
+    async () => {
+      const accountName =
+        accountForm
+          .accountName
+          .trim();
+
+      if (
+        accountName.length <
+        2
+      ) {
+        setAccountError(
+          "Account name must be at least 2 characters.",
+        );
+
+        return;
+      }
+
+      setCreatingAccount(
+        true,
+      );
+
+      setAccountError("");
+      setAccountSuccess("");
+
+      try {
+        await accountService.createMine(
+          {
+            accountName,
+
+            accountType:
+              accountForm.accountType,
+
+            currency:
+              accountForm.currency,
+          },
+        );
+
+        setAccountForm({
+          accountName: "",
+          accountType:
+            "savings",
+          currency: "GBP",
+        });
+
+        setOpenAccountModal(
+          false,
+        );
+
+        setAccountSuccess(
+          "Your account was created successfully.",
+        );
+
+        await reload();
+      } catch (
+        requestError
+      ) {
+        setAccountError(
+          getApiErrorMessage(
+            requestError,
+            "Unable to create account.",
+          ),
+        );
+      } finally {
+        setCreatingAccount(
+          false,
+        );
+      }
+    };
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#E7EBF0] pb-[92px] text-[#333] md:pb-10">
@@ -256,7 +496,9 @@ export default function DashboardPage() {
             <div className="relative h-11 w-11 overflow-hidden rounded-full border border-white bg-[#B7D8FF] shadow-sm md:h-12 md:w-12">
               <Image
                 src="/images/profile-avatar.png"
-                alt={displayName}
+                alt={
+                  displayName
+                }
                 fill
                 className="object-cover"
               />
@@ -268,11 +510,16 @@ export default function DashboardPage() {
               </h1>
 
               <p className="font-lato text-[12px] font-medium md:text-[13px]">
-                <span className="text-[#333333]">
-                  {accounts[0]?.account_type || "Client"}
+                <span className="capitalize text-[#333333]">
+                  {accounts[0]
+                    ?.account_type ||
+                    "Client"}
                 </span>{" "}
+
                 <span className="text-[#2B945D]">
-                  {formatKycStatus(user?.kyc_status)}
+                  {formatKycStatus(
+                    user?.kyc_status,
+                  )}
                 </span>
               </p>
             </div>
@@ -284,11 +531,15 @@ export default function DashboardPage() {
               aria-label="Notifications"
               className="relative"
             >
-              <Bell size={18} />
+              <Bell
+                size={18}
+              />
 
-              {unreadNotificationCount > 0 && (
+              {unreadNotificationCount >
+                0 && (
                 <span className="absolute -right-2 -top-2 grid min-h-[16px] min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
-                  {unreadNotificationCount > 99
+                  {unreadNotificationCount >
+                  99
                     ? "99+"
                     : unreadNotificationCount}
                 </span>
@@ -299,38 +550,148 @@ export default function DashboardPage() {
               href="/settings"
               aria-label="Settings"
             >
-              <Settings size={18} />
+              <Settings
+                size={18}
+              />
             </Link>
           </div>
         </header>
 
-        <section className="mt-4 rounded-[9px] bg-[#2F9158] px-3 py-3 text-white shadow-sm md:mt-6 md:rounded-[18px] md:px-7 md:py-6 md:shadow-md">
-          <div className="flex items-center gap-2 text-[12px] md:text-[14px]">
-            <span>Balance</span>
-            <EyeOff size={16} />
+        {accountSuccess ? (
+          <div className="mt-4 rounded-[10px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-[12px] font-medium text-emerald-700">
+            {accountSuccess}
           </div>
+        ) : null}
 
-          <div className="mt-2 flex items-end justify-between">
-            <h2 className="text-[30px] font-semibold tracking-wide md:text-[42px]">
-              {isLoading
-                ? "Loading…"
-                : formatMoney(
-                    totalBalance,
-                    primaryCurrency,
-                  )}
-            </h2>
-          </div>
-        </section>
+<section className="mt-4 rounded-[9px] bg-[#2F9158] px-3 py-3 text-white shadow-sm md:mt-6 md:rounded-[18px] md:px-7 md:py-6 md:shadow-md">
+  <div className="flex items-center justify-between">
+    <button
+      type="button"
+      onClick={() => setShowBalance(!showBalance)}
+      className="flex items-center gap-2 text-[12px] transition-opacity hover:opacity-80 md:text-[14px]"
+    >
+      <span>Balance</span>
+
+      {showBalance ? (
+        <Eye size={16} />
+      ) : (
+        <EyeOff size={16} />
+      )}
+    </button>
+
+    {accounts.length > 0 && (
+      <button
+        type="button"
+        onClick={openCreateAccount}
+        className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-white/25 md:text-[12px]"
+      >
+        <Plus size={14} />
+        Add account
+      </button>
+    )}
+  </div>
+
+  <div className="mt-2 flex items-end justify-between">
+    <h2 className="text-[30px] font-semibold tracking-wide md:text-[42px]">
+      {isLoading
+        ? "Loading…"
+        : showBalance
+          ? formatMoney(totalBalance, primaryCurrency)
+          : "*********"}
+    </h2>
+  </div>
+
+  {!isLoading && accounts[0]?.account_number ? (
+    <div className="mt-3 flex items-end justify-between gap-4 border-t border-white/15 pt-3">
+      <div>
+        <p className="text-[10px] text-white/60 md:text-[12px]">
+          Account number
+        </p>
+
+        <p className="mt-0.5 text-[13px] font-semibold tracking-[0.08em] text-white md:text-[15px]">
+          {accounts[0].account_number}
+        </p>
+      </div>
+
+      <div className="text-right">
+        <p className="text-[10px] text-white/60 md:text-[12px]">
+          Account type
+        </p>
+
+        <p className="mt-0.5 text-[12px] font-semibold capitalize text-white md:text-[14px]">
+          {accounts[0].account_type}
+        </p>
+      </div>
+    </div>
+  ) : null}
+
+  {!isLoading && accounts.length > 0 ? (
+    <p className="mt-2 text-[11px] text-white/70 md:text-[13px]">
+      {accounts.length} account
+      {accounts.length === 1 ? "" : "s"} connected
+    </p>
+  ) : null}
+</section>
+
+        {!isLoading &&
+        accounts.length ===
+          0 ? (
+          <section className="mt-4 rounded-[10px] border border-[#2458E8]/20 bg-white p-4 shadow-sm md:mt-6 md:flex md:items-center md:justify-between md:rounded-[18px] md:px-6 md:py-5">
+            <div className="flex items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-[#E8F0FF] text-[#2458E8]">
+                <Wallet
+                  size={21}
+                />
+              </span>
+
+              <div>
+                <p className="text-[14px] font-bold text-[#222] md:text-[17px]">
+                  Open your first
+                  account
+                </p>
+
+                <p className="mt-1 max-w-[500px] text-[12px] leading-5 text-black/50 md:text-[14px]">
+                  Create a wallet,
+                  savings or current
+                  account to start
+                  using your
+                  ZentraBank banking
+                  features.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                openCreateAccount
+              }
+              className="mt-4 h-[42px] w-full rounded-[10px] bg-[#2458E8] px-5 text-[13px] font-bold text-white transition hover:bg-[#1d49c9] md:mt-0 md:w-auto"
+            >
+              Open Account
+            </button>
+          </section>
+        ) : null}
 
         <section className="mt-4 grid grid-cols-4 gap-4 rounded-[8px] md:mt-6 md:grid-cols-4 md:gap-5">
-          {quickActions.map((item) => (
-            <SmallActionCard
-              key={item.title}
-              title={item.title}
-              icon={item.icon}
-              href={item.href}
-            />
-          ))}
+          {quickActions.map(
+            (item) => (
+              <SmallActionCard
+                key={
+                  item.title
+                }
+                title={
+                  item.title
+                }
+                icon={
+                  item.icon
+                }
+                href={
+                  item.href
+                }
+              />
+            ),
+          )}
         </section>
 
         <div className="mt-4 flex items-center justify-between md:mt-7">
@@ -340,7 +701,11 @@ export default function DashboardPage() {
 
           <button
             type="button"
-            onClick={() => setShowMoreServices(true)}
+            onClick={() =>
+              setShowMoreServices(
+                true,
+              )
+            }
             className="text-[12px] text-black/50 md:text-[13px]"
           >
             View all
@@ -348,21 +713,33 @@ export default function DashboardPage() {
         </div>
 
         <section className="mt-3 grid grid-cols-3 gap-4 font-lato md:grid-cols-6 md:gap-5">
-          {services.map((item) => (
-            <DashboardServiceCard
-              key={item.title}
-              title={item.title}
-              icon={item.icon}
-              href={item.href}
-            />
-          ))}
+          {services.map(
+            (item) => (
+              <DashboardServiceCard
+                key={
+                  item.title
+                }
+                title={
+                  item.title
+                }
+                icon={
+                  item.icon
+                }
+                href={
+                  item.href
+                }
+              />
+            ),
+          )}
         </section>
 
         <section className="mt-4 rounded-[10px] bg-white px-3 py-3 shadow-sm md:mt-6 md:rounded-[16px] md:px-5 md:py-5">
           <div className="flex items-center justify-between gap-4">
             <div className="flex min-w-0 items-center gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[#E8F0FF] text-[#2458E8]">
-                <CreditCard size={19} />
+                <CreditCard
+                  size={19}
+                />
               </span>
 
               <div className="min-w-0">
@@ -375,13 +752,17 @@ export default function DashboardPage() {
                 </p>
 
                 <p className="truncate text-[11px] text-black/45">
-                  {cardSummary.description}
+                  {
+                    cardSummary.description
+                  }
                 </p>
               </div>
             </div>
 
             <Link
-              href={cardSummary.href}
+              href={
+                cardSummary.href
+              }
               className="shrink-0 text-[12px] font-bold text-[#2458E8]"
             >
               View
@@ -405,11 +786,15 @@ export default function DashboardPage() {
         <section className="mt-2 space-y-2 font-lato md:grid md:grid-cols-3 md:gap-4 md:space-y-0">
           {error ? (
             <div className="rounded-[7px] border border-red-200 bg-red-50 px-3 py-3 text-[12px] text-red-700">
-              <p>{error}</p>
+              <p>
+                {error}
+              </p>
 
               <button
                 type="button"
-                onClick={() => void reload()}
+                onClick={() =>
+                  void reload()
+                }
                 className="mt-2 font-semibold underline"
               >
                 Try again
@@ -417,22 +802,36 @@ export default function DashboardPage() {
             </div>
           ) : isLoading ? (
             <div className="rounded-[7px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
-              Loading recent activity…
+              Loading recent
+              activity…
             </div>
-          ) : transfers.length === 0 ? (
+          ) : transfers.length ===
+            0 ? (
             <div className="rounded-[7px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
-              No transfers yet. Your recent activity will
-              appear here.
+              No transfers yet.
+              Your recent activity
+              will appear here.
             </div>
           ) : (
             transfers
-              .slice(0, 3)
-              .map((transfer) => (
-                <LiveTransactionCard
-                  key={transfer.id}
-                  transfer={transfer}
-                />
-              ))
+              .slice(
+                0,
+                3,
+              )
+              .map(
+                (
+                  transfer,
+                ) => (
+                  <LiveTransactionCard
+                    key={
+                      transfer.id
+                    }
+                    transfer={
+                      transfer
+                    }
+                  />
+                ),
+              )
           )}
         </section>
 
@@ -449,11 +848,13 @@ export default function DashboardPage() {
 
             <div className="flex flex-1 flex-col justify-center px-3 text-center md:px-8 md:text-left">
               <h2 className="font-sf-condensed text-[22px] font-black leading-[22px] text-[#2E8B57] md:text-[30px] md:leading-[32px]">
-                Register to Redeem Funds!
+                Register to Redeem
+                Funds!
               </h2>
 
               <p className="mt-2 font-lato text-[12px] text-black/55 md:text-[14px]">
-                Get redemption code for gifts, donations
+                Get redemption code
+                for gifts, donations
               </p>
             </div>
           </div>
@@ -477,19 +878,31 @@ export default function DashboardPage() {
             <div className="rounded-[10px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
               Loading updates…
             </div>
-          ) : notifications.length === 0 ? (
+          ) : notifications.length ===
+            0 ? (
             <div className="rounded-[10px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
               No recent updates.
             </div>
           ) : (
             notifications
-              .slice(0, 3)
-              .map((notification) => (
-                <LiveUpdateCard
-                  key={notification.id}
-                  notification={notification}
-                />
-              ))
+              .slice(
+                0,
+                3,
+              )
+              .map(
+                (
+                  notification,
+                ) => (
+                  <LiveUpdateCard
+                    key={
+                      notification.id
+                    }
+                    notification={
+                      notification
+                    }
+                  />
+                ),
+              )
           )}
         </section>
 
@@ -498,24 +911,65 @@ export default function DashboardPage() {
             viewBox="0 0 330 150"
             className="h-[150px] w-full md:h-[220px]"
           >
-            {[0, 1, 2, 3, 4, 5, 6].map((y) => (
-              <line
-                key={y}
-                x1="30"
-                x2="320"
-                y1={20 + y * 20}
-                y2={20 + y * 20}
-                stroke="#cbd2da"
-                strokeWidth="1"
-              />
-            ))}
+            {[
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+            ].map(
+              (y) => (
+                <line
+                  key={
+                    y
+                  }
+                  x1="30"
+                  x2="320"
+                  y1={
+                    20 +
+                    y *
+                      20
+                  }
+                  y2={
+                    20 +
+                    y *
+                      20
+                  }
+                  stroke="#cbd2da"
+                  strokeWidth="1"
+                />
+              ),
+            )}
 
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(
+            {[
+              0,
+              1,
+              2,
+              3,
+              4,
+              5,
+              6,
+              7,
+              8,
+              9,
+            ].map(
               (x) => (
                 <line
-                  key={x}
-                  x1={30 + x * 32}
-                  x2={30 + x * 32}
+                  key={
+                    x
+                  }
+                  x1={
+                    30 +
+                    x *
+                      32
+                  }
+                  x2={
+                    30 +
+                    x *
+                      32
+                  }
                   y1="20"
                   y2="140"
                   stroke="#cbd2da"
@@ -529,22 +983,33 @@ export default function DashboardPage() {
               "40,70 70,112 102,86 135,52 168,106 200,84 230,55 265,105 300,78 320,96",
               "40,92 70,60 102,120 135,62 168,115 200,52 230,74 265,78 300,64 320,88",
               "40,48 70,86 102,42 135,86 168,72 200,58 230,74 265,42 300,38 320,66",
-            ].map((points, index) => (
-              <polyline
-                key={index}
-                points={points}
-                fill="none"
-                strokeWidth="1.2"
-                stroke={
-                  [
-                    "#2B945D",
-                    "#FF6EA8",
-                    "#7E39FF",
-                    "#3E53D9",
-                  ][index]
-                }
-              />
-            ))}
+            ].map(
+              (
+                points,
+                index,
+              ) => (
+                <polyline
+                  key={
+                    index
+                  }
+                  points={
+                    points
+                  }
+                  fill="none"
+                  strokeWidth="1.2"
+                  stroke={
+                    [
+                      "#2B945D",
+                      "#FF6EA8",
+                      "#7E39FF",
+                      "#3E53D9",
+                    ][
+                      index
+                    ]
+                  }
+                />
+              ),
+            )}
           </svg>
         </section>
 
@@ -559,14 +1024,28 @@ export default function DashboardPage() {
                 size={18}
                 className="text-black/30"
               />
-              <ChevronRight size={18} />
+
+              <ChevronRight
+                size={18}
+              />
             </div>
           </div>
 
           <div className="mt-3 flex gap-3 overflow-x-auto pb-3 scrollbar-hide md:grid md:grid-cols-4 md:gap-5 md:overflow-visible">
-            {[1, 2, 3, 4].map((item) => (
-              <AdvertCard key={item} />
-            ))}
+            {[
+              1,
+              2,
+              3,
+              4,
+            ].map(
+              (item) => (
+                <AdvertCard
+                  key={
+                    item
+                  }
+                />
+              ),
+            )}
           </div>
         </section>
       </section>
@@ -574,7 +1053,32 @@ export default function DashboardPage() {
       {showMoreServices && (
         <MoreServicesOverlay
           onClose={() =>
-            setShowMoreServices(false)
+            setShowMoreServices(
+              false,
+            )
+          }
+        />
+      )}
+
+      {openAccountModal && (
+        <CreateAccountModal
+          form={
+            accountForm
+          }
+          setForm={
+            setAccountForm
+          }
+          error={
+            accountError
+          }
+          creating={
+            creatingAccount
+          }
+          onClose={
+            closeCreateAccount
+          }
+          onCreate={() =>
+            void handleCreateAccount()
           }
         />
       )}
@@ -583,6 +1087,215 @@ export default function DashboardPage() {
         <BottomNav />
       </div>
     </main>
+  );
+}
+
+function CreateAccountModal({
+  form,
+  setForm,
+  error,
+  creating,
+  onClose,
+  onCreate,
+}: {
+  form: AccountFormState;
+
+  setForm:
+    React.Dispatch<
+      React.SetStateAction<AccountFormState>
+    >;
+
+  error: string;
+  creating: boolean;
+
+  onClose: () => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/45 px-5 backdrop-blur-sm">
+      <section className="relative w-full max-w-[380px] rounded-[22px] bg-white p-5 shadow-2xl">
+        <button
+          type="button"
+          onClick={
+            onClose
+          }
+          disabled={
+            creating
+          }
+          className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-[#E7EBF0] disabled:opacity-50"
+          aria-label="Close account form"
+        >
+          <X size={17} />
+        </button>
+
+        <div className="flex items-center gap-3 pr-10">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-[#E8F0FF] text-[#2458E8]">
+            <Wallet
+              size={21}
+            />
+          </span>
+
+          <div>
+            <h2 className="text-[20px] font-black text-[#222]">
+              Open Account
+            </h2>
+
+            <p className="mt-0.5 text-[12px] text-black/50">
+              Create an account
+              under your
+              ZentraBank profile.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-4">
+          <div>
+            <label className="text-[11px] font-bold text-black/55">
+              Account name
+            </label>
+
+            <input
+              type="text"
+              value={
+                form.accountName
+              }
+              onChange={(
+                event,
+              ) =>
+                setForm(
+                  (
+                    current,
+                  ) => ({
+                    ...current,
+
+                    accountName:
+                      event
+                        .target
+                        .value,
+                  }),
+                )
+              }
+              placeholder="e.g. Personal Savings"
+              className="mt-1 h-[42px] w-full rounded-[10px] border border-gray-200 px-3 text-[13px] outline-none transition focus:border-[#2458E8]"
+            />
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-black/55">
+              Account type
+            </label>
+
+            <select
+              title="Account type"
+              value={
+                form.accountType
+              }
+              onChange={(
+                event,
+              ) =>
+                setForm(
+                  (
+                    current,
+                  ) => ({
+                    ...current,
+
+                    accountType:
+                      event
+                        .target
+                        .value as AccountType,
+                  }),
+                )
+              }
+              className="mt-1 h-[42px] w-full rounded-[10px] border border-gray-200 bg-white px-3 text-[13px] outline-none transition focus:border-[#2458E8]"
+            >
+              <option value="wallet">
+                Wallet
+              </option>
+
+              <option value="savings">
+                Savings
+              </option>
+
+              <option value="current">
+                Current
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-bold text-black/55">
+              Currency
+            </label>
+
+            <select
+              title="Currency"
+              value={
+                form.currency
+              }
+              onChange={(
+                event,
+              ) =>
+                setForm(
+                  (
+                    current,
+                  ) => ({
+                    ...current,
+
+                    currency:
+                      event
+                        .target
+                        .value,
+                  }),
+                )
+              }
+              className="mt-1 h-[42px] w-full rounded-[10px] border border-gray-200 bg-white px-3 text-[13px] outline-none transition focus:border-[#2458E8]"
+            >
+              <option value="GBP">
+                GBP — British
+                Pound
+              </option>
+
+              <option value="USD">
+                USD — US Dollar
+              </option>
+
+              <option value="EUR">
+                EUR — Euro
+              </option>
+
+              <option value="NGN">
+                NGN — Nigerian
+                Naira
+              </option>
+            </select>
+          </div>
+
+          {error ? (
+            <p
+              role="alert"
+              className="rounded-[10px] bg-red-50 px-3 py-2 text-[12px] text-red-700"
+            >
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={
+              onCreate
+            }
+            disabled={
+              creating
+            }
+            className="h-[46px] w-full rounded-[12px] bg-[#2458E8] text-[14px] font-bold text-white transition hover:bg-[#1d49c9] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {creating
+              ? "Creating account..."
+              : "Create Account"}
+          </button>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -661,7 +1374,9 @@ function MoreServicesOverlay({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={
+              onClose
+            }
             className="grid h-8 w-8 place-items-center rounded-full bg-white shadow"
             aria-label="Close services"
           >
@@ -670,15 +1385,27 @@ function MoreServicesOverlay({
         </div>
 
         <div className="grid grid-cols-4 gap-3 md:grid-cols-6 md:gap-5">
-          {allServices.map((item) => (
-            <MoreServiceCard
-              key={item.title}
-              title={item.title}
-              icon={item.icon}
-              href={item.href}
-              className={item.className}
-            />
-          ))}
+          {allServices.map(
+            (item) => (
+              <MoreServiceCard
+                key={
+                  item.title
+                }
+                title={
+                  item.title
+                }
+                icon={
+                  item.icon
+                }
+                href={
+                  item.href
+                }
+                className={
+                  item.className
+                }
+              />
+            ),
+          )}
         </div>
       </section>
     </div>
@@ -724,8 +1451,10 @@ function LiveTransactionCard({
   transfer: ClientTransfer;
 }) {
   const destination =
-    transfer.destination_account_name ||
-    transfer.destination_account_number ||
+    transfer
+      .destination_account_name ||
+    transfer
+      .destination_account_number ||
     "Recipient";
 
   return (
@@ -755,7 +1484,8 @@ function TransactionCard({
   bank: string;
   amount: string;
 }) {
-  const isIn = type === "in";
+  const isIn =
+    type === "in";
 
   return (
     <div className="flex items-center justify-between rounded-[7px] border border-black/10 bg-[#F2F5F8] px-3 py-2 shadow-sm md:min-h-[78px] md:rounded-[14px] md:bg-white md:px-4 md:py-3">
@@ -802,24 +1532,31 @@ function LiveUpdateCard({
   notification: ClientNotification;
 }) {
   const Icon =
-    notification.notification_type?.includes(
-      "card",
-    )
+    notification
+      .notification_type
+      ?.includes(
+        "card",
+      )
       ? CreditCard
-      : notification.notification_type?.includes(
-            "transfer",
-          )
-        ? SendHorizontal
-        : notification.notification_type?.includes(
-              "donation",
+      : notification
+            .notification_type
+            ?.includes(
+              "transfer",
             )
+        ? SendHorizontal
+        : notification
+              .notification_type
+              ?.includes(
+                "donation",
+              )
           ? Gift
           : Info;
 
   return (
     <Link
       href={
-        notification.action_url ||
+        notification
+          .action_url ||
         "/notifications"
       }
       className="flex w-full items-center gap-3 rounded-[10px] border border-black/10 bg-[#F3F6FA] px-3 py-2 text-left shadow-sm md:min-h-[86px] md:rounded-[14px] md:bg-white md:px-4 md:py-3"
@@ -832,16 +1569,21 @@ function LiveUpdateCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h4 className="truncate text-[13px] font-semibold">
-            {notification.title}
+            {
+              notification.title
+            }
           </h4>
 
-          {!notification.read_at && (
+          {!notification
+            .read_at && (
             <span className="h-2 w-2 shrink-0 rounded-full bg-[#2458E8]" />
           )}
         </div>
 
         <p className="truncate text-[11px] text-black/55">
-          {notification.message}
+          {
+            notification.message
+          }
         </p>
       </div>
 
@@ -871,12 +1613,15 @@ function AdvertCard() {
       </h4>
 
       <p className="mt-2 text-[9px] font-semibold">
-        More offers coming soon
+        More offers coming
+        soon
       </p>
 
       <p className="mt-1 text-[8px] leading-[10px] text-black/70">
-        Promotions and personalised offers will appear
-        here when available.
+        Promotions and
+        personalised offers
+        will appear here when
+        available.
       </p>
     </article>
   );

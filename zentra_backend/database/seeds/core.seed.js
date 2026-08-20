@@ -584,17 +584,23 @@ const seedRolePermissions = async (
     "chat.respond",
   ];
 
-  const customerPermissionCodes = [
-    "accounts.read",
-    "transactions.read",
-    "transactions.create",
-    "notifications.read",
-    "subscriptions.read",
-    "cards.read",
-    "donations.read",
-    "chat.read",
-    "chat.respond",
-  ];
+const customerPermissionCodes = [
+  "accounts.read",
+  "accounts.create",
+
+  "transfers.create",
+  "transfers.read_own",
+
+  "notifications.read",
+  "subscriptions.read",
+  "cards.read",
+  "donations.read",
+  "donations.create",
+  "investments.read",
+  "investments.create",
+  "chat.read",
+  "chat.respond",
+];
 
   await assignPermissions(
     connection,

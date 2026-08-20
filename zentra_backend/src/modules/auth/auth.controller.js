@@ -4,7 +4,23 @@ const { sendSuccess } = require("../../utils/response");
 const authService = require("./auth.service");
 const socialAuthService = require("./social-auth.service");
 
-const REFRESH_COOKIE_NAME = "zentrabank_refresh_token";
+const REFRESH_COOKIE_NAMES = {
+  client: "zentrabank_client_refresh_token",
+  tenant: "zentrabank_tenant_refresh_token",
+};
+
+const getAppScope = (req) => {
+  const value = String(
+    req.get("X-Zentra-App") || "client"
+  ).toLowerCase();
+
+  return value === "tenant"
+    ? "tenant"
+    : "client";
+};
+
+const getRefreshCookieName = (req) =>
+  REFRESH_COOKIE_NAMES[getAppScope(req)];
 
 const getClientIpAddress = (req) =>
   req.ip || req.socket?.remoteAddress || null;
@@ -17,10 +33,16 @@ const getRefreshCookieOptions = (expiresAt) => ({
   expires: expiresAt,
 });
 
-const getRefreshTokenFromRequest = (req) =>
-  req.cookies?.[REFRESH_COOKIE_NAME] ||
-  req.body?.refreshToken ||
-  null;
+const getRefreshTokenFromRequest = (req) => {
+  const cookieName =
+    getRefreshCookieName(req);
+
+  return (
+    req.cookies?.[cookieName] ||
+    req.body?.refreshToken ||
+    null
+  );
+};
 
 
 const register = asyncHandler(async (req, res) => {
@@ -50,7 +72,13 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 const changePassword = asyncHandler(async (req, res) => {
   await authService.changePassword({ userId: req.auth.userId, tenantId: req.auth.tenantId, ...req.body });
-  res.clearCookie(REFRESH_COOKIE_NAME, { httpOnly: true, secure: env.cookies.secure, sameSite: env.cookies.sameSite, path: `${env.apiPrefix}/auth` });
+res.cookie(
+  getRefreshCookieName(req),
+  result.refreshToken,
+  getRefreshCookieOptions(
+    result.refreshTokenExpiresAt
+  )
+);
   return sendSuccess(res, { message: "Password changed successfully. Please log in again.", data: null });
 });
 
@@ -63,11 +91,13 @@ const login = asyncHandler(async (req, res) => {
     userAgent: req.get("user-agent") || null,
   });
 
-  res.cookie(
-    REFRESH_COOKIE_NAME,
-    result.refreshToken,
-    getRefreshCookieOptions(result.refreshTokenExpiresAt)
-  );
+res.cookie(
+  getRefreshCookieName(req),
+  result.refreshToken,
+  getRefreshCookieOptions(
+    result.refreshTokenExpiresAt
+  )
+);
 
   return sendSuccess(res, {
     message: "Login successful",
@@ -127,7 +157,7 @@ const socialCallback = asyncHandler(async (req, res) => {
     });
 
     res.cookie(
-      REFRESH_COOKIE_NAME,
+      getRefreshCookieName(req),
       result.refreshToken,
       getRefreshCookieOptions(result.refreshTokenExpiresAt)
     );
@@ -147,7 +177,7 @@ const refresh = asyncHandler(async (req, res) => {
   });
 
   res.cookie(
-    REFRESH_COOKIE_NAME,
+    getRefreshCookieName(req),
     result.refreshToken,
     getRefreshCookieOptions(result.refreshTokenExpiresAt)
   );
@@ -167,7 +197,7 @@ const logout = asyncHandler(async (req, res) => {
     refreshToken: getRefreshTokenFromRequest(req),
   });
 
-  res.clearCookie(REFRESH_COOKIE_NAME, {
+  res.clearCookie(getRefreshCookieName(req), {
     httpOnly: true,
     secure: env.cookies.secure,
     sameSite: env.cookies.sameSite,

@@ -49,9 +49,9 @@ function LoginContent() {
     }
   };
 
-  const handleSocialLogin = (provider: SocialProvider) => {
-    window.location.assign(authService.socialLoginUrl(provider, searchParams.get("next") || "/dashboard"));
-  };
+  // const handleSocialLogin = (provider: SocialProvider) => {
+  //   window.location.assign(authService.socialLoginUrl(provider, searchParams.get("next") || "/dashboard"));
+  // };
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#E8EEF3] px-4 py-6 text-[#555] md:flex md:items-center md:justify-center md:bg-gradient-to-br md:from-[#dbe8f5] md:via-white md:to-[#cbdaf3]">

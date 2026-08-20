@@ -24,5 +24,52 @@ module.exports = {
         .valid("active", "inactive", "frozen", "closed")
         .required()
     })
-  }
+  },
+
+balanceSchema: {
+  params: Joi.object({
+    accountId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+
+  body: Joi.object({
+    balance: Joi.number()
+      .min(0)
+      .precision(2)
+      .required(),
+  }),
+},
+
+balanceAdjustmentSchema: {
+  params: Joi.object({
+    accountId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+
+  body: Joi.object({
+    type: Joi.string()
+      .valid(
+        "credit",
+        "debit"
+      )
+      .required(),
+
+    amount: Joi.number()
+      .positive()
+      .precision(2)
+      .required(),
+
+    description: Joi.string()
+      .trim()
+      .max(255)
+      .allow("")
+      .optional(),
+  }).required(),
+},
 };
+
+
+
+

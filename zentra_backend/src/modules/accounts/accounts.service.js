@@ -1,4 +1,5 @@
 const repo = require("./accounts.repository");
+const db = require("../../config/db");
 const generateAccountNumber = require("../../utils/generateAccountNumber");
 
 const httpError = (statusCode, message) => {
@@ -8,75 +9,129 @@ const httpError = (statusCode, message) => {
 };
 
 const listOwn = ({ userId, tenantId }) =>
-  repo.findByUser({ userId, tenantId });
-
-const getOwn = async ({ accountId, userId, tenantId }) => {
-  const account = await repo.findById({ accountId, tenantId });
-  if (!account || account.user_id !== userId) {
-    throw httpError(404, "Account not found");
-  }
-  return account;
-};
-
-const createOwn = async ({ auth, body }) => {
-  if (!auth.subscriptionId || !auth.planId) {
-    throw httpError(403, "An active subscription is required");
-  }
-
-  const feature = auth.planFeatures?.number_of_accounts;
-  const limit = Number(feature?.value);
-
-  if (!feature?.enabled || !Number.isFinite(limit)) {
-    throw httpError(403, "Your plan does not allow account creation");
-  }
-
-  const count = await repo.countByUser({
-    userId: auth.userId,
-    tenantId: auth.tenantId
+  repo.findByUser({
+    userId,
+    tenantId,
   });
 
-  if (count >= limit) {
+const getOwn = async ({
+  accountId,
+  userId,
+  tenantId,
+}) => {
+  const account =
+    await repo.findById({
+      accountId,
+      tenantId,
+    });
+
+  if (
+    !account ||
+    account.user_id !== userId
+  ) {
     throw httpError(
-      403,
-      `Your current plan allows a maximum of ${limit} account${limit === 1 ? "" : "s"}`
+      404,
+      "Account not found"
     );
   }
 
+  return account;
+};
+
+const createOwn = async ({
+  auth,
+  body,
+}) => {
+  /*
+   * Clients can create accounts without
+   * requiring a subscription plan.
+   */
+
   let accountNumber;
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const candidate = generateAccountNumber();
-    const exists = await repo.existsByNumber({
-      accountNumber: candidate,
-      tenantId: auth.tenantId
-    });
+
+  for (
+    let attempt = 0;
+    attempt < 10;
+    attempt += 1
+  ) {
+    const candidate =
+      generateAccountNumber();
+
+    const exists =
+      await repo.existsByNumber({
+        accountNumber:
+          candidate,
+
+        tenantId:
+          auth.tenantId,
+      });
+
     if (!exists) {
-      accountNumber = candidate;
+      accountNumber =
+        candidate;
+
       break;
     }
   }
 
   if (!accountNumber) {
-    throw httpError(500, "Unable to generate a unique account number");
+    throw httpError(
+      500,
+      "Unable to generate a unique account number"
+    );
   }
 
   return repo.create({
-    userId: auth.userId,
-    tenantId: auth.tenantId,
+    userId:
+      auth.userId,
+
+    tenantId:
+      auth.tenantId,
+
     accountNumber,
-    accountName: body.accountName,
-    accountType: body.accountType,
-    currency: body.currency
+
+    accountName:
+      body.accountName,
+
+    accountType:
+      body.accountType,
+
+    currency:
+      body.currency,
   });
 };
 
-const setStatus = async ({ accountId, tenantId, status }) => {
-  const account = await repo.findById({ accountId, tenantId });
-  if (!account) throw httpError(404, "Account not found");
-  return repo.updateStatus({ accountId, tenantId, status });
+const setStatus = async ({
+  accountId,
+  tenantId,
+  status,
+}) => {
+  const account =
+    await repo.findById({
+      accountId,
+      tenantId,
+    });
+
+  if (!account) {
+    throw httpError(
+      404,
+      "Account not found"
+    );
+  }
+
+  return repo.updateStatus({
+    accountId,
+    tenantId,
+    status,
+  });
 };
 
-const listTenantAccounts = ({ tenantId }) =>
-  repo.findByTenant({ tenantId });
+const listTenantAccounts = ({
+  tenantId,
+}) =>
+  repo.findByTenant({
+    tenantId,
+  });
 
 const getTenantAccount = async ({
   tenantId,
@@ -89,17 +144,183 @@ const getTenantAccount = async ({
     });
 
   if (!account) {
-    const error =
-      new Error(
-        "Account not found"
-      );
-
-    error.statusCode = 404;
-
-    throw error;
+    throw httpError(
+      404,
+      "Account not found"
+    );
   }
 
   return account;
 };
 
-module.exports = { listOwn, getOwn, createOwn, setStatus, listTenantAccounts, getTenantAccount };
+const setBalance = async ({
+  accountId,
+  tenantId,
+  balance,
+}) => {
+  const account =
+    await repo.findById({
+      accountId,
+      tenantId,
+    });
+
+  if (!account) {
+    throw httpError(
+      404,
+      "Account not found"
+    );
+  }
+
+  const nextBalance =
+    Number(balance);
+
+  if (
+    !Number.isFinite(nextBalance) ||
+    nextBalance < 0
+  ) {
+    throw httpError(
+      422,
+      "Balance must be a valid non-negative number"
+    );
+  }
+
+  return repo.updateBalance({
+    accountId,
+    tenantId,
+    balance: nextBalance,
+  });
+};
+
+const adjustTenantBalance = async ({
+  accountId,
+  tenantId,
+  body,
+}) => {
+  const amount =
+    Number(body.amount);
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+    throw httpError(
+      422,
+      "Adjustment amount must be greater than zero"
+    );
+  }
+
+  const adjustment =
+    body.type === "credit"
+      ? amount
+      : -amount;
+
+  const connection =
+  await db.pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    const account =
+      await repo.findByIdForUpdate({
+        connection,
+        accountId,
+        tenantId,
+      });
+
+    if (!account) {
+      throw httpError(
+        404,
+        "Account not found"
+      );
+    }
+
+    if (
+      account.status === "closed"
+    ) {
+      throw httpError(
+        422,
+        "Closed accounts cannot be adjusted"
+      );
+    }
+
+    const currentBalance =
+      Number(account.balance || 0);
+
+    const nextBalance =
+      currentBalance +
+      adjustment;
+
+    if (nextBalance < 0) {
+      throw httpError(
+        422,
+        "Debit adjustment would make the account balance negative"
+      );
+    }
+
+    const updated =
+      await repo.adjustBalance({
+        connection,
+        accountId,
+        tenantId,
+        amount:
+          adjustment,
+      });
+
+    if (!updated) {
+      throw httpError(
+        500,
+        "Unable to adjust account balance"
+      );
+    }
+
+    await repo.createAdjustmentLedgerEntry({
+      connection,
+      tenantId,
+      accountId,
+
+      entryType:
+        body.type ===
+        "credit"
+          ? "credit"
+          : "debit",
+
+      amount,
+
+      balanceAfter:
+        nextBalance,
+
+      description:
+        body.description ||
+        `${
+          body.type ===
+          "credit"
+            ? "Credit"
+            : "Debit"
+        } adjustment`,
+    });
+
+    await connection.commit();
+
+    return repo.findById({
+      accountId,
+      tenantId,
+    });
+  } catch (error) {
+    await connection.rollback();
+
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+module.exports = {
+  listOwn,
+  getOwn,
+  createOwn,
+  setStatus,
+  listTenantAccounts,
+  getTenantAccount,
+  setBalance,
+  adjustTenantBalance,
+};
