@@ -14,12 +14,12 @@ import type { BankAccount, Transfer } from "@/types/banking.types";
 import {
   Send, Smartphone, Globe2, CreditCard, Receipt, Gift, HeartHandshake,
   Settings, Wallet, Bell, ArrowRightLeft, UsersRound, UserCog,
-  BadgeDollarSign, CircleDollarSign,
+  BadgeDollarSign, CircleDollarSign,Landmark,
 } from "lucide-react";
 
 const mainServices = [
   { title: "Send money", icon: Send, href: "/dashboard/transfer" },
-  { title: "Airtime", icon: Smartphone, href: "#" },
+  { title: "FX", icon: Landmark, href: "/fx" },
   { title: "Data", icon: Globe2, href: "#" },
   { title: "Cards", icon: CreditCard, href: "/dashboard/card-lock" },
   { title: "Next-of-kin", icon: Receipt, href: "/nok" },

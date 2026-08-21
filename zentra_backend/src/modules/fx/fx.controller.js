@@ -109,10 +109,64 @@ const executeConversion =
     );
   });
 
+  const listRateSources =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.listRateSources({
+          auth:
+            req.auth,
+        });
+
+      return sendSuccess(res, {
+        message:
+          "FX rate sources retrieved",
+        data,
+      });
+    }
+  );
+
+const listRates =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.listRates({
+          auth:
+            req.auth,
+        });
+
+      return sendSuccess(res, {
+        message:
+          "FX rates retrieved",
+        data,
+      });
+    }
+  );
+
+const listSpreadRules =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.listSpreadRules({
+          auth:
+            req.auth,
+        });
+
+      return sendSuccess(res, {
+        message:
+          "FX spread rules retrieved",
+        data,
+      });
+    }
+  );
+
 module.exports = {
   createRateSource,
   createRate,
   createSpreadRule,
   createQuote,
   executeConversion,
+  listRateSources,
+  listRates,
+  listSpreadRules,
 };

@@ -574,6 +574,97 @@ const markConversionPosted = async ({
   });
 };
 
+const listRateSources = async ({
+  tenantId,
+}) => {
+  const [rows] = await db.query(
+    `
+      SELECT *
+      FROM fx_rate_sources
+      WHERE tenant_id = ?
+         OR tenant_id IS NULL
+      ORDER BY
+        CASE
+          WHEN tenant_id = ? THEN 0
+          ELSE 1
+        END,
+        priority ASC,
+        created_at DESC
+    `,
+    [
+      tenantId,
+      tenantId,
+    ]
+  );
+
+  return rows;
+};
+
+const listRates = async ({
+  tenantId,
+}) => {
+  const [rows] = await db.query(
+    `
+      SELECT
+        r.*,
+        s.code AS rate_source_code,
+        s.name AS rate_source_name,
+        s.provider_type,
+        s.priority AS source_priority
+
+      FROM fx_rates r
+
+      INNER JOIN fx_rate_sources s
+        ON s.id = r.rate_source_id
+
+      WHERE (
+        r.tenant_id = ?
+        OR r.tenant_id IS NULL
+      )
+      AND (
+        s.tenant_id = ?
+        OR s.tenant_id IS NULL
+      )
+
+      ORDER BY
+        CASE
+          WHEN r.tenant_id = ? THEN 0
+          ELSE 1
+        END,
+        r.base_currency ASC,
+        r.quote_currency ASC,
+        r.effective_at DESC
+    `,
+    [
+      tenantId,
+      tenantId,
+      tenantId,
+    ]
+  );
+
+  return rows;
+};
+
+const listSpreadRules = async ({
+  tenantId,
+}) => {
+  const [rows] = await db.query(
+    `
+      SELECT *
+      FROM fx_spread_rules
+      WHERE tenant_id = ?
+      ORDER BY
+        priority ASC,
+        created_at DESC
+    `,
+    [
+      tenantId,
+    ]
+  );
+
+  return rows;
+};
+
 module.exports = {
   createRateSource,
   findRateSourceById,
@@ -591,5 +682,7 @@ module.exports = {
   findConversionById,
   markConversionPosted,
   findQuoteByIdForUpdate,
-  
+  listRateSources,
+  listRates,
+  listSpreadRules,
 };

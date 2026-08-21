@@ -38,6 +38,30 @@ router.use(
   authenticate
 );
 
+router.get(
+  "/rate-sources",
+  requireAllPermissions(
+    "fx.rates.manage"
+  ),
+  controller.listRateSources
+);
+
+router.get(
+  "/rates",
+  requireAllPermissions(
+    "fx.rates.manage"
+  ),
+  controller.listRates
+);
+
+router.get(
+  "/spread-rules",
+  requireAllPermissions(
+    "fx.spreads.manage"
+  ),
+  controller.listSpreadRules
+);
+
 router.post(
   "/rate-sources",
   validate(

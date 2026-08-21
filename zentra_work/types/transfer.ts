@@ -6,7 +6,6 @@ export type ClientTransfer = {
   destination_account_id: string | null;
   destination_account_number: string;
   transfer_type?: "internal" | "external";
-  destination_account_name?: string | null;
   destination_bank_name?: string | null;
   destination_bank_code?: string | null;
   settlement_mode?: "internal" | "simulation" | "provider";
@@ -31,10 +30,13 @@ export type CreateTransferInput = {
   destinationAccountNumber: string;
   amount: number;
   currency: string;
-  description?: string;
   transactionPin: string;
-  transferType?: "internal" | "external";
+  transferType: "internal" | "external";
+
+  fxQuoteId?: string;
+
   destinationAccountName?: string;
   destinationBankName?: string;
   destinationBankCode?: string;
+  description?: string;
 };

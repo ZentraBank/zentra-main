@@ -454,9 +454,63 @@ const listOwnActivity = async ({
     },
   };
 };
+const lookupTransferDestination = async ({
+  auth,
+  accountNumber,
+}) => {
+  const account =
+    await repo.findTransferDestinationByNumber({
+      tenantId:
+        auth.tenantId,
+
+      accountNumber,
+    });
+
+  if (!account) {
+    throw httpError(
+      404,
+      "Destination account not found"
+    );
+  }
+
+  if (
+    account.status !==
+    "active"
+  ) {
+    throw httpError(
+      403,
+      "Destination account is not available for transfers"
+    );
+  }
+
+  return {
+    accountNumber:
+      account.account_number,
+
+    accountName:
+      account.account_name,
+
+    accountType:
+      account.account_type,
+
+    currency:
+      account.currency,
+
+    bankName:
+      "ZentraBank",
+
+    bankCode:
+      "ZENTRA",
+
+    isOwnAccount:
+      account.user_id ===
+      auth.userId,
+  };
+};
 
 module.exports = {
   listOwn,
+  
   getOwn,
   createOwn,
   setStatus,
@@ -465,4 +519,5 @@ module.exports = {
   setBalance,
   adjustTenantBalance,
   listOwnActivity,
+  lookupTransferDestination,
 };

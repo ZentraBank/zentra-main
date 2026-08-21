@@ -83,7 +83,18 @@ activityListSchema: {
       .default(20),
   }),
 },
+
+transferDestinationSchema: {
+  params: Joi.object({
+    accountNumber: Joi.string()
+      .trim()
+      .pattern(/^\d{8,20}$/)
+      .required(),
+  }),
+},
 };
+
+
 
 
 

@@ -42,6 +42,16 @@ router.get(
   ),
   controller.listOwnActivity
 );
+router.get(
+  "/transfer-destination/:accountNumber",
+  validate(
+    schemas.transferDestinationSchema
+  ),
+  requireAllPermissions(
+    "accounts.read"
+  ),
+  controller.lookupTransferDestination
+);
 
 router.get(
   "/me/:accountId",

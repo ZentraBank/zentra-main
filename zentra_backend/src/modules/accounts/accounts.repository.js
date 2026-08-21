@@ -337,6 +337,38 @@ const countActivityByUser = async ({
   );
 };
 
+const findTransferDestinationByNumber = async ({
+  tenantId,
+  accountNumber,
+}) => {
+  const [rows] = await db.query(
+    `
+      SELECT
+        a.id,
+        a.account_number,
+        a.account_name,
+        a.account_type,
+        a.currency,
+        a.status,
+        a.user_id
+
+      FROM accounts a
+
+      WHERE a.tenant_id = ?
+        AND a.account_number = ?
+        AND a.status <> 'closed'
+
+      LIMIT 1
+    `,
+    [
+      tenantId,
+      accountNumber,
+    ]
+  );
+
+  return rows[0] || null;
+};
+
 module.exports = {
   findById, findByUser, countByUser,
   existsByNumber, create, updateStatus,
@@ -344,4 +376,5 @@ module.exports = {
   findByIdForUpdate, adjustBalance,
   createAdjustmentLedgerEntry,
   findActivityByUser, countActivityByUser,
+  findTransferDestinationByNumber,
 };

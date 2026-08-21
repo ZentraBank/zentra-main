@@ -50,6 +50,18 @@ export type AccountActivityResponse = {
   };
 };
 
+export type TransferDestination = {
+  accountNumber: string;
+  accountName: string;
+  accountType: string;
+  currency: string;
+
+  bankName: string;
+  bankCode: string;
+
+  isOwnAccount: boolean;
+};
+
 export const accountService = {
   listMine(): Promise<ClientAccount[]> {
     return apiRequest<ClientAccount[]>(
@@ -57,6 +69,7 @@ export const accountService = {
     );
   },
 
+    
   getMine(
     accountId: string,
   ): Promise<ClientAccount> {
@@ -98,4 +111,14 @@ export const accountService = {
       `/accounts/me/activity?${params.toString()}`,
     );
   },
+  
+  lookupTransferDestination(
+  accountNumber: string,
+): Promise<TransferDestination> {
+  return apiRequest<TransferDestination>(
+    `/accounts/transfer-destination/${encodeURIComponent(
+      accountNumber,
+    )}`,
+  );
+},
 };

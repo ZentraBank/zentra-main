@@ -571,10 +571,37 @@ const getTransferQuote = async ({
   return quote;
 };
 
+const listRateSources = ({
+  auth,
+}) =>
+  repo.listRateSources({
+    tenantId:
+      auth.tenantId,
+  });
+
+const listRates = ({
+  auth,
+}) =>
+  repo.listRates({
+    tenantId:
+      auth.tenantId,
+  });
+
+const listSpreadRules = ({
+  auth,
+}) =>
+  repo.listSpreadRules({
+    tenantId:
+      auth.tenantId,
+  });
+
 module.exports = {
   createQuote,
   executeConversion,
   getTransferQuote,
+  listRateSources,
+  listRates,
+  listSpreadRules,
 
   createRateSource:
     ({ auth, body }) =>
