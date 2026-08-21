@@ -27,16 +27,27 @@ export type ClientTransfer = {
 
 export type CreateTransferInput = {
   sourceAccountId: string;
-  destinationAccountNumber: string;
-  amount: number;
-  currency: string;
-  transactionPin: string;
-  transferType: "internal" | "external";
 
-  fxQuoteId?: string;
+  destinationAccountNumber: string;
+
+  amount: number;
+
+  currency: string;
+
+  transactionPin: string;
+
+  transferType:
+    | "internal"
+    | "external";
+
+  fxRateId?: string;
+  fxRate?: number;
 
   destinationAccountName?: string;
+
   destinationBankName?: string;
+
   destinationBankCode?: string;
+
   description?: string;
 };

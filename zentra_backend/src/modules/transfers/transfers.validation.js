@@ -3,51 +3,114 @@ const Joi = require("joi");
 module.exports = {
   createTransferSchema: {
     body: Joi.object({
-      sourceAccountId: Joi.string().uuid().required(),
+      sourceAccountId:
+        Joi.string()
+          .uuid()
+          .required(),
 
-      destinationAccountNumber: Joi.string()
-        .trim()
-        .pattern(/^\d{8,20}$/)
-        .required(),
+      destinationAccountNumber:
+        Joi.string()
+          .trim()
+          .pattern(/^\d{8,20}$/)
+          .required(),
 
-      amount: Joi.number()
-        .positive()
-        .precision(2)
-        .required(),
+      amount:
+        Joi.number()
+          .positive()
+          .precision(2)
+          .required(),
 
-      currency: Joi.string()
-        .trim()
-        .uppercase()
-        .length(3)
-        .default("USD"),
+      currency:
+        Joi.string()
+          .trim()
+          .uppercase()
+          .length(3)
+          .required(),
 
-      transactionPin: Joi.string()
-  .pattern(/^\d{4}$/)
-  .required(),
+      transactionPin:
+        Joi.string()
+          .pattern(/^\d{4}$/)
+          .required(),
 
-appliedFxRateId: Joi.string()
-  .uuid()
-  .optional(),
+      /*
+       * Fixed tenant FX rate.
+       *
+       * Required by the service only
+       * when source/destination currencies differ.
+       */
+      fxRateId:
+        Joi.string()
+          .uuid()
+          .optional(),
 
-appliedFxRate: Joi.number()
-  .positive()
-  .precision(10)
-  .optional(),
+      fxRate:
+        Joi.number()
+          .positive()
+          .precision(10)
+          .optional(),
 
-transferType: Joi.string()
-  .valid("internal", "external")
-  .default("internal"),
-      destinationAccountName: Joi.string().trim().max(150).when("transferType", { is: "external", then: Joi.required(), otherwise: Joi.optional() }),
-      destinationBankName: Joi.string().trim().max(150).when("transferType", { is: "external", then: Joi.required(), otherwise: Joi.optional() }),
-      destinationBankCode: Joi.string().trim().max(50).when("transferType", { is: "external", then: Joi.required(), otherwise: Joi.optional() }),
+      transferType:
+        Joi.string()
+          .valid(
+            "internal",
+            "external"
+          )
+          .default("internal"),
 
-      description: Joi.string()
-        .trim()
-        .max(255)
-        .allow("")
-        .optional(),
+      destinationAccountName:
+        Joi.string()
+          .trim()
+          .max(150)
+          .when(
+            "transferType",
+            {
+              is: "external",
+              then:
+                Joi.required(),
+              otherwise:
+                Joi.optional(),
+            }
+          ),
+
+      destinationBankName:
+        Joi.string()
+          .trim()
+          .max(150)
+          .when(
+            "transferType",
+            {
+              is: "external",
+              then:
+                Joi.required(),
+              otherwise:
+                Joi.optional(),
+            }
+          ),
+
+      destinationBankCode:
+        Joi.string()
+          .trim()
+          .max(50)
+          .when(
+            "transferType",
+            {
+              is: "external",
+              then:
+                Joi.required(),
+              otherwise:
+                Joi.optional(),
+            }
+          ),
+
+      description:
+        Joi.string()
+          .trim()
+          .max(255)
+          .allow("")
+          .optional(),
     }),
   },
+
 
   transferIdSchema: {
     params: Joi.object({

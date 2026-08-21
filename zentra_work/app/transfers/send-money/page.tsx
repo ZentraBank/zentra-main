@@ -9,7 +9,9 @@ import {
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  ArrowRight,
   ChevronDown,
+  RefreshCw,
 } from "lucide-react";
 
 import BottomNav from "@/components/layout/BottomNav";
@@ -31,7 +33,7 @@ import {
 
 import {
   fxService,
-  type FxQuote,
+  type ClientFxRate,
 } from "@/services/fx.service";
 
 import { formatMoney } from "@/lib/formatters";
@@ -42,12 +44,6 @@ import type {
 
 export default function SendMoneyPage() {
   const router = useRouter();
-
-  /*
-  |--------------------------------------------------------------------------
-  | Main overlays
-  |--------------------------------------------------------------------------
-  */
 
   const [
     showConfirmOverlay,
@@ -69,12 +65,6 @@ export default function SendMoneyPage() {
     setShowResetPin,
   ] = useState(false);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Accounts
-  |--------------------------------------------------------------------------
-  */
-
   const [
     accounts,
     setAccounts,
@@ -84,12 +74,6 @@ export default function SendMoneyPage() {
     sourceAccountId,
     setSourceAccountId,
   ] = useState("");
-
-  /*
-  |--------------------------------------------------------------------------
-  | Destination
-  |--------------------------------------------------------------------------
-  */
 
   const [
     beneficiaryName,
@@ -118,13 +102,9 @@ export default function SendMoneyPage() {
     destinationError,
     setDestinationError,
   ] =
-    useState<string | null>(null);
-
-  /*
-  |--------------------------------------------------------------------------
-  | Transfer
-  |--------------------------------------------------------------------------
-  */
+    useState<string | null>(
+      null,
+    );
 
   const [
     amount,
@@ -147,29 +127,34 @@ export default function SendMoneyPage() {
   const [
     bankName,
     setBankName,
-  ] = useState("ZentraBank");
+  ] = useState(
+    "ZentraBank",
+  );
 
   const [
     bankCode,
     setBankCode,
-  ] = useState("ZENTRA");
+  ] = useState(
+    "ZENTRA",
+  );
 
   /*
   |--------------------------------------------------------------------------
-  | FX
+  | Fixed tenant FX rate
   |--------------------------------------------------------------------------
   */
 
   const [
-    fxQuote,
-    setFxQuote,
-  ] = useState<FxQuote | null>(
-    null,
-  );
+    fxRate,
+    setFxRate,
+  ] =
+    useState<ClientFxRate | null>(
+      null,
+    );
 
   const [
-    isLoadingFxQuote,
-    setIsLoadingFxQuote,
+    isLoadingFxRate,
+    setIsLoadingFxRate,
   ] = useState(false);
 
   const [
@@ -180,12 +165,6 @@ export default function SendMoneyPage() {
       null,
     );
 
-  /*
-  |--------------------------------------------------------------------------
-  | PIN
-  |--------------------------------------------------------------------------
-  */
-
   const [
     pinStatus,
     setPinStatus,
@@ -193,12 +172,6 @@ export default function SendMoneyPage() {
     isSet: boolean;
     isLocked: boolean;
   } | null>(null);
-
-  /*
-  |--------------------------------------------------------------------------
-  | General state
-  |--------------------------------------------------------------------------
-  */
 
   const [
     isLoading,
@@ -220,7 +193,7 @@ export default function SendMoneyPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Initial page load
+  | Initial load
   |--------------------------------------------------------------------------
   */
 
@@ -231,7 +204,8 @@ export default function SendMoneyPage() {
       );
 
     setBeneficiaryName(
-      params.get("name") || "",
+      params.get("name") ||
+        "",
     );
 
     setAccountNumber(
@@ -244,8 +218,9 @@ export default function SendMoneyPage() {
 
     setAmount(
       (
-        params.get("amount") ||
-        ""
+        params.get(
+          "amount",
+        ) || ""
       ).replace(
         /[^\d.]/g,
         "",
@@ -281,27 +256,19 @@ export default function SendMoneyPage() {
           accountItems,
           status,
         ]) => {
-          const activeAccounts =
+          const active =
             accountItems.filter(
               (account) =>
                 account.status ===
                 "active",
             );
 
-          setAccounts(
-            activeAccounts,
-          );
+          setAccounts(active);
+          setPinStatus(status);
 
-          setPinStatus(
-            status,
-          );
-
-          if (
-            activeAccounts[0]
-          ) {
+          if (active[0]) {
             setSourceAccountId(
-              activeAccounts[0]
-                .id,
+              active[0].id,
             );
           }
         },
@@ -325,7 +292,7 @@ export default function SendMoneyPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Selected source account
+  | Selected source
   |--------------------------------------------------------------------------
   */
 
@@ -348,12 +315,7 @@ export default function SendMoneyPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Look up internal destination by account number
-  |--------------------------------------------------------------------------
-  |
-  | A beneficiary is NOT required.
-  |
-  | The user can type any valid ZentraBank account number.
+  | Destination lookup
   |--------------------------------------------------------------------------
   */
 
@@ -365,12 +327,15 @@ export default function SendMoneyPage() {
     ) {
       setDestination(null);
       setDestinationError(null);
-      setFxQuote(null);
+
+      setFxRate(null);
+      setFxError(null);
 
       return;
     }
 
-    let cancelled = false;
+    let cancelled =
+      false;
 
     const timer =
       window.setTimeout(
@@ -383,8 +348,11 @@ export default function SendMoneyPage() {
             null,
           );
 
-          setDestination(null);
-          setFxQuote(null);
+          setDestination(
+            null,
+          );
+
+          setFxRate(null);
 
           try {
             const result =
@@ -400,10 +368,6 @@ export default function SendMoneyPage() {
               result,
             );
 
-            /*
-             * Internal account name comes from
-             * the backend, not user input.
-             */
             setBeneficiaryName(
               result.accountName,
             );
@@ -433,14 +397,16 @@ export default function SendMoneyPage() {
                 : "Unable to find this account",
             );
           } finally {
-            if (!cancelled) {
+            if (
+              !cancelled
+            ) {
               setIsLookingUpDestination(
                 false,
               );
             }
           }
         },
-        500,
+        450,
       );
 
     return () => {
@@ -457,7 +423,7 @@ export default function SendMoneyPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Does this transfer require FX?
+  | Does this transfer need FX?
   |--------------------------------------------------------------------------
   */
 
@@ -473,7 +439,10 @@ export default function SendMoneyPage() {
 
   /*
   |--------------------------------------------------------------------------
-  | Create FX quote
+  | Read tenant's fixed FX rate
+  |--------------------------------------------------------------------------
+  |
+  | The customer does NOT create a quote.
   |--------------------------------------------------------------------------
   */
 
@@ -483,102 +452,102 @@ export default function SendMoneyPage() {
       !selectedAccount ||
       !destination
     ) {
-      setFxQuote(null);
+      setFxRate(null);
       setFxError(null);
-      setIsLoadingFxQuote(
+      setIsLoadingFxRate(
         false,
       );
 
       return;
     }
 
-    const sourceAmount =
-      Number(amount);
+    let cancelled =
+      false;
 
-    if (
-      !Number.isFinite(
-        sourceAmount,
-      ) ||
-      sourceAmount <= 0
-    ) {
-      setFxQuote(null);
-      setFxError(null);
+    const loadRate =
+      async () => {
+        setIsLoadingFxRate(
+          true,
+        );
 
-      return;
-    }
+        setFxError(null);
+        setFxRate(null);
 
-    let cancelled = false;
+        try {
+          const result =
+            await fxService.getRate({
+              sourceCurrency:
+                selectedAccount.currency,
 
-    const timer =
-      window.setTimeout(
-        async () => {
-          setIsLoadingFxQuote(
-            true,
-          );
+              destinationCurrency:
+                destination.currency,
+            });
 
-          setFxError(null);
-          setFxQuote(null);
-
-          try {
-            const result =
-              await fxService.createTransferQuote(
-                {
-                  sourceCurrency:
-                    selectedAccount.currency,
-
-                  destinationCurrency:
-                    destination.currency,
-
-                  sourceAmount,
-                },
-              );
-
-            if (cancelled) {
-              return;
-            }
-
-            setFxQuote(
-              result.quote,
-            );
-          } catch (
-            requestError
-          ) {
-            if (cancelled) {
-              return;
-            }
-
-            setFxQuote(null);
-
-            setFxError(
-              requestError instanceof
-                Error
-                ? requestError.message
-                : "Unable to get an exchange rate",
-            );
-          } finally {
-            if (!cancelled) {
-              setIsLoadingFxQuote(
-                false,
-              );
-            }
+          if (cancelled) {
+            return;
           }
-        },
-        500,
-      );
+
+          setFxRate(
+            result,
+          );
+        } catch (
+          requestError
+        ) {
+          if (cancelled) {
+            return;
+          }
+
+          setFxRate(null);
+
+          setFxError(
+            requestError instanceof
+              Error
+              ? requestError.message
+              : "No exchange rate is currently available",
+          );
+        } finally {
+          if (
+            !cancelled
+          ) {
+            setIsLoadingFxRate(
+              false,
+            );
+          }
+        }
+      };
+
+    void loadRate();
 
     return () => {
       cancelled = true;
-
-      window.clearTimeout(
-        timer,
-      );
     };
   }, [
-    amount,
-    destination,
     requiresFx,
     selectedAccount,
+    destination,
   ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Calculated FX destination amount
+  |--------------------------------------------------------------------------
+  */
+
+  const convertedAmount =
+    requiresFx &&
+    fxRate &&
+    Number.isFinite(
+      numericAmount,
+    ) &&
+    numericAmount > 0
+      ? Math.round(
+          numericAmount *
+            Number(
+              fxRate.rate,
+            ) *
+            100,
+        ) / 100
+      : null;
 
   /*
   |--------------------------------------------------------------------------
@@ -595,17 +564,10 @@ export default function SendMoneyPage() {
           destination.accountNumber,
     );
 
-  const fxQuoteIsUsable =
-    !requiresFx ||
-    Boolean(
-      fxQuote &&
-        fxQuote.status ===
-          "active" &&
-        new Date(
-          fxQuote.expires_at,
-        ).getTime() >
-          Date.now(),
-    );
+  const destinationReady =
+    transferType ===
+      "external" ||
+    Boolean(destination);
 
   const externalRecipientReady =
     transferType !==
@@ -616,72 +578,89 @@ export default function SendMoneyPage() {
         bankCode.trim(),
     );
 
-  const destinationReady =
-    transferType ===
-      "external" ||
-    Boolean(destination);
+  const fxReady =
+    !requiresFx ||
+    Boolean(fxRate);
 
   const canSubmit =
     Boolean(
       selectedAccount &&
+
         accountNumber.length >=
           8 &&
+
         Number.isFinite(
           numericAmount,
         ) &&
+
         numericAmount > 0 &&
+
         numericAmount <=
           Number(
             selectedAccount.balance,
           ) &&
+
         destinationReady &&
+
         !sameAccount &&
+
         externalRecipientReady &&
+
         !isLookingUpDestination &&
-        !isLoadingFxQuote &&
-        fxQuoteIsUsable,
+
+        !isLoadingFxRate &&
+
+        fxReady,
     );
 
   const displayAmount =
     selectedAccount
       ? formatMoney(
-          numericAmount || 0,
+          numericAmount ||
+            0,
           selectedAccount.currency,
         )
-      : amount || "0.00";
+      : amount ||
+        "0.00";
 
   /*
   |--------------------------------------------------------------------------
-  | PIN flow
+  | PIN
   |--------------------------------------------------------------------------
   */
 
-  const openPinFlow = () => {
-    setShowConfirmOverlay(
-      false,
-    );
-
-    setError(null);
-
-    if (
-      !pinStatus?.isSet
-    ) {
-      setShowCreatePin(true);
-      return;
-    }
-
-    if (
-      pinStatus.isLocked
-    ) {
-      setError(
-        "Your transaction PIN is temporarily locked. Please try again later.",
+  const openPinFlow =
+    () => {
+      setShowConfirmOverlay(
+        false,
       );
 
-      return;
-    }
+      setError(null);
 
-    setShowPinOverlay(true);
-  };
+      if (
+        !pinStatus?.isSet
+      ) {
+        setShowCreatePin(
+          true,
+        );
+
+        return;
+      }
+
+      if (
+        pinStatus.isLocked
+      ) {
+        setError(
+          "Your transaction PIN is temporarily locked. Please try again later.",
+        );
+
+        return;
+      }
+
+      setShowPinOverlay(
+        true,
+      );
+    };
 
   /*
   |--------------------------------------------------------------------------
@@ -703,16 +682,19 @@ export default function SendMoneyPage() {
 
       if (
         requiresFx &&
-        !fxQuote
+        !fxRate
       ) {
         setError(
-          "An exchange-rate quote is required for this transfer.",
+          "An exchange rate is required for this transfer.",
         );
 
         return;
       }
 
-      setIsSubmitting(true);
+      setIsSubmitting(
+        true,
+      );
+
       setError(null);
 
       try {
@@ -729,8 +711,8 @@ export default function SendMoneyPage() {
                 numericAmount,
 
               /*
-               * Currency is always the
-               * SOURCE account currency.
+               * Transfer currency is
+               * always source currency.
                */
               currency:
                 selectedAccount.currency,
@@ -739,10 +721,23 @@ export default function SendMoneyPage() {
 
               transferType,
 
-              ...(fxQuote
+              /*
+               * The client sends the
+               * rate it just reviewed.
+               *
+               * Backend checks it again
+               * before moving funds.
+               */
+              ...(requiresFx &&
+              fxRate
                 ? {
-                    fxQuoteId:
-                      fxQuote.id,
+                    fxRateId:
+                      fxRate.id,
+
+                    fxRate:
+                      Number(
+                        fxRate.rate,
+                      ),
                   }
                 : {}),
 
@@ -796,6 +791,35 @@ export default function SendMoneyPage() {
         setShowPinOverlay(
           false,
         );
+
+        /*
+         * If the tenant changed
+         * the rate between preview
+         * and submission, refresh it.
+         */
+        if (
+          requiresFx &&
+          selectedAccount &&
+          destination
+        ) {
+          try {
+            const latest =
+              await fxService.getRate({
+                sourceCurrency:
+                  selectedAccount.currency,
+
+                destinationCurrency:
+                  destination.currency,
+              });
+
+            setFxRate(
+              latest,
+            );
+          } catch {
+            // Main transfer error
+            // remains visible.
+          }
+        }
       } finally {
         setIsSubmitting(
           false,
@@ -803,15 +827,12 @@ export default function SendMoneyPage() {
       }
     };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Page
-  |--------------------------------------------------------------------------
-  */
-
   return (
     <main className="relative min-h-screen bg-[#E7EBF0] text-[#4A4A4A]">
       <section className="mx-auto min-h-screen w-full max-w-[430px] px-6 pb-[110px] pt-12">
+
+        {/* HEADER */}
+
         <header className="relative flex items-center justify-center">
           <Link
             href="/transfers"
@@ -834,14 +855,17 @@ export default function SendMoneyPage() {
           ) => {
             event.preventDefault();
 
-            if (canSubmit) {
+            if (
+              canSubmit
+            ) {
               setShowConfirmOverlay(
                 true,
               );
             }
           }}
         >
-          {/* FROM ACCOUNT */}
+
+          {/* SOURCE */}
 
           <div>
             <label className="mb-1 block font-heading text-[12px] font-black tracking-[0.05em]">
@@ -861,14 +885,18 @@ export default function SendMoneyPage() {
                       .value,
                   );
 
-                  setFxQuote(
+                  setFxRate(
+                    null,
+                  );
+
+                  setFxError(
                     null,
                   );
                 }}
                 disabled={
                   isLoading
                 }
-                className="h-[38px] w-full appearance-none rounded-[7px] bg-white/80 px-3 pr-9 text-[13px] outline-none"
+                className="h-[42px] w-full appearance-none rounded-[8px] bg-white/80 px-3 pr-9 text-[13px] outline-none"
               >
                 {accounts.map(
                   (
@@ -884,12 +912,12 @@ export default function SendMoneyPage() {
                     >
                       {
                         account.account_name
-                      }{" "}
-                      •{" "}
+                      }
+                      {" • "}
                       {
                         account.account_number
-                      }{" "}
-                      •{" "}
+                      }
+                      {" • "}
                       {
                         account.currency
                       }
@@ -905,7 +933,7 @@ export default function SendMoneyPage() {
             </div>
           </div>
 
-          {/* ACCOUNT NUMBER */}
+          {/* DESTINATION NUMBER */}
 
           <div className="mt-5">
             <label className="mb-1 block font-heading text-[12px] font-black tracking-[0.05em]">
@@ -940,41 +968,47 @@ export default function SendMoneyPage() {
                   null,
                 );
 
-                setFxQuote(
+                setFxRate(
                   null,
                 );
               }}
               placeholder="Destination account number"
-              className="h-[35px] w-full rounded-[7px] bg-white/80 px-3 text-[15px] outline-none placeholder:text-black/25"
+              className="h-[42px] w-full rounded-[8px] bg-white/80 px-3 text-[15px] outline-none placeholder:text-black/25"
             />
 
             {transferType ===
               "internal" &&
               isLookingUpDestination && (
-                <p className="mt-2 text-[11px] text-black/40">
+                <div className="mt-2 flex items-center gap-2 text-[11px] text-black/45">
+                  <RefreshCw
+                    size={12}
+                    className="animate-spin"
+                  />
+
                   Checking
                   account…
-                </p>
+                </div>
               )}
 
             {transferType ===
               "internal" &&
               destination && (
-                <div className="mt-2 rounded-[8px] bg-green-50 px-3 py-2 text-[11px] text-green-800">
-                  <p className="font-bold">
+                <div className="mt-2 rounded-[9px] border border-green-100 bg-green-50 px-3 py-3">
+                  <p className="text-[13px] font-bold text-green-900">
                     {
                       destination.accountName
                     }
                   </p>
 
-                  <p className="mt-0.5">
+                  <p className="mt-1 text-[11px] text-green-700">
                     {
                       destination.accountType
-                    }{" "}
-                    •{" "}
+                    }
+                    {" • "}
                     {
                       destination.currency
                     }
+
                     {destination.isOwnAccount
                       ? " • Your account"
                       : ""}
@@ -992,15 +1026,15 @@ export default function SendMoneyPage() {
 
             {sameAccount && (
               <p className="mt-2 text-[11px] text-red-600">
-                You cannot
-                transfer money
-                to the same
-                account.
+                Source and
+                destination
+                accounts cannot
+                be the same.
               </p>
             )}
           </div>
 
-          {/* BENEFICIARY NAME */}
+          {/* BENEFICIARY */}
 
           <div className="mt-5">
             <label className="mb-1 block font-heading text-[12px] font-black tracking-[0.05em]">
@@ -1029,41 +1063,37 @@ export default function SendMoneyPage() {
                   ? "Account holder will appear automatically"
                   : "Beneficiary name"
               }
-              className="h-[35px] w-full rounded-[7px] bg-white/80 px-3 text-[15px] outline-none placeholder:text-black/25 read-only:text-black/60"
+              className="h-[42px] w-full rounded-[8px] bg-white/80 px-3 text-[15px] outline-none placeholder:text-black/25 read-only:text-black/60"
             />
           </div>
 
-          {/* EXTERNAL TRANSFER INFO */}
+          {/* EXTERNAL NOTICE */}
 
           {transferType ===
             "external" && (
-            <div className="mt-4 rounded-[7px] bg-blue-50 px-3 py-3 text-[11px] leading-4 text-blue-800">
-              <strong>
-                {bankName}
-              </strong>{" "}
-              demo transfer.
-              The sender balance
-              and ledger will
-              update, but no real
-              bank settlement
-              will occur.
-            </div>
-          )}
+              <div className="mt-4 rounded-[8px] bg-blue-50 px-3 py-3 text-[11px] leading-4 text-blue-800">
+                <strong>
+                  {bankName}
+                </strong>{" "}
+                demo transfer.
+                No real external
+                bank settlement
+                will occur.
+              </div>
+            )}
 
           {/* AMOUNT */}
 
-          <div className="mt-5 grid grid-cols-[70px_1fr] gap-4">
-            <div className="pt-[21px]">
-              <div className="flex h-[31px] items-center justify-center rounded-full bg-white px-2 text-[12px] shadow-sm">
+          <div className="mt-5">
+            <label className="mb-1 block font-heading text-[12px] font-black tracking-[0.05em]">
+              Amount
+            </label>
+
+            <div className="flex gap-3">
+              <div className="flex h-[42px] min-w-[70px] items-center justify-center rounded-[8px] bg-white px-3 text-[12px] font-bold shadow-sm">
                 {selectedAccount?.currency ||
                   "—"}
               </div>
-            </div>
-
-            <div>
-              <label className="mb-1 block font-heading text-[12px] font-black tracking-[0.05em]">
-                Amount
-              </label>
 
               <input
                 inputMode="decimal"
@@ -1071,39 +1101,52 @@ export default function SendMoneyPage() {
                 onChange={(
                   event,
                 ) => {
-                  setAmount(
-                    event.target.value.replace(
-                      /[^\d.]/g,
-                      "",
-                    ),
-                  );
+                  const next =
+                    event.target.value
+                      .replace(
+                        /[^\d.]/g,
+                        "",
+                      );
 
-                  setFxQuote(
-                    null,
+                  setAmount(
+                    next,
                   );
                 }}
                 placeholder="0.00"
-                className="h-[35px] w-full rounded-[7px] bg-white/80 px-3 text-[15px] outline-none placeholder:text-black/25"
+                className="h-[42px] min-w-0 flex-1 rounded-[8px] bg-white/80 px-3 text-[15px] outline-none placeholder:text-black/25"
               />
-
-              <p className="mt-1 text-right text-[11px] font-bold tracking-[0.04em] text-black/35">
-                balance:
-                <span className="ml-2 text-black/45">
-                  {selectedAccount
-                    ? formatMoney(
-                        selectedAccount.balance,
-                        selectedAccount.currency,
-                      )
-                    : "—"}
-                </span>
-              </p>
             </div>
+
+            <p className="mt-1 text-right text-[11px] font-bold text-black/35">
+              Balance:{" "}
+              <span className="text-black/50">
+                {selectedAccount
+                  ? formatMoney(
+                      selectedAccount.balance,
+                      selectedAccount.currency,
+                    )
+                  : "—"}
+              </span>
+            </p>
+
+            {selectedAccount &&
+              numericAmount >
+                Number(
+                  selectedAccount.balance,
+                ) && (
+                <p className="mt-2 text-[11px] text-red-600">
+                  The amount
+                  exceeds your
+                  available
+                  balance.
+                </p>
+              )}
           </div>
 
-          {/* FX PREVIEW */}
+          {/* FIXED FX RATE */}
 
           {requiresFx && (
-            <div className="mt-5 rounded-[12px] border border-blue-100 bg-blue-50/80 p-4">
+            <div className="mt-5 rounded-[12px] border border-blue-100 bg-blue-50 p-4">
               <div className="flex items-center justify-between">
                 <p className="text-[12px] font-black text-blue-950">
                   Currency
@@ -1115,102 +1158,98 @@ export default function SendMoneyPage() {
                 </span>
               </div>
 
-              {isLoadingFxQuote ? (
-                <p className="mt-3 text-[12px] text-blue-700">
-                  Getting
+              {isLoadingFxRate ? (
+                <div className="mt-4 flex items-center gap-2 text-[12px] text-blue-700">
+                  <RefreshCw
+                    size={13}
+                    className="animate-spin"
+                  />
+
+                  Loading
                   exchange
                   rate…
-                </p>
-              ) : fxQuote ? (
-                <>
-                  <div className="mt-4 flex items-end justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-black/40">
-                        You send
-                      </p>
-
-                      <p className="mt-1 text-[18px] font-black text-black/80">
-                        {formatMoney(
-                          fxQuote.source_amount,
-                          fxQuote.source_currency,
-                        )}
-                      </p>
-                    </div>
-
-                    <span className="pb-1 text-black/30">
-                      →
-                    </span>
-
-                    <div className="text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-wide text-black/40">
-                        Recipient
-                        gets
-                      </p>
-
-                      <p className="mt-1 text-[18px] font-black text-blue-700">
-                        {formatMoney(
-                          fxQuote.destination_amount,
-                          fxQuote.destination_currency,
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 border-t border-blue-100 pt-3 text-[11px] text-black/50">
-                    <div className="flex justify-between gap-4">
-                      <span>
-                        Exchange
-                        rate
-                      </span>
-
-                      <span className="text-right font-bold text-black/65">
-                        1{" "}
-                        {
-                          fxQuote.source_currency
-                        }{" "}
-                        ={" "}
-                        {Number(
-                          fxQuote.customer_rate,
-                        ).toFixed(
-                          4,
-                        )}{" "}
-                        {
-                          fxQuote.destination_currency
-                        }
-                      </span>
-                    </div>
-
-                    {Number(
-                      fxQuote.fee_amount,
-                    ) >
-                      0 && (
-                      <div className="mt-1 flex justify-between">
-                        <span>
-                          FX fee
-                        </span>
-
-                        <span>
-                          {formatMoney(
-                            fxQuote.fee_amount,
-                            fxQuote.source_currency,
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </>
+                </div>
               ) : fxError ? (
-                <p className="mt-3 text-[11px] text-red-600">
+                <div className="mt-4 rounded-[8px] bg-red-50 px-3 py-3 text-[11px] text-red-600">
                   {fxError}
-                </p>
-              ) : (
-                <p className="mt-3 text-[11px] text-blue-700">
-                  Enter an
-                  amount to get
-                  your exchange
-                  rate.
-                </p>
-              )}
+                </div>
+              ) : fxRate ? (
+                <>
+                  <div className="mt-4 rounded-[9px] bg-white/70 px-3 py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-black/35">
+                      Exchange
+                      rate
+                    </p>
+
+                    <p className="mt-1 text-[15px] font-black text-[#252525]">
+                      1{" "}
+                      {
+                        fxRate.sourceCurrency
+                      }
+                      {" = "}
+                      {Number(
+                        fxRate.rate,
+                      ).toLocaleString(
+                        undefined,
+                        {
+                          maximumFractionDigits: 8,
+                        },
+                      )}
+                      {" "}
+                      {
+                        fxRate.destinationCurrency
+                      }
+                    </p>
+                  </div>
+
+                  {convertedAmount !==
+                    null && (
+                    <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                      <div>
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-black/35">
+                          You send
+                        </p>
+
+                        <p className="mt-1 text-[17px] font-black text-black/75">
+                          {formatMoney(
+                            numericAmount,
+                            fxRate.sourceCurrency,
+                          )}
+                        </p>
+                      </div>
+
+                      <ArrowRight
+                        size={17}
+                        className="text-black/25"
+                      />
+
+                      <div className="text-right">
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-black/35">
+                          Recipient
+                          gets
+                        </p>
+
+                        <p className="mt-1 text-[17px] font-black text-blue-700">
+                          {formatMoney(
+                            convertedAmount,
+                            fxRate.destinationCurrency,
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="mt-4 text-[10px] leading-4 text-black/40">
+                    This rate is
+                    set by your
+                    bank. It will
+                    be checked
+                    again when
+                    you confirm
+                    the transfer.
+                  </p>
+                </>
+              ) : null}
             </div>
           )}
 
@@ -1222,7 +1261,9 @@ export default function SendMoneyPage() {
             </label>
 
             <textarea
-              value={purpose}
+              value={
+                purpose
+              }
               onChange={(
                 event,
               ) =>
@@ -1234,18 +1275,18 @@ export default function SendMoneyPage() {
                 )
               }
               placeholder="What’s this for?"
-              className="h-[118px] w-full resize-none rounded-[7px] bg-white/80 px-3 py-2 text-[15px] outline-none placeholder:text-black/25"
+              className="h-[100px] w-full resize-none rounded-[8px] bg-white/80 px-3 py-2 text-[15px] outline-none placeholder:text-black/25"
             />
 
-            <p className="-mt-1 text-right text-[11px] font-bold text-black/20">
+            <p className="mt-1 text-right text-[11px] font-bold text-black/20">
               Optional
             </p>
           </div>
 
-          {/* ERRORS */}
+          {/* GENERAL ERROR */}
 
           {error && (
-            <div className="mt-4 rounded-[7px] border border-red-200 bg-red-50 px-3 py-3 text-[12px] text-red-700">
+            <div className="mt-4 rounded-[8px] border border-red-200 bg-red-50 px-3 py-3 text-[12px] text-red-700">
               {error}
             </div>
           )}
@@ -1253,25 +1294,12 @@ export default function SendMoneyPage() {
           {!isLoading &&
             accounts.length ===
               0 && (
-              <div className="mt-4 rounded-[7px] bg-amber-50 px-3 py-3 text-[12px] text-amber-800">
+              <div className="mt-4 rounded-[8px] bg-amber-50 px-3 py-3 text-[12px] text-amber-800">
                 You need an
                 active account
-                before you can
-                make a transfer.
+                before making a
+                transfer.
               </div>
-            )}
-
-          {selectedAccount &&
-            numericAmount >
-              Number(
-                selectedAccount.balance,
-              ) && (
-              <p className="mt-2 text-[11px] text-red-600">
-                The amount
-                exceeds your
-                available
-                balance.
-              </p>
             )}
 
           {/* SUBMIT */}
@@ -1283,12 +1311,12 @@ export default function SendMoneyPage() {
               isSubmitting ||
               isLoading
             }
-            className="mt-20 flex h-[43px] w-full items-center justify-center rounded-[8px] bg-[#2458E8] text-[14px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+            className="mt-10 flex h-[46px] w-full items-center justify-center rounded-[8px] bg-[#2458E8] text-[14px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
           >
             {isSubmitting
               ? "Sending…"
-              : isLoadingFxQuote
-                ? "Getting rate…"
+              : isLoadingFxRate
+                ? "Loading rate…"
                 : "Send money"}
           </button>
         </form>
@@ -1415,7 +1443,7 @@ export default function SendMoneyPage() {
 
 /*
 |--------------------------------------------------------------------------
-| Create transaction PIN
+| Create PIN
 |--------------------------------------------------------------------------
 */
 
@@ -1475,6 +1503,7 @@ function CreateTransactionPinOverlay({
         setError(
           "Enter your account password.",
         );
+
         return;
       }
 
@@ -1486,15 +1515,18 @@ function CreateTransactionPinOverlay({
         setError(
           "PIN must be exactly 4 digits.",
         );
+
         return;
       }
 
       if (
-        pin !== confirmPin
+        pin !==
+        confirmPin
       ) {
         setError(
           "PIN confirmation does not match.",
         );
+
         return;
       }
 
@@ -1502,12 +1534,10 @@ function CreateTransactionPinOverlay({
       setError("");
 
       try {
-        await transactionPinService.setup(
-          {
-            password,
-            pin,
-          },
-        );
+        await transactionPinService.setup({
+          password,
+          pin,
+        });
 
         await onCreated();
       } catch (
@@ -1636,7 +1666,7 @@ function CreateTransactionPinOverlay({
 
 /*
 |--------------------------------------------------------------------------
-| Reset forgotten transaction PIN
+| Reset PIN
 |--------------------------------------------------------------------------
 */
 
@@ -1689,16 +1719,11 @@ function ResetTransactionPinOverlay({
 
   useEffect(() => {
     if (!open) {
-      setRequested(
-        false,
-      );
-
+      setRequested(false);
       setCode("");
       setNewPin("");
       setConfirmPin("");
-      setDevelopmentCode(
-        "",
-      );
+      setDevelopmentCode("");
       setError("");
     }
   }, [open]);
@@ -1748,6 +1773,7 @@ function ResetTransactionPinOverlay({
         setError(
           "Enter the 6-digit reset code.",
         );
+
         return;
       }
 
@@ -1759,6 +1785,7 @@ function ResetTransactionPinOverlay({
         setError(
           "New PIN must be exactly 4 digits.",
         );
+
         return;
       }
 
@@ -1769,6 +1796,7 @@ function ResetTransactionPinOverlay({
         setError(
           "PIN confirmation does not match.",
         );
+
         return;
       }
 
@@ -1776,12 +1804,10 @@ function ResetTransactionPinOverlay({
       setError("");
 
       try {
-        await transactionPinService.reset(
-          {
-            code,
-            newPin,
-          },
-        );
+        await transactionPinService.reset({
+          code,
+          newPin,
+        });
 
         await onReset();
       } catch (
@@ -1821,9 +1847,7 @@ function ResetTransactionPinOverlay({
               onClick={() =>
                 void requestCode()
               }
-              disabled={
-                busy
-              }
+              disabled={busy}
               className="mt-6 h-[44px] w-full rounded-[10px] bg-[#2458E8] font-bold text-white disabled:opacity-50"
             >
               {busy
@@ -1868,7 +1892,9 @@ function ResetTransactionPinOverlay({
             <input
               type="password"
               inputMode="numeric"
-              value={newPin}
+              value={
+                newPin
+              }
               onChange={(
                 event,
               ) =>
@@ -1918,9 +1944,7 @@ function ResetTransactionPinOverlay({
               onClick={() =>
                 void resetPin()
               }
-              disabled={
-                busy
-              }
+              disabled={busy}
               className="mt-5 h-[44px] w-full rounded-[10px] bg-[#2458E8] font-bold text-white disabled:opacity-50"
             >
               {busy
