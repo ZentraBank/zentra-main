@@ -122,4 +122,31 @@ const adjustTenantBalance =
     }
   );
 
-module.exports = { listOwn, getOwn, createOwn, setStatus, listTenantAccounts, getTenantAccount, setBalance, adjustTenantBalance };
+  const listOwnActivity =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.listOwnActivity({
+          auth:
+            req.auth,
+
+          page:
+            Number(
+              req.query.page
+            ) || 1,
+
+          pageSize:
+            Number(
+              req.query.pageSize
+            ) || 20,
+        });
+
+      return sendSuccess(res, {
+        message:
+          "Account activity retrieved successfully",
+        data,
+      });
+    }
+  );
+
+module.exports = { listOwn, getOwn, createOwn, setStatus, listTenantAccounts, getTenantAccount, setBalance, adjustTenantBalance , listOwnActivity };

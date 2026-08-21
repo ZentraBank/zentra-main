@@ -32,6 +32,16 @@ router.get(
   requireAllPermissions("accounts.read"),
   controller.listOwn
 );
+router.get(
+  "/me/activity",
+  validate(
+    schemas.activityListSchema
+  ),
+  requireAllPermissions(
+    "accounts.read"
+  ),
+  controller.listOwnActivity
+);
 
 router.get(
   "/me/:accountId",

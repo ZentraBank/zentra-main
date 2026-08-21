@@ -521,10 +521,60 @@ const executeConversion = async ({
 
   return posted;
 };
+const getTransferQuote = async ({
+  auth,
+  quoteId,
+}) => {
+  const quote =
+    await repo.findQuoteById({
+      tenantId: auth.tenantId,
+      quoteId,
+    });
+
+  if (!quote) {
+    throw httpError(
+      404,
+      "FX quote not found"
+    );
+  }
+
+  if (
+    quote.user_id !==
+    auth.userId
+  ) {
+    throw httpError(
+      403,
+      "This FX quote does not belong to you"
+    );
+  }
+
+  if (
+    quote.status !== "active"
+  ) {
+    throw httpError(
+      409,
+      "FX quote is no longer active"
+    );
+  }
+
+  if (
+    new Date(
+      quote.expires_at
+    ).getTime() <= Date.now()
+  ) {
+    throw httpError(
+      409,
+      "FX quote has expired"
+    );
+  }
+
+  return quote;
+};
 
 module.exports = {
   createQuote,
   executeConversion,
+  getTransferQuote,
 
   createRateSource:
     ({ auth, body }) =>

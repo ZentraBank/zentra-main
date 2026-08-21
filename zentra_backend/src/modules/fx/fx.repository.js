@@ -419,28 +419,54 @@ const findQuoteById = async ({
   return rows[0] || null;
 };
 
-const acceptQuote = async ({
+const findQuoteByIdForUpdate = async ({
+  connection,
   tenantId,
   quoteId,
 }) => {
-  await db.query(
-    `
-      UPDATE fx_quotes
-      SET
-        status = 'accepted',
-        accepted_at = NOW()
-      WHERE tenant_id = ?
-        AND id = ?
-        AND status = 'active'
-        AND expires_at > NOW()
-    `,
-    [tenantId, quoteId]
-  );
+  const [rows] =
+    await connection.query(
+      `
+        SELECT *
+        FROM fx_quotes
+        WHERE tenant_id = ?
+          AND id = ?
+        LIMIT 1
+        FOR UPDATE
+      `,
+      [
+        tenantId,
+        quoteId,
+      ]
+    );
 
-  return findQuoteById({
-    tenantId,
-    quoteId,
-  });
+  return rows[0] || null;
+};
+
+const acceptQuote = async ({
+  connection = db,
+  tenantId,
+  quoteId,
+}) => {
+  const [result] =
+    await connection.query(
+      `
+        UPDATE fx_quotes
+        SET
+          status = 'accepted',
+          accepted_at = NOW()
+        WHERE tenant_id = ?
+          AND id = ?
+          AND status = 'active'
+          AND expires_at > NOW()
+      `,
+      [
+        tenantId,
+        quoteId,
+      ]
+    );
+
+  return result.affectedRows === 1;
 };
 
 const createConversion = async ({
@@ -564,4 +590,6 @@ module.exports = {
   createConversion,
   findConversionById,
   markConversionPosted,
+  findQuoteByIdForUpdate,
+  
 };

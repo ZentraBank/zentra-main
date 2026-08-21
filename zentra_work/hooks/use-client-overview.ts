@@ -1,98 +1,254 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
-import { accountService } from "@/services/account.service";
-import { transferService } from "@/services/transfer.service";
-import { cardService } from "@/services/card.service";
-import { notificationService } from "@/services/notification.service";
+import {
+  accountService,
+  type AccountActivity,
+} from "@/services/account.service";
 
-import type { ClientAccount } from "@/types/account";
-import type { ClientTransfer } from "@/types/transfer";
-import type { ClientCard } from "@/types/card";
-import type { ClientNotification } from "@/types/notification";
-import type { CardPurchaseRequest } from "@/services/card.service";
+import {
+  transferService,
+} from "@/services/transfer.service";
+
+import {
+  cardService,
+} from "@/services/card.service";
+
+import {
+  notificationService,
+} from "@/services/notification.service";
+
+import type {
+  ClientAccount,
+} from "@/types/account";
+
+import type {
+  ClientTransfer,
+} from "@/types/transfer";
+
+import type {
+  ClientCard,
+} from "@/types/card";
+
+import type {
+  ClientNotification,
+} from "@/types/notification";
+
+import type {
+  CardPurchaseRequest,
+} from "@/services/card.service";
 
 export function useClientOverview() {
-  const [accounts, setAccounts] = useState<ClientAccount[]>([]);
-  const [transfers, setTransfers] = useState<ClientTransfer[]>([]);
-  const [cards, setCards] = useState<ClientCard[]>([]);
-  const [notifications, setNotifications] = useState<ClientNotification[]>([]);
-  const [cardPurchaseRequests, setCardPurchaseRequests] = useState<
-    CardPurchaseRequest[]
-  >([]);
+  const [
+    accounts,
+    setAccounts,
+  ] =
+    useState<ClientAccount[]>(
+      [],
+    );
 
-  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [
+    transfers,
+    setTransfers,
+  ] =
+    useState<ClientTransfer[]>(
+      [],
+    );
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [
+    activity,
+    setActivity,
+  ] =
+    useState<AccountActivity[]>(
+      [],
+    );
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const [
+    cards,
+    setCards,
+  ] =
+    useState<ClientCard[]>(
+      [],
+    );
 
-    const [
-      accountsResult,
-      transfersResult,
-      cardsResult,
-      notificationsResult,
-      unreadResult,
-      cardRequestsResult,
-    ] = await Promise.allSettled([
-      accountService.listMine(),
-      transferService.listMine(1, 5),
-      cardService.listMine(),
-      notificationService.list(1, 5),
-      notificationService.unreadCount(),
-      cardService.listMyPurchaseRequests(),
-    ]);
+  const [
+    notifications,
+    setNotifications,
+  ] =
+    useState<
+      ClientNotification[]
+    >([]);
 
-    if (accountsResult.status === "fulfilled") {
-      setAccounts(accountsResult.value);
-    }
+  const [
+    cardPurchaseRequests,
+    setCardPurchaseRequests,
+  ] =
+    useState<
+      CardPurchaseRequest[]
+    >([]);
 
-    if (transfersResult.status === "fulfilled") {
-      setTransfers(transfersResult.value);
-    }
+  const [
+    unreadNotificationCount,
+    setUnreadNotificationCount,
+  ] =
+    useState(0);
 
-    if (cardsResult.status === "fulfilled") {
-      setCards(cardsResult.value);
-    }
+  const [
+    isLoading,
+    setIsLoading,
+  ] =
+    useState(true);
 
-    if (notificationsResult.status === "fulfilled") {
-      setNotifications(notificationsResult.value);
-    }
+  const [
+    error,
+    setError,
+  ] =
+    useState<string | null>(
+      null,
+    );
 
-   if (unreadResult.status === "fulfilled") {
-  setUnreadNotificationCount(unreadResult.value);
-}
+  const load =
+    useCallback(async () => {
+      setIsLoading(true);
+      setError(null);
 
-    if (cardRequestsResult.status === "fulfilled") {
-      setCardPurchaseRequests(cardRequestsResult.value);
-    }
+      const [
+        accountsResult,
+        transfersResult,
+        activityResult,
+        cardsResult,
+        notificationsResult,
+        unreadResult,
+        cardRequestsResult,
+      ] =
+        await Promise.allSettled([
+          accountService.listMine(),
 
-    const criticalFailure =
-      accountsResult.status === "rejected" ||
-      transfersResult.status === "rejected";
+          transferService.listMine(
+            1,
+            5,
+          ),
 
-    if (criticalFailure) {
-      const reason =
-        accountsResult.status === "rejected"
-          ? accountsResult.reason
-          : transfersResult.status === "rejected"
-            ? transfersResult.reason
-            : null;
+          accountService.listMyActivity(
+            1,
+            5,
+          ),
 
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Unable to load your banking information",
-      );
-    }
+          cardService.listMine(),
 
-    setIsLoading(false);
-  }, []);
+          notificationService.list(
+            1,
+            5,
+          ),
+
+          notificationService.unreadCount(),
+
+          cardService.listMyPurchaseRequests(),
+        ]);
+
+      if (
+        accountsResult.status ===
+        "fulfilled"
+      ) {
+        setAccounts(
+          accountsResult.value,
+        );
+      }
+
+      if (
+        transfersResult.status ===
+        "fulfilled"
+      ) {
+        setTransfers(
+          transfersResult.value,
+        );
+      }
+
+      if (
+        activityResult.status ===
+        "fulfilled"
+      ) {
+        setActivity(
+          activityResult.value.activity,
+        );
+      }
+
+      if (
+        cardsResult.status ===
+        "fulfilled"
+      ) {
+        setCards(
+          cardsResult.value,
+        );
+      }
+
+      if (
+        notificationsResult.status ===
+        "fulfilled"
+      ) {
+        setNotifications(
+          notificationsResult.value,
+        );
+      }
+
+      if (
+        unreadResult.status ===
+        "fulfilled"
+      ) {
+        setUnreadNotificationCount(
+          unreadResult.value,
+        );
+      }
+
+      if (
+        cardRequestsResult.status ===
+        "fulfilled"
+      ) {
+        setCardPurchaseRequests(
+          cardRequestsResult.value,
+        );
+      }
+
+      /*
+       * Accounts and account activity are
+       * the critical dashboard banking data.
+       *
+       * Transfers can still be loaded for
+       * other widgets/features, but the
+       * homepage transaction history should
+       * now use ledger activity.
+       */
+      const criticalFailure =
+        accountsResult.status ===
+          "rejected" ||
+        activityResult.status ===
+          "rejected";
+
+      if (criticalFailure) {
+        const reason =
+          accountsResult.status ===
+          "rejected"
+            ? accountsResult.reason
+            : activityResult.status ===
+                "rejected"
+              ? activityResult.reason
+              : null;
+
+        setError(
+          reason instanceof Error
+            ? reason.message
+            : "Unable to load your banking information",
+        );
+      }
+
+      setIsLoading(false);
+    }, []);
 
   useEffect(() => {
     void load();
@@ -100,7 +256,19 @@ export function useClientOverview() {
 
   return {
     accounts,
+
+    /*
+     * Keep transfers because other client
+     * pages may still rely on them.
+     */
     transfers,
+
+    /*
+     * Use this for homepage transaction
+     * history / unified account activity.
+     */
+    activity,
+
     cards,
     notifications,
     unreadNotificationCount,
@@ -108,6 +276,8 @@ export function useClientOverview() {
 
     isLoading,
     error,
-    reload: load,
+
+    reload:
+      load,
   };
 }

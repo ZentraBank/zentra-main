@@ -1,7 +1,17 @@
 const db = require("../../config/db");
 
 const getByUserId = async (userId) => {
-  const [rows] = await db.query(`SELECT id, password_hash, transaction_pin_hash, transaction_pin_failed_attempts, transaction_pin_locked_until FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1`, [userId]);
+  const [rows] = await db.query(`SELECT
+  id,
+  email,
+  password_hash,
+  transaction_pin_hash,
+  transaction_pin_failed_attempts,
+  transaction_pin_locked_until
+FROM users
+WHERE id = ?
+  AND deleted_at IS NULL
+LIMIT 1`, [userId]);
   return rows[0] || null;
 };
 

@@ -4,6 +4,11 @@ const repo = require("./transfers.repository");
 const transactionPinService = require(
   "../transaction-pin/transaction-pin.service"
 );
+const fxRepo = require(
+  "../fx/fx.repository"
+);
+
+
 const notifications = require(
   "../notifications/notifications.repository"
 );
@@ -119,70 +124,193 @@ const createInternalTransfer = async ({ auth, body }) => {
   try {
     await connection.beginTransaction();
 
-    const source = await repo.findAccountForUpdate({
+    const source =
+  await repo.findAccountForUpdate({
+    connection,
+    accountId:
+      body.sourceAccountId,
+    tenantId:
+      auth.tenantId,
+  });
+
+if (
+  !source ||
+  source.user_id !==
+    auth.userId
+) {
+  throw httpError(
+    404,
+    "Source account not found"
+  );
+}
+
+if (
+  source.status !== "active"
+) {
+  throw httpError(
+    403,
+    "The source account must be active"
+  );
+}
+
+if (
+  source.currency !==
+  body.currency
+) {
+  throw httpError(
+    400,
+    "Account currency does not match transfer currency"
+  );
+}
+
+let destination = null;
+let destinationAmount = amount;
+let fxQuote = null;
+
+if (
+  transferType === "internal"
+) {
+  destination =
+    await repo.findAccountByNumberForUpdate({
       connection,
-      accountId: body.sourceAccountId,
-      tenantId: auth.tenantId,
+
+      accountNumber:
+        body.destinationAccountNumber,
+
+      tenantId:
+        auth.tenantId,
     });
 
-    if (!source || source.user_id !== auth.userId) {
-      throw httpError(404, "Source account not found");
-    }
+  if (!destination) {
+    throw httpError(
+      404,
+      "Destination account not found"
+    );
+  }
 
-    if (source.status !== "active") {
-      throw httpError(
-        403,
-        "The source account must be active"
-      );
-    }
+  if (
+    source.id ===
+    destination.id
+  ) {
+    throw httpError(
+      400,
+      "Source and destination accounts cannot be the same"
+    );
+  }
 
-    if (source.currency !== body.currency) {
+  if (
+    destination.status !==
+    "active"
+  ) {
+    throw httpError(
+      403,
+      "The destination account must be active"
+    );
+  }
+
+  const requiresFx =
+    destination.currency !==
+    source.currency;
+
+  if (requiresFx) {
+    if (!body.fxQuoteId) {
       throw httpError(
         400,
-        "Account currency does not match transfer currency"
+        `An FX quote is required to transfer from ${source.currency} to ${destination.currency}`
       );
     }
 
-    let destination = null;
+    fxQuote =
+      await fxRepo.findQuoteByIdForUpdate({
+        connection,
 
-    if (transferType === "internal") {
-      destination =
-        await repo.findAccountByNumberForUpdate({
-          connection,
-          accountNumber:
-            body.destinationAccountNumber,
-          tenantId: auth.tenantId,
-        });
+        tenantId:
+          auth.tenantId,
 
-      if (!destination) {
-        throw httpError(
-          404,
-          "Destination account not found"
-        );
-      }
+        quoteId:
+          body.fxQuoteId,
+      });
 
-      if (source.id === destination.id) {
-        throw httpError(
-          400,
-          "Source and destination accounts cannot be the same"
-        );
-      }
-
-      if (destination.status !== "active") {
-        throw httpError(
-          403,
-          "The destination account must be active"
-        );
-      }
-
-      if (destination.currency !== body.currency) {
-        throw httpError(
-          400,
-          "Account currency does not match transfer currency"
-        );
-      }
+    if (!fxQuote) {
+      throw httpError(
+        404,
+        "FX quote not found"
+      );
     }
 
+    if (
+      fxQuote.user_id !==
+      auth.userId
+    ) {
+      throw httpError(
+        403,
+        "This FX quote does not belong to you"
+      );
+    }
+
+    if (
+      fxQuote.status !==
+      "active"
+    ) {
+      throw httpError(
+        409,
+        "FX quote has already been used"
+      );
+    }
+
+    if (
+      new Date(
+        fxQuote.expires_at
+      ).getTime() <=
+      Date.now()
+    ) {
+      throw httpError(
+        409,
+        "FX quote has expired"
+      );
+    }
+
+    if (
+      fxQuote.source_currency !==
+        source.currency ||
+      fxQuote.destination_currency !==
+        destination.currency
+    ) {
+      throw httpError(
+        400,
+        "FX quote currency pair does not match the selected accounts"
+      );
+    }
+
+    if (
+      Number(
+        fxQuote.source_amount
+      ) !== amount
+    ) {
+      throw httpError(
+        400,
+        "Transfer amount does not match the FX quote"
+      );
+    }
+
+    destinationAmount =
+      Number(
+        fxQuote.destination_amount
+      );
+
+    if (
+      !Number.isFinite(
+        destinationAmount
+      ) ||
+      destinationAmount <= 0
+    ) {
+      throw httpError(
+        500,
+        "FX quote contains an invalid destination amount"
+      );
+    }
+  }
+}
     const debited = await repo.debitAccount({
       connection,
       accountId: source.id,
@@ -202,7 +330,7 @@ const createInternalTransfer = async ({ auth, body }) => {
         connection,
         accountId: destination.id,
         tenantId: auth.tenantId,
-        amount,
+        amount: destinationAmount,
       });
 
       if (!credited) {
@@ -263,20 +391,38 @@ const createInternalTransfer = async ({ auth, body }) => {
     });
 
     if (destination) {
-      await repo.createLedgerEntry({
-        connection,
-        tenantId: auth.tenantId,
-        accountId: destination.id,
-        transferId,
-        entryType: "credit",
-        amount,
-        balanceAfter:
-          Number(destination.balance) + amount,
-        description:
-          body.description ||
-          "Internal transfer credit",
-      });
-    }
+  await repo.createLedgerEntry({
+    connection,
+
+    tenantId:
+      auth.tenantId,
+
+    accountId:
+      destination.id,
+
+    transferId,
+
+    entryType:
+      "credit",
+
+    amount:
+      destinationAmount,
+
+    balanceAfter:
+      Number(
+        destination.balance
+      ) +
+      destinationAmount,
+
+    description:
+      body.description ||
+      (
+        fxQuote
+          ? `FX transfer credit from ${source.currency}`
+          : "Internal transfer credit"
+      ),
+  });
+}
 
     await notifications.create({
       connection,
@@ -307,16 +453,21 @@ const createInternalTransfer = async ({ auth, body }) => {
       },
     });
 
-    if (destination?.user_id) {
+    if (
+  destination?.user_id &&
+  destination.user_id !==
+    auth.userId
+)  {
       await notifications.create({
         connection,
         tenantId: auth.tenantId,
         userId: destination.user_id,
         notificationType: "transfer_received",
         title: "Money received",
-        message: `${amount.toFixed(2)} ${
-          body.currency
-        } was credited to your account.`,
+        message:
+  `${destinationAmount.toFixed(2)} ${
+    destination.currency
+  } was credited to your account.`,
         entityType: "transfer",
         entityId: transferId,
         priority: "normal",
@@ -328,6 +479,25 @@ const createInternalTransfer = async ({ auth, body }) => {
         },
       });
     }
+    if (fxQuote) {
+  const accepted =
+    await fxRepo.acceptQuote({
+      connection,
+
+      tenantId:
+        auth.tenantId,
+
+      quoteId:
+        fxQuote.id,
+    });
+
+  if (!accepted) {
+    throw httpError(
+      409,
+      "FX quote could not be accepted"
+    );
+  }
+}
 
     await connection.commit();
 

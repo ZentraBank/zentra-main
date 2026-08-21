@@ -589,15 +589,22 @@ const customerPermissionCodes = [
   "accounts.create",
 
   "transfers.create",
+  "transfers.read",
   "transfers.read_own",
+
+  "beneficiaries.read",
+  "beneficiaries.create",
 
   "notifications.read",
   "subscriptions.read",
   "cards.read",
+
   "donations.read",
   "donations.create",
+
   "investments.read",
   "investments.create",
+
   "chat.read",
   "chat.respond",
 ];

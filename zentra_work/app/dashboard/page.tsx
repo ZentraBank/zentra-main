@@ -2,10 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-
+import type {
+  AccountActivity,
+} from "@/services/account.service";
 import {
   useMemo,
   useState,
+  useEffect,
 } from "react";
 
 import {
@@ -196,6 +199,8 @@ type AccountFormState = {
 };
 
 export default function DashboardPage() {
+  const [selectedAccountId, setSelectedAccountId] = useState("");
+  
   const [
     showMoreServices,
     setShowMoreServices,
@@ -237,16 +242,17 @@ export default function DashboardPage() {
     );
 
   const {
-    accounts,
-    transfers,
-    cards,
-    notifications,
-    unreadNotificationCount,
-    cardPurchaseRequests,
-    isLoading,
-    error,
-    reload,
-  } = useClientOverview();
+  accounts,
+  transfers,
+  activity,
+  cards,
+  notifications,
+  unreadNotificationCount,
+  cardPurchaseRequests,
+  isLoading,
+  error,
+  reload,
+} = useClientOverview();
 
   const activeAccounts =
     useMemo(
@@ -259,38 +265,60 @@ export default function DashboardPage() {
       [accounts],
     );
 
-  const primaryCurrency =
-    activeAccounts[0]
-      ?.currency ??
-    accounts[0]
-      ?.currency ??
-    "GBP";
+  const selectedAccount = useMemo(
+  () =>
+    accounts.find(
+      (account) =>
+        account.id === selectedAccountId,
+    ) ||
+    accounts[0] ||
+    null,
+  [accounts, selectedAccountId],
+);
 
-  const totalBalance =
-    useMemo(
-      () =>
-        accounts
-          .filter(
-            (account) =>
-              account.currency ===
-              primaryCurrency,
-          )
-          .reduce(
-            (
-              total,
-              account,
-            ) =>
-              total +
-              (Number(
-                account.balance,
-              ) || 0),
-            0,
-          ),
-      [
-        accounts,
-        primaryCurrency,
-      ],
-    );
+const selectedBalance =
+  selectedAccount
+    ? Number(
+        selectedAccount.balance || 0,
+      )
+    : 0;
+
+const selectedCurrency =
+  selectedAccount?.currency ||
+  "GBP";
+
+  // const primaryCurrency =
+  //   activeAccounts[0]
+  //     ?.currency ??
+  //   accounts[0]
+  //     ?.currency ??
+  //   "GBP";
+
+  // const totalBalance =
+  //   useMemo(
+  //     () =>
+  //       accounts
+  //         .filter(
+  //           (account) =>
+  //             account.currency ===
+  //             primaryCurrency,
+  //         )
+  //         .reduce(
+  //           (
+  //             total,
+  //             account,
+  //           ) =>
+  //             total +
+  //             (Number(
+  //               account.balance,
+  //             ) || 0),
+  //           0,
+  //         ),
+  //     [
+  //       accounts,
+  //       primaryCurrency,
+  //     ],
+  //   );
 
   const displayName =
     user?.full_name ||
@@ -375,6 +403,8 @@ export default function DashboardPage() {
       cards,
       pendingCardRequest,
     ]);
+
+    
 
   const openCreateAccount =
     () => {
@@ -485,6 +515,18 @@ export default function DashboardPage() {
       }
     };
 
+    useEffect(() => {
+  if (!accounts.length) return;
+
+  const stillExists = accounts.some(
+    (account) => account.id === selectedAccountId,
+  );
+
+  if (!selectedAccountId || !stillExists) {
+    setSelectedAccountId(accounts[0].id);
+  }
+}, [accounts, selectedAccountId]);
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#E7EBF0] pb-[92px] text-[#333] md:pb-10">
       <section className="mx-auto w-full max-w-[390px] px-5 pt-12 md:max-w-[1180px] md:px-8 md:pt-8 xl:max-w-[1320px]">
@@ -511,9 +553,7 @@ export default function DashboardPage() {
 
               <p className="font-lato text-[12px] font-medium md:text-[13px]">
                 <span className="capitalize text-[#333333]">
-                  {accounts[0]
-                    ?.account_type ||
-                    "Client"}
+                 {selectedAccount?.account_type || "Client"}
                 </span>{" "}
 
                 <span className="text-[#2B945D]">
@@ -567,7 +607,11 @@ export default function DashboardPage() {
   <div className="flex items-center justify-between">
     <button
       type="button"
-      onClick={() => setShowBalance(!showBalance)}
+      onClick={() =>
+        setShowBalance(
+          !showBalance,
+        )
+      }
       className="flex items-center gap-2 text-[12px] transition-opacity hover:opacity-80 md:text-[14px]"
     >
       <span>Balance</span>
@@ -582,7 +626,9 @@ export default function DashboardPage() {
     {accounts.length > 0 && (
       <button
         type="button"
-        onClick={openCreateAccount}
+        onClick={
+          openCreateAccount
+        }
         className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-white/25 md:text-[12px]"
       >
         <Plus size={14} />
@@ -596,12 +642,71 @@ export default function DashboardPage() {
       {isLoading
         ? "Loading…"
         : showBalance
-          ? formatMoney(totalBalance, primaryCurrency)
+          ? formatMoney(
+              selectedBalance,
+              selectedCurrency,
+            )
           : "*********"}
     </h2>
   </div>
 
-  {!isLoading && accounts[0]?.account_number ? (
+  {accounts.length > 1 && (
+    <div className="mt-3">
+      <label className="mb-1 block text-[10px] text-white/60 md:text-[12px]">
+        Select account
+      </label>
+
+      <div className="relative">
+        <select
+          title="Select account"
+          value={
+            selectedAccount?.id ||
+            ""
+          }
+          onChange={(event) =>
+            setSelectedAccountId(
+              event.target.value,
+            )
+          }
+          className="h-[38px] w-full appearance-none rounded-[8px] border border-white/20 bg-white/15 px-3 pr-9 text-[11px] font-semibold text-white outline-none backdrop-blur md:max-w-[320px] md:text-[13px]"
+        >
+          {accounts.map(
+            (account) => (
+              <option
+                key={
+                  account.id
+                }
+                value={
+                  account.id
+                }
+                className="text-black"
+              >
+                {
+                  account.account_name
+                }{" "}
+                ·{" "}
+                {
+                  account.account_type
+                }{" "}
+                ·{" "}
+                {
+                  account.account_number
+                }
+              </option>
+            ),
+          )}
+        </select>
+
+        <ChevronDown
+          size={15}
+          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/80 md:hidden"
+        />
+      </div>
+    </div>
+  )}
+
+  {!isLoading &&
+  selectedAccount ? (
     <div className="mt-3 flex items-end justify-between gap-4 border-t border-white/15 pt-3">
       <div>
         <p className="text-[10px] text-white/60 md:text-[12px]">
@@ -609,7 +714,9 @@ export default function DashboardPage() {
         </p>
 
         <p className="mt-0.5 text-[13px] font-semibold tracking-[0.08em] text-white md:text-[15px]">
-          {accounts[0].account_number}
+          {
+            selectedAccount.account_number
+          }
         </p>
       </div>
 
@@ -619,16 +726,22 @@ export default function DashboardPage() {
         </p>
 
         <p className="mt-0.5 text-[12px] font-semibold capitalize text-white md:text-[14px]">
-          {accounts[0].account_type}
+          {
+            selectedAccount.account_type
+          }
         </p>
       </div>
     </div>
   ) : null}
 
-  {!isLoading && accounts.length > 0 ? (
+  {!isLoading &&
+  accounts.length > 0 ? (
     <p className="mt-2 text-[11px] text-white/70 md:text-[13px]">
       {accounts.length} account
-      {accounts.length === 1 ? "" : "s"} connected
+      {accounts.length === 1
+        ? ""
+        : "s"}{" "}
+      connected
     </p>
   ) : null}
 </section>
@@ -805,7 +918,7 @@ export default function DashboardPage() {
               Loading recent
               activity…
             </div>
-          ) : transfers.length ===
+          ) : activity.length ===
             0 ? (
             <div className="rounded-[7px] bg-white/60 px-3 py-4 text-center text-[12px] text-black/50">
               No transfers yet.
@@ -813,21 +926,21 @@ export default function DashboardPage() {
               will appear here.
             </div>
           ) : (
-            transfers
+            activity
               .slice(
                 0,
                 3,
               )
               .map(
                 (
-                  transfer,
+                  activity,
                 ) => (
-                  <LiveTransactionCard
+                  <LiveActivityCard
                     key={
-                      transfer.id
+                      activity.id
                     }
-                    transfer={
-                      transfer
+                    activity={
+                      activity
                     }
                   />
                 ),
@@ -1445,29 +1558,46 @@ function MoreServiceCard({
   );
 }
 
-function LiveTransactionCard({
-  transfer,
+function LiveActivityCard({
+  activity,
 }: {
-  transfer: ClientTransfer;
+  activity: AccountActivity;
 }) {
-  const destination =
-    transfer
-      .destination_account_name ||
-    transfer
-      .destination_account_number ||
-    "Recipient";
+  const isCredit =
+    activity.entry_type ===
+    "credit";
+
+  const title =
+    activity.transfer_id
+      ? isCredit
+        ? "Incoming transfer"
+        : "Transfer sent"
+      : isCredit
+        ? "Incoming payment"
+        : "Account debit";
 
   return (
     <TransactionCard
-      type="out"
-      name={
-        transfer.description ||
-        `Transfer to ${destination}`
+      type={
+        isCredit
+          ? "in"
+          : "out"
       }
-      bank={destination}
-      amount={`-${formatMoney(
-        transfer.amount,
-        transfer.currency,
+      name={
+        activity.description ||
+        title
+      }
+      bank={
+        activity.account_name ||
+        activity.account_number
+      }
+      amount={`${
+        isCredit
+          ? "+"
+          : "-"
+      }${formatMoney(
+        activity.amount,
+        activity.currency,
       )}`}
     />
   );

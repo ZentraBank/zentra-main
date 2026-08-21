@@ -1,6 +1,8 @@
 const repo = require("./accounts.repository");
 const db = require("../../config/db");
 const generateAccountNumber = require("../../utils/generateAccountNumber");
+const notificationsRepo =
+  require("../notifications/notifications.repository");
 
 const httpError = (statusCode, message) => {
   const error = new Error(message);
@@ -298,7 +300,76 @@ const adjustTenantBalance = async ({
             : "Debit"
         } adjustment`,
     });
+    const formattedAmount =
+  new Intl.NumberFormat(
+    "en-GB",
+    {
+      style: "currency",
+      currency: account.currency,
+    }
+  ).format(amount);
 
+await notificationsRepo.create({
+  connection,
+
+  tenantId,
+
+  userId:
+    account.user_id,
+
+  notificationType:
+    body.type === "credit"
+      ? "account_credited"
+      : "account_debited",
+
+  title:
+    body.type === "credit"
+      ? "Account credited"
+      : "Account debited",
+
+  message:
+    body.type === "credit"
+      ? `${formattedAmount} has been credited to your ${account.account_type} account.`
+      : `${formattedAmount} has been debited from your ${account.account_type} account.`,
+
+  entityType:
+    "account",
+
+  entityId:
+    account.id,
+
+  priority:
+    "normal",
+
+  actionUrl:
+    "/transactions",
+
+  metadata: {
+    accountId:
+      account.id,
+
+    accountNumber:
+      account.account_number,
+
+    accountType:
+      account.account_type,
+
+    currency:
+      account.currency,
+
+    amount,
+
+    adjustmentType:
+      body.type,
+
+    balanceAfter:
+      nextBalance,
+
+    description:
+      body.description ||
+      null,
+  },
+});
     await connection.commit();
 
     return repo.findById({
@@ -314,6 +385,76 @@ const adjustTenantBalance = async ({
   }
 };
 
+const listOwnActivity = async ({
+  auth,
+  page = 1,
+  pageSize = 20,
+}) => {
+  const safePage =
+    Number(page) > 0
+      ? Number(page)
+      : 1;
+
+  const safePageSize =
+    Number(pageSize) > 0
+      ? Math.min(
+          Number(pageSize),
+          100
+        )
+      : 20;
+
+  const offset =
+    (safePage - 1) *
+    safePageSize;
+
+  const [
+    activity,
+    total,
+  ] =
+    await Promise.all([
+      repo.findActivityByUser({
+        userId:
+          auth.userId,
+
+        tenantId:
+          auth.tenantId,
+
+        limit:
+          safePageSize,
+
+        offset,
+      }),
+
+      repo.countActivityByUser({
+        userId:
+          auth.userId,
+
+        tenantId:
+          auth.tenantId,
+      }),
+    ]);
+
+  return {
+    activity,
+
+    pagination: {
+      page:
+        safePage,
+
+      pageSize:
+        safePageSize,
+
+      total,
+
+      totalPages:
+        Math.ceil(
+          total /
+            safePageSize
+        ),
+    },
+  };
+};
+
 module.exports = {
   listOwn,
   getOwn,
@@ -323,4 +464,5 @@ module.exports = {
   getTenantAccount,
   setBalance,
   adjustTenantBalance,
+  listOwnActivity,
 };

@@ -110,23 +110,23 @@ const findByTenant = async ({ tenantId }) => {
   return rows;
 };
 
-const updateBalance = async ({
-  accountId,
-  tenantId,
-  balance,
-}) => {
-  await db.query(
-    `UPDATE accounts
-     SET balance = ?, updated_at = NOW()
-     WHERE id = ? AND tenant_id = ?`,
-    [balance, accountId, tenantId]
-  );
+// const updateBalance = async ({
+//   accountId,
+//   tenantId,
+//   balance,
+// }) => {
+//   await db.query(
+//     `UPDATE accounts
+//      SET balance = ?, updated_at = NOW()
+//      WHERE id = ? AND tenant_id = ?`,
+//     [balance, accountId, tenantId]
+//   );
 
-  return findById({
-    accountId,
-    tenantId,
-  });
-};
+//   return findById({
+//     accountId,
+//     tenantId,
+//   });
+// };
 
 
 const findTenantAccountById = async ({
@@ -265,11 +265,83 @@ const createAdjustmentLedgerEntry = async ({
   return id;
 };
 
+const findActivityByUser = async ({
+  userId,
+  tenantId,
+  limit,
+  offset,
+}) => {
+  const [rows] = await db.query(
+    `SELECT
+       le.id,
+       le.tenant_id,
+       le.account_id,
+       le.transfer_id,
+       le.entry_type,
+       le.amount,
+       le.balance_after,
+       le.description,
+       le.created_at,
+
+       a.account_number,
+       a.account_name,
+       a.account_type,
+       a.currency
+
+     FROM account_ledger_entries le
+
+     INNER JOIN accounts a
+       ON a.id = le.account_id
+      AND a.tenant_id = le.tenant_id
+
+     WHERE a.user_id = ?
+       AND le.tenant_id = ?
+
+     ORDER BY le.created_at DESC
+
+     LIMIT ? OFFSET ?`,
+    [
+      userId,
+      tenantId,
+      limit,
+      offset,
+    ]
+  );
+
+  return rows;
+};
+
+const countActivityByUser = async ({
+  userId,
+  tenantId,
+}) => {
+  const [rows] = await db.query(
+    `SELECT COUNT(*) AS total
+
+     FROM account_ledger_entries le
+
+     INNER JOIN accounts a
+       ON a.id = le.account_id
+      AND a.tenant_id = le.tenant_id
+
+     WHERE a.user_id = ?
+       AND le.tenant_id = ?`,
+    [
+      userId,
+      tenantId,
+    ]
+  );
+
+  return Number(
+    rows[0]?.total || 0
+  );
+};
+
 module.exports = {
   findById, findByUser, countByUser,
   existsByNumber, create, updateStatus,
   findByTenant, findTenantAccountById,
   findByIdForUpdate, adjustBalance,
-  updateBalance,
   createAdjustmentLedgerEntry,
+  findActivityByUser, countActivityByUser,
 };
