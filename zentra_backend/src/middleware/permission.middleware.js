@@ -4,6 +4,8 @@ const isPlatformSuperadmin = (auth) => {
   return auth?.roleCode === "platform_superadmin";
 };
 
+
+
 const getPermissionCodes = (req) => {
   const permissions =
     req.auth?.permissions ||
@@ -97,6 +99,7 @@ const requireAnyPermission = (...allowedPermissions) => {
     return next();
   };
 };
+
 
 module.exports = {
   requireAllPermissions,

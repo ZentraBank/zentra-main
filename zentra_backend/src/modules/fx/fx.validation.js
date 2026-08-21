@@ -322,4 +322,70 @@ module.exports = {
             .optional(),
       }),
   },
+saveSimpleRate: {
+  body: Joi.object({
+    baseCurrency: Joi.string()
+      .trim()
+      .uppercase()
+      .length(3)
+      .required(),
+
+    quoteCurrency: Joi.string()
+      .trim()
+      .uppercase()
+      .length(3)
+      .invalid(
+        Joi.ref(
+          "baseCurrency"
+        )
+      )
+      .required(),
+
+    rate: Joi.number()
+      .positive()
+      .precision(10)
+      .required(),
+  }),
+},
+simpleRateId: {
+  params: Joi.object({
+    rateId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+},
+
+updateSimpleRate: {
+  params: Joi.object({
+    rateId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+
+  body: Joi.object({
+    rate: Joi.number()
+      .positive()
+      .precision(10)
+      .required(),
+  }),
+},
+getSimpleRate: {
+  query: Joi.object({
+    sourceCurrency: Joi.string()
+      .trim()
+      .uppercase()
+      .length(3)
+      .required(),
+
+    destinationCurrency: Joi.string()
+      .trim()
+      .uppercase()
+      .length(3)
+      .invalid(
+        Joi.ref("sourceCurrency")
+      )
+      .required(),
+  }),
+},
+
 };

@@ -73,6 +73,44 @@ router.post(
   controller.createRateSource
 );
 
+router.get(
+  "/simple-rates",
+  requireAllPermissions(
+    "fx.rates.manage"
+  ),
+  controller.listSimpleRates
+);
+
+router.post(
+  "/simple-rates",
+  validate(
+    schemas.saveSimpleRate
+  ),
+  requireAllPermissions(
+    "fx.rates.manage"
+  ),
+  controller.saveSimpleRate
+);
+
+router.patch(
+  "/simple-rates/:rateId",
+  validate(schemas.updateSimpleRate),
+  requireAllPermissions("fx.rates.manage"),
+  controller.updateSimpleRate
+);
+
+router.delete(
+  "/simple-rates/:rateId",
+  validate(schemas.simpleRateId),
+  requireAllPermissions("fx.rates.manage"),
+  controller.deleteSimpleRate
+);
+
+router.get(
+  "/rate",
+  validate(schemas.getSimpleRate),
+  controller.getSimpleRate
+);
 router.post(
   "/rates",
   validate(

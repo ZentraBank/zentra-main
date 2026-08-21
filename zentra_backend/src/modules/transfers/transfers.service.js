@@ -165,7 +165,7 @@ if (
 
 let destination = null;
 let destinationAmount = amount;
-let fxQuote = null;
+let appliedFxRate = null;
 
 if (
   transferType === "internal"
@@ -209,107 +209,155 @@ if (
   }
 
   const requiresFx =
-    destination.currency !==
-    source.currency;
+  destination.currency !==
+  source.currency;
 
-  if (requiresFx) {
-    if (!body.fxQuoteId) {
-      throw httpError(
-        400,
-        `An FX quote is required to transfer from ${source.currency} to ${destination.currency}`
-      );
-    }
+let destinationAmount =
+  amount;
 
-    fxQuote =
-      await fxRepo.findQuoteByIdForUpdate({
-        connection,
+let appliedFxRate =
+  null;
 
-        tenantId:
-          auth.tenantId,
+if (requiresFx) {
+  if (
+    !body.fxRateId ||
+    !body.fxRate
+  ) {
+    throw httpError(
+      400,
+      `An exchange rate is required to transfer from ${source.currency} to ${destination.currency}`
+    );
+  }
 
-        quoteId:
-          body.fxQuoteId,
-      });
+  const rateRecord =
+    await fxRepo.findRateById({
+      tenantId:
+        auth.tenantId,
 
-    if (!fxQuote) {
-      throw httpError(
-        404,
-        "FX quote not found"
-      );
-    }
+      rateId:
+        body.fxRateId,
+    });
 
-    if (
-      fxQuote.user_id !==
-      auth.userId
-    ) {
-      throw httpError(
-        403,
-        "This FX quote does not belong to you"
-      );
-    }
+  if (!rateRecord) {
+    throw httpError(
+      404,
+      "Exchange rate not found"
+    );
+  }
 
-    if (
-      fxQuote.status !==
-      "active"
-    ) {
-      throw httpError(
-        409,
-        "FX quote has already been used"
-      );
-    }
+  /*
+   * Only active tenant rates
+   * should be used.
+   */
+  if (
+    rateRecord.status !==
+    "active"
+  ) {
+    throw httpError(
+      409,
+      "This exchange rate is no longer active"
+    );
+  }
 
-    if (
-      new Date(
-        fxQuote.expires_at
-      ).getTime() <=
-      Date.now()
-    ) {
-      throw httpError(
-        409,
-        "FX quote has expired"
-      );
-    }
+  /*
+   * Make sure this rate belongs
+   * to the selected currency pair.
+   */
+  let currentRate;
 
-    if (
-      fxQuote.source_currency !==
-        source.currency ||
-      fxQuote.destination_currency !==
-        destination.currency
-    ) {
-      throw httpError(
-        400,
-        "FX quote currency pair does not match the selected accounts"
-      );
-    }
-
-    if (
+  if (
+    rateRecord.base_currency ===
+      source.currency &&
+    rateRecord.quote_currency ===
+      destination.currency
+  ) {
+    currentRate =
       Number(
-        fxQuote.source_amount
-      ) !== amount
-    ) {
-      throw httpError(
-        400,
-        "Transfer amount does not match the FX quote"
+        rateRecord.mid_rate
       );
-    }
-
-    destinationAmount =
+  } else if (
+    rateRecord.base_currency ===
+      destination.currency &&
+    rateRecord.quote_currency ===
+      source.currency
+  ) {
+    const storedRate =
       Number(
-        fxQuote.destination_amount
+        rateRecord.mid_rate
       );
 
     if (
       !Number.isFinite(
-        destinationAmount
+        storedRate
       ) ||
-      destinationAmount <= 0
+      storedRate <= 0
     ) {
       throw httpError(
         500,
-        "FX quote contains an invalid destination amount"
+        "Stored exchange rate is invalid"
       );
     }
+
+    currentRate =
+      1 / storedRate;
+  } else {
+    throw httpError(
+      400,
+      "Exchange rate does not match the selected currencies"
+    );
   }
+
+  if (
+    !Number.isFinite(
+      currentRate
+    ) ||
+    currentRate <= 0
+  ) {
+    throw httpError(
+      500,
+      "Exchange rate is invalid"
+    );
+  }
+
+  /*
+   * Make sure the customer is
+   * still sending with the rate
+   * they reviewed on-screen.
+   */
+  const submittedRate =
+    Number(body.fxRate);
+
+  const tolerance =
+    0.00000001;
+
+  if (
+    Math.abs(
+      currentRate -
+        submittedRate
+    ) > tolerance
+  ) {
+    throw httpError(
+      409,
+      "The exchange rate has changed. Please review the latest rate before continuing"
+    );
+  }
+
+  appliedFxRate =
+    currentRate;
+
+  destinationAmount =
+    amount *
+    appliedFxRate;
+
+  /*
+   * Currency amounts are stored
+   * to two decimal places.
+   */
+  destinationAmount =
+    Math.round(
+      destinationAmount *
+        100
+    ) / 100;
 }
     const debited = await repo.debitAccount({
       connection,
@@ -417,7 +465,7 @@ if (
     description:
       body.description ||
       (
-        fxQuote
+        appliedFxRate
           ? `FX transfer credit from ${source.currency}`
           : "Internal transfer credit"
       ),
@@ -479,7 +527,7 @@ if (
         },
       });
     }
-    if (fxQuote) {
+    if (appliedFxRate) {
   const accepted =
     await fxRepo.acceptQuote({
       connection,
@@ -488,7 +536,7 @@ if (
         auth.tenantId,
 
       quoteId:
-        fxQuote.id,
+        appliedFxRate.id,
     });
 
   if (!accepted) {
@@ -505,15 +553,16 @@ if (
       transferId,
       tenantId: auth.tenantId,
     });
-  } catch (error) {
+  }
+  catch (error) {
     await connection.rollback();
     throw error;
-  } finally {
-    connection.release();
   }
-};
-
-const listOwn = ({
+  finally {
+    connection.release();
+  } 
+  
+  const listOwn = ({
   auth,
   page,
   pageSize,
@@ -663,4 +712,5 @@ module.exports = {
   listTenant,
   getTenant,
   updateTenant,
+  
 };

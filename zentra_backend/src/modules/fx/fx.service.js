@@ -595,6 +595,99 @@ const listSpreadRules = ({
       auth.tenantId,
   });
 
+  const listSimpleRates = ({
+  auth,
+}) =>
+  repo.listSimpleRates({
+    tenantId:
+      auth.tenantId,
+  });
+
+const saveSimpleRate = ({
+  auth,
+  body,
+}) =>
+  repo.saveSimpleRate({
+    tenantId:
+      auth.tenantId,
+
+    baseCurrency:
+      body.baseCurrency,
+
+    quoteCurrency:
+      body.quoteCurrency,
+
+    rate:
+      body.rate,
+  });
+
+  const updateSimpleRate = async ({
+  auth,
+  rateId,
+  body,
+}) => {
+  const updated =
+    await repo.updateSimpleRate({
+      tenantId: auth.tenantId,
+      rateId,
+      rate: body.rate,
+    });
+
+  if (!updated) {
+    throw httpError(
+      404,
+      "FX rate not found"
+    );
+  }
+
+  return updated;
+};
+
+const deleteSimpleRate = async ({
+  auth,
+  rateId,
+}) => {
+  const deleted =
+    await repo.deleteSimpleRate({
+      tenantId: auth.tenantId,
+      rateId,
+    });
+
+  if (!deleted) {
+    throw httpError(
+      404,
+      "FX rate not found"
+    );
+  }
+
+  return {
+    deleted: true,
+  };
+};
+const getSimpleRate = async ({
+  auth,
+  sourceCurrency,
+  destinationCurrency,
+}) => {
+  const result =
+    await repo.findSimpleRate({
+      tenantId:
+        auth.tenantId,
+
+      sourceCurrency,
+
+      destinationCurrency,
+    });
+
+  if (!result) {
+    throw httpError(
+      404,
+      `No exchange rate is available for ${sourceCurrency}/${destinationCurrency}`
+    );
+  }
+
+  return result;
+};
 module.exports = {
   createQuote,
   executeConversion,
@@ -602,6 +695,12 @@ module.exports = {
   listRateSources,
   listRates,
   listSpreadRules,
+  listSimpleRates,
+  saveSimpleRate,
+  calculateSpread,
+  updateSimpleRate,
+  deleteSimpleRate,
+  getSimpleRate,
 
   createRateSource:
     ({ auth, body }) =>

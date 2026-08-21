@@ -25,8 +25,13 @@ module.exports = {
   .pattern(/^\d{4}$/)
   .required(),
 
-fxQuoteId: Joi.string()
+appliedFxRateId: Joi.string()
   .uuid()
+  .optional(),
+
+appliedFxRate: Joi.number()
+  .positive()
+  .precision(10)
   .optional(),
 
 transferType: Joi.string()

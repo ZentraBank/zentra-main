@@ -300,4 +300,72 @@ async listSpreadRules(): Promise<FxSpreadRule[]> {
 
   return response.data.data;
 },
+ async listSimpleRates(): Promise<
+  SimpleFxRate[]
+> {
+  const response =
+    await api.get<
+      ApiResponse<
+        SimpleFxRate[]
+      >
+    >(
+      "/fx/simple-rates"
+    );
+
+  return response.data.data;
+},
+
+async saveSimpleRate(
+  payload:
+    SaveSimpleFxRateInput,
+): Promise<SimpleFxRate> {
+  const response =
+    await api.post<
+      ApiResponse<
+        SimpleFxRate
+      >
+    >(
+      "/fx/simple-rates",
+      payload
+    );
+
+  return response.data.data;
+},
+
+async updateSimpleRate(
+  rateId: string,
+  rate: number,
+): Promise<SimpleFxRate> {
+  const response =
+    await api.patch<
+      ApiResponse<SimpleFxRate>
+    >(
+      `/fx/simple-rates/${encodeURIComponent(rateId)}`,
+      { rate },
+    );
+
+  return response.data.data;
+},
+
+async deleteSimpleRate(
+  rateId: string,
+): Promise<void> {
+  await api.delete(
+    `/fx/simple-rates/${encodeURIComponent(rateId)}`,
+  );
+},
+};
+export type SimpleFxRate = {
+  id: string;
+  base_currency: string;
+  quote_currency: string;
+  rate: string | number;
+  status: string;
+  effective_at: string;
+};
+
+export type SaveSimpleFxRateInput = {
+  baseCurrency: string;
+  quoteCurrency: string;
+  rate: number;
 };

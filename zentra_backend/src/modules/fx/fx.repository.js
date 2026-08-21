@@ -665,6 +665,348 @@ const listSpreadRules = async ({
   return rows;
 };
 
+const listSimpleRates = async ({
+  tenantId,
+}) => {
+  const [rows] =
+    await db.query(
+      `
+        SELECT
+          id,
+          base_currency,
+          quote_currency,
+          mid_rate AS rate,
+          status,
+          effective_at
+        FROM fx_rates
+        WHERE tenant_id = ?
+          AND status = 'active'
+        ORDER BY
+          base_currency,
+          quote_currency
+      `,
+      [tenantId]
+    );
+
+  return rows;
+};
+const findOrCreateSimpleRateSource =
+  async ({
+    tenantId,
+  }) => {
+    const [existing] =
+      await db.query(
+        `
+          SELECT *
+          FROM fx_rate_sources
+          WHERE tenant_id = ?
+            AND code = 'TENANT_MANUAL'
+          LIMIT 1
+        `,
+        [tenantId]
+      );
+
+    if (existing[0]) {
+      return existing[0];
+    }
+
+    const id =
+      randomUUID();
+
+    await db.query(
+      `
+        INSERT INTO fx_rate_sources (
+          id,
+          tenant_id,
+          code,
+          name,
+          provider_type,
+          priority,
+          status
+        )
+        VALUES (
+          ?,
+          ?,
+          'TENANT_MANUAL',
+          'Tenant Manual Rates',
+          'manual',
+          1,
+          'active'
+        )
+      `,
+      [
+        id,
+        tenantId,
+      ]
+    );
+
+    return {
+      id,
+      tenant_id:
+        tenantId,
+      code:
+        "TENANT_MANUAL",
+    };
+  };
+
+  const saveSimpleRate = async ({
+  tenantId,
+  baseCurrency,
+  quoteCurrency,
+  rate,
+}) => {
+  const source =
+    await findOrCreateSimpleRateSource({
+      tenantId,
+    });
+
+  await db.query(
+    `
+      UPDATE fx_rates
+      SET status = 'superseded'
+      WHERE tenant_id = ?
+        AND base_currency = ?
+        AND quote_currency = ?
+        AND status = 'active'
+    `,
+    [
+      tenantId,
+      baseCurrency,
+      quoteCurrency,
+    ]
+  );
+
+  const id =
+    randomUUID();
+
+  await db.query(
+    `
+      INSERT INTO fx_rates (
+        id,
+        tenant_id,
+        rate_source_id,
+        base_currency,
+        quote_currency,
+        bid_rate,
+        ask_rate,
+        mid_rate,
+        effective_at,
+        status
+      )
+      VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, NOW(), 'active'
+      )
+    `,
+    [
+      id,
+      tenantId,
+      source.id,
+      baseCurrency,
+      quoteCurrency,
+
+      // same value for all three internally
+      rate,
+      rate,
+      rate,
+    ]
+  );
+
+  return findRateById({
+    tenantId,
+    rateId: id,
+  });
+};
+
+const updateSimpleRate = async ({
+  tenantId,
+  rateId,
+  rate,
+}) => {
+  const [result] = await db.query(
+    `
+      UPDATE fx_rates
+      SET
+        bid_rate = ?,
+        ask_rate = ?,
+        mid_rate = ?,
+        effective_at = NOW(),
+        updated_at = NOW()
+      WHERE id = ?
+        AND tenant_id = ?
+        AND status = 'active'
+    `,
+    [
+      rate,
+      rate,
+      rate,
+      rateId,
+      tenantId,
+    ]
+  );
+
+  if (result.affectedRows !== 1) {
+    return null;
+  }
+
+  return findRateById({
+    tenantId,
+    rateId,
+  });
+};
+
+const deleteSimpleRate = async ({
+  tenantId,
+  rateId,
+}) => {
+  const [result] = await db.query(
+    `
+      UPDATE fx_rates
+      SET
+        status = 'inactive',
+        updated_at = NOW()
+      WHERE id = ?
+        AND tenant_id = ?
+        AND status = 'active'
+    `,
+    [
+      rateId,
+      tenantId,
+    ]
+  );
+
+  return result.affectedRows === 1;
+};
+
+const findSimpleRate = async ({
+  tenantId,
+  sourceCurrency,
+  destinationCurrency,
+}) => {
+  /*
+   * First look for an exact pair.
+   */
+  const [directRows] =
+    await db.query(
+      `
+        SELECT
+          id,
+          base_currency,
+          quote_currency,
+          mid_rate AS rate,
+          effective_at
+        FROM fx_rates
+        WHERE tenant_id = ?
+          AND base_currency = ?
+          AND quote_currency = ?
+          AND status = 'active'
+          AND effective_at <= NOW()
+          AND (
+            expires_at IS NULL
+            OR expires_at > NOW()
+          )
+        ORDER BY effective_at DESC
+        LIMIT 1
+      `,
+      [
+        tenantId,
+        sourceCurrency,
+        destinationCurrency,
+      ]
+    );
+
+  if (directRows[0]) {
+    return {
+      id:
+        directRows[0].id,
+
+      sourceCurrency,
+      destinationCurrency,
+
+      rate:
+        Number(
+          directRows[0].rate
+        ),
+
+      inverse:
+        false,
+
+      effectiveAt:
+        directRows[0]
+          .effective_at,
+    };
+  }
+
+  /*
+   * If GBP -> USD exists but the
+   * customer needs USD -> GBP,
+   * use the inverse automatically.
+   */
+  const [inverseRows] =
+    await db.query(
+      `
+        SELECT
+          id,
+          base_currency,
+          quote_currency,
+          mid_rate AS rate,
+          effective_at
+        FROM fx_rates
+        WHERE tenant_id = ?
+          AND base_currency = ?
+          AND quote_currency = ?
+          AND status = 'active'
+          AND effective_at <= NOW()
+          AND (
+            expires_at IS NULL
+            OR expires_at > NOW()
+          )
+        ORDER BY effective_at DESC
+        LIMIT 1
+      `,
+      [
+        tenantId,
+        destinationCurrency,
+        sourceCurrency,
+      ]
+    );
+
+  const inverse =
+    inverseRows[0];
+
+  if (!inverse) {
+    return null;
+  }
+
+  const originalRate =
+    Number(inverse.rate);
+
+  if (
+    !Number.isFinite(
+      originalRate
+    ) ||
+    originalRate <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    id:
+      inverse.id,
+
+    sourceCurrency,
+    destinationCurrency,
+
+    rate:
+      1 / originalRate,
+
+    inverse:
+      true,
+
+    effectiveAt:
+      inverse.effective_at,
+  };
+};
+
 module.exports = {
   createRateSource,
   findRateSourceById,
@@ -685,4 +1027,10 @@ module.exports = {
   listRateSources,
   listRates,
   listSpreadRules,
+  listSimpleRates,
+  saveSimpleRate,
+  findOrCreateSimpleRateSource,
+  updateSimpleRate,
+  deleteSimpleRate,
+  findSimpleRate,
 };

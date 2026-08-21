@@ -160,6 +160,99 @@ const listSpreadRules =
     }
   );
 
+  const listSimpleRates =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.listSimpleRates({
+          auth:
+            req.auth,
+        });
+
+      return sendSuccess(res, {
+        message:
+          "FX rates retrieved",
+        data,
+      });
+    }
+  );
+
+const saveSimpleRate =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.saveSimpleRate({
+          auth:
+            req.auth,
+
+          body:
+            req.body,
+        });
+
+      return sendSuccess(res, {
+        message:
+          "FX rate saved",
+        data,
+      });
+    }
+  );
+
+  const updateSimpleRate =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.updateSimpleRate({
+          auth: req.auth,
+          rateId: req.params.rateId,
+          body: req.body,
+        });
+
+      return sendSuccess(res, {
+        message: "FX rate updated",
+        data,
+      });
+    }
+  );
+
+const deleteSimpleRate =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.deleteSimpleRate({
+          auth: req.auth,
+          rateId: req.params.rateId,
+        });
+
+      return sendSuccess(res, {
+        message: "FX rate deleted",
+        data,
+      });
+    }
+  );
+
+  const getSimpleRate =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.getSimpleRate({
+          auth:
+            req.auth,
+
+          sourceCurrency:
+            req.query.sourceCurrency,
+
+          destinationCurrency:
+            req.query.destinationCurrency,
+        });
+
+      return sendSuccess(res, {
+        message:
+          "Exchange rate retrieved",
+        data,
+      });
+    }
+  );
+
 module.exports = {
   createRateSource,
   createRate,
@@ -169,4 +262,9 @@ module.exports = {
   listRateSources,
   listRates,
   listSpreadRules,
+  listSimpleRates,
+  saveSimpleRate,
+  updateSimpleRate,
+  deleteSimpleRate,
+  getSimpleRate,
 };
