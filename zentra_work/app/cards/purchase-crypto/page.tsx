@@ -156,40 +156,50 @@ export default function CryptoPaymentPage() {
     }
   };
 
-  const submitForVerification = async () => {
-    if (!product) {
-      setError("The selected card type is invalid.");
-      return;
-    }
+ const submitForVerification = async () => {
+  if (!product) {
+    setError("The selected card type is invalid.");
+    return;
+  }
 
-    if (!accountId || !account) {
-      setError("A valid linked account is required.");
-      return;
-    }
+  if (!accountId || !account) {
+    setError("A valid linked account is required.");
+    return;
+  }
 
-    setSubmitting(true);
-    setError("");
+  if (!paymentReference.trim()) {
+    setError(
+      "Enter your transaction hash or payment reference before submitting."
+    );
+    return;
+  }
 
-    try {
-      const request = await cardService.submitPurchaseRequest({
+  setSubmitting(true);
+  setError("");
+
+  try {
+    const request =
+      await cardService.submitPurchaseRequest({
         accountId,
         cardType: product.type,
         cardBrand: "Zentra",
         paymentMethod: "cryptocurrency",
-        paymentReference: paymentReference.trim() || undefined,
+        paymentReference: paymentReference.trim(),
       });
 
-      router.replace(`/cards/purchase-status/${request.id}`);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to submit your card request.",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    router.replace(
+      `/cards/purchase-status/${request.id}`
+    );
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Unable to submit your card request."
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (!product) {
     return (
@@ -363,9 +373,7 @@ export default function CryptoPaymentPage() {
                 className="text-sm font-bold"
               >
                 Payment reference
-                <span className="ml-1 font-normal text-black/40">
-                  optional
-                </span>
+               
               </label>
 
               <input
@@ -390,7 +398,12 @@ export default function CryptoPaymentPage() {
               <button
                 type="button"
                 onClick={submitForVerification}
-                disabled={submitting || loading || !account}
+                disabled={
+                  submitting ||
+                  loading ||
+                  !account ||
+                  !paymentReference.trim()
+                }
                 className="mt-5 flex h-[50px] w-full items-center justify-center gap-2 rounded-[16px] bg-[#1D4ED8] text-[13px] font-bold text-white shadow-md disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? (

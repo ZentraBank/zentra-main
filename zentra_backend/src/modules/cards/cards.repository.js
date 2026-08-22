@@ -115,14 +115,67 @@ const create = async (input) => {
   });
 };
 
-const updateStatus = async ({ tenantId, cardId, status }) => {
-  await db.query(
-    `UPDATE cards
-     SET status=?, deactivated_at=IF(?='inactive',NOW(),deactivated_at)
-     WHERE id=? AND tenant_id=?`,
-    [status,status,cardId,tenantId]
+const updateStatus = async ({
+  tenantId,
+  cardId,
+  status,
+  frozenByAdmin = null,
+}) => {
+  const values = [
+    status,
+  ];
+
+  const updates = [
+    "status = ?",
+    `
+      deactivated_at =
+        CASE
+          WHEN ? = 'inactive'
+          THEN NOW()
+          ELSE deactivated_at
+        END
+    `,
+  ];
+
+  values.push(status);
+
+  /*
+   * Only change frozen_by_admin when
+   * the caller explicitly provides it.
+   */
+  if (
+    frozenByAdmin !== null
+  ) {
+    updates.push(
+      "frozen_by_admin = ?"
+    );
+
+    values.push(
+      frozenByAdmin
+        ? 1
+        : 0
+    );
+  }
+
+  values.push(
+    cardId,
+    tenantId,
   );
-  return findById({ tenantId, cardId });
+
+  await db.query(
+    `
+      UPDATE cards
+      SET ${updates.join(", ")}
+      WHERE id = ?
+        AND tenant_id = ?
+    `,
+    values
+  );
+
+  return findById({
+    tenantId,
+    cardId,
+  });
 };
 
 const updateDailySpendLimit = async ({
@@ -483,6 +536,138 @@ const cancelPurchaseRequest = async ({
 
   return result.affectedRows === 1;
 };
+
+const findByTenant = async ({
+  tenantId,
+  limit = 20,
+  offset = 0,
+}) => {
+  const safeLimit =
+    Math.min(
+      Math.max(
+        Number(limit) || 20,
+        1
+      ),
+      100
+    );
+
+  const safeOffset =
+    Math.max(
+      Number(offset) || 0,
+      0
+    );
+
+  const [rows] =
+    await db.query(
+      `
+        SELECT
+          c.*,
+
+          a.account_number,
+          a.account_name,
+          a.currency,
+
+          CONCAT_WS(
+            ' ',
+            u.first_name,
+            u.middle_name,
+            u.last_name
+          ) AS customer_name,
+
+          u.email AS customer_email
+
+        FROM cards c
+
+        INNER JOIN accounts a
+          ON a.id =
+            c.account_id
+
+        INNER JOIN users u
+          ON u.id =
+            c.user_id
+
+        WHERE c.tenant_id = ?
+
+        ORDER BY
+          c.created_at DESC
+
+        LIMIT ?
+        OFFSET ?
+      `,
+      [
+        tenantId,
+        safeLimit,
+        safeOffset,
+      ]
+    );
+
+  return rows;
+};
+
+const countByTenant = async ({
+  tenantId,
+}) => {
+  const row =
+    await one(
+      `
+        SELECT
+          COUNT(*) AS total
+        FROM cards
+        WHERE tenant_id = ?
+      `,
+      [
+        tenantId,
+      ]
+    );
+
+  return Number(
+    row?.total || 0
+  );
+};
+
+const findTenantCardById = ({
+  tenantId,
+  cardId,
+}) =>
+  one(
+    `
+      SELECT
+        c.*,
+
+        a.account_number,
+        a.account_name,
+        a.currency,
+
+        CONCAT_WS(
+          ' ',
+          u.first_name,
+          u.middle_name,
+          u.last_name
+        ) AS customer_name,
+
+        u.email AS customer_email
+
+      FROM cards c
+
+      INNER JOIN accounts a
+        ON a.id =
+          c.account_id
+
+      INNER JOIN users u
+        ON u.id =
+          c.user_id
+
+      WHERE c.id = ?
+        AND c.tenant_id = ?
+
+      LIMIT 1
+    `,
+    [
+      cardId,
+      tenantId,
+    ]
+  );
+
 module.exports = {
   findAccountById,
   countActiveCardsByUser,
@@ -493,7 +678,7 @@ module.exports = {
    updateStatus,
     updateDailySpendLimit,
     createEvent,
-  createEvent,
+
 
   createPurchaseRequest,
   findPurchaseRequestById,
@@ -504,4 +689,7 @@ module.exports = {
   approvePurchaseRequest,
   rejectPurchaseRequest,
   cancelPurchaseRequest,
+  findByTenant,
+  countByTenant,
+  findTenantCardById,
 };

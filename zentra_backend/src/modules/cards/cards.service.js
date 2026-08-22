@@ -263,25 +263,127 @@ const submitPurchaseRequest = async ({
         body.paymentProofUrl || null,
     });
 
-  await notifications.create({
-    tenantId: auth.tenantId,
-    userId: auth.userId,
-    notificationType: "card_purchase_submitted",
-    title: "Card request submitted",
-    message: `Your ${body.cardType} card payment has been submitted for verification.`,
-    entityType: "card_purchase_request",
-    entityId: purchaseRequest.id,
-    priority: "normal",
-    actionUrl: `/cards/purchase-status/${purchaseRequest.id}`,
-    metadata: {
-      cardType: body.cardType,
-      price: product.price,
-      currency: product.currency,
-      status: "pending",
-    },
+await notifications.create({
+  tenantId:
+    auth.tenantId,
+
+  userId:
+    auth.userId,
+
+  notificationType:
+    "card_purchase_submitted",
+
+  title:
+    "Card request submitted",
+
+  message:
+    `Your ${body.cardType} card payment has been submitted for verification.`,
+
+  entityType:
+    "card_purchase_request",
+
+  entityId:
+    purchaseRequest.id,
+
+  priority:
+    "normal",
+
+  actionUrl:
+    `/cards/purchase-status/${purchaseRequest.id}`,
+
+  metadata: {
+    cardType:
+      body.cardType,
+
+    price:
+      product.price,
+
+    currency:
+      product.currency,
+
+    status:
+      "pending",
+  },
+});
+
+/*
+|--------------------------------------------------------------------------
+| Notify tenant administrators
+|--------------------------------------------------------------------------
+*/
+
+const tenantAdmins =
+  await notifications.audienceUsers({
+    tenantId:
+      auth.tenantId,
+
+    audienceType:
+      "role",
+
+    audienceValue:
+      "tenant_admin",
   });
 
-  return purchaseRequest;
+for (
+  const admin of
+  tenantAdmins
+) {
+  await notifications.create({
+    tenantId:
+      auth.tenantId,
+
+    userId:
+      admin.user_id,
+
+    notificationType:
+      "card_purchase_request_received",
+
+    title:
+      "New card request",
+
+    message:
+      `${purchaseRequest.customer_name || "A customer"} submitted a ${body.cardType} card request for verification.`,
+
+    entityType:
+      "card_purchase_request",
+
+    entityId:
+      purchaseRequest.id,
+
+    priority:
+      "high",
+
+    actionUrl:
+      `/cards?requestId=${purchaseRequest.id}`,
+
+    metadata: {
+      cardType:
+        body.cardType,
+
+      accountId:
+        account.id,
+
+      price:
+        product.price,
+
+      currency:
+        product.currency,
+
+      paymentMethod:
+        body.paymentMethod ||
+        "cryptocurrency",
+
+      paymentReference:
+        body.paymentReference ||
+        null,
+
+      status:
+        "pending",
+    },
+  });
+}
+
+return purchaseRequest;
 };
 
 const listOwnPurchaseRequests = ({ auth }) =>
@@ -741,6 +843,15 @@ const changeOwnStatus = async ({
     cardId,
   });
 
+  if (
+  card.status === "frozen" &&
+  card.frozen_by_admin
+) {
+  throw httpError(
+    403,
+    "This card was frozen by your bank and cannot be unfrozen from your account"
+  );
+}
   const allowedTransitions =
     customerTransitions[card.status] || [];
 
@@ -753,12 +864,26 @@ const changeOwnStatus = async ({
     );
   }
 
-  const updated =
-    await repo.updateStatus({
-      tenantId: auth.tenantId,
-      cardId,
-      status,
-    });
+const frozenByAdmin =
+  status === "frozen";
+
+const updated =
+  await repo.updateStatus({
+    tenantId:
+      auth.tenantId,
+
+    cardId,
+
+    status,
+
+    /*
+     * Freeze by tenant = protected freeze.
+     *
+     * Moving to active, blocked or inactive
+     * clears the freeze flag.
+     */
+    frozenByAdmin,
+  });
 
   await repo.createEvent({
     tenantId: auth.tenantId,
@@ -768,8 +893,77 @@ const changeOwnStatus = async ({
     eventType: `card_${status}`,
   });
 
+  const notificationContent = {
+  frozen: {
+    type:
+      "card_frozen",
+
+    title:
+      "Card frozen",
+
+    message:
+      reason
+        ? `Your ${card.card_type} card ending in ${card.pan_last4} was frozen by your bank. Reason: ${reason}`
+        : `Your ${card.card_type} card ending in ${card.pan_last4} was frozen by your bank.`,
+  },
+
+  active: {
+    type:
+      card.status ===
+      "blocked"
+        ? "card_unblocked"
+        : "card_activated",
+
+    title:
+      card.status ===
+      "blocked"
+        ? "Card unblocked"
+        : card.status ===
+            "frozen"
+          ? "Card unfrozen"
+          : "Card activated",
+
+    message:
+      card.status ===
+      "blocked"
+        ? `Your ${card.card_type} card ending in ${card.pan_last4} has been unblocked by your bank.`
+        : card.status ===
+            "frozen"
+          ? `Your ${card.card_type} card ending in ${card.pan_last4} has been unfrozen by your bank.`
+          : `Your ${card.card_type} card ending in ${card.pan_last4} is now active.`,
+  },
+
+  blocked: {
+    type:
+      "card_blocked",
+
+    title:
+      "Card blocked",
+
+    message:
+      reason
+        ? `Your ${card.card_type} card ending in ${card.pan_last4} was blocked by your bank. Reason: ${reason}`
+        : `Your ${card.card_type} card ending in ${card.pan_last4} was blocked by your bank.`,
+  },
+
+  inactive: {
+    type:
+      "card_deactivated",
+
+    title:
+      "Card deactivated",
+
+    message:
+      reason
+        ? `Your ${card.card_type} card ending in ${card.pan_last4} was deactivated by your bank. Reason: ${reason}`
+        : `Your ${card.card_type} card ending in ${card.pan_last4} was deactivated by your bank.`,
+  },
+}[status];
+
   return updated;
 };
+
+
 
 const changeOwnLimit = async ({
   auth,
@@ -833,48 +1027,316 @@ const changeOwnLimit = async ({
   return updated;
 };
 
+/*
+|--------------------------------------------------------------------------
+| Tenant-admin issued card services
+|--------------------------------------------------------------------------
+*/
+
+const listTenantCards = async ({
+  auth,
+  page = 1,
+  pageSize = 20,
+}) => {
+  const safePage =
+    Number.isInteger(page) &&
+    page > 0
+      ? page
+      : 1;
+
+  const safePageSize =
+    Number.isInteger(
+      pageSize
+    ) &&
+    pageSize > 0
+      ? Math.min(
+          pageSize,
+          100
+        )
+      : 20;
+
+  const offset =
+    (safePage - 1) *
+    safePageSize;
+
+  const [
+    cards,
+    total,
+  ] =
+    await Promise.all([
+      repo.findByTenant({
+        tenantId:
+          auth.tenantId,
+
+        limit:
+          safePageSize,
+
+        offset,
+      }),
+
+      repo.countByTenant({
+        tenantId:
+          auth.tenantId,
+      }),
+    ]);
+
+  return {
+    cards,
+
+    pagination: {
+      page:
+        safePage,
+
+      pageSize:
+        safePageSize,
+
+      total,
+
+      totalPages:
+        Math.ceil(
+          total /
+            safePageSize
+        ),
+    },
+  };
+};
+
+const getTenantCard = async ({
+  auth,
+  cardId,
+}) => {
+  const card =
+    await repo.findTenantCardById({
+      tenantId:
+        auth.tenantId,
+
+      cardId,
+    });
+
+  if (!card) {
+    throw httpError(
+      404,
+      "Card not found"
+    );
+  }
+
+  return card;
+};
+
 const changeStatusAsAdmin = async ({
   auth,
   cardId,
   status,
   reason,
 }) => {
-  const card = await repo.findById({
-    tenantId: auth.tenantId,
-    cardId,
-  });
+  const card =
+    await repo.findById({
+      tenantId:
+        auth.tenantId,
+
+      cardId,
+    });
 
   if (!card) {
-    throw httpError(404, "Card not found");
+    throw httpError(
+      404,
+      "Card not found"
+    );
   }
 
   const allowedTransitions =
-    adminTransitions[card.status] || [];
+    adminTransitions[
+      card.status
+    ] || [];
 
-  if (!allowedTransitions.includes(status)) {
+  if (
+    !allowedTransitions.includes(
+      status
+    )
+  ) {
     throw httpError(
       409,
       `Cannot change a ${card.status} card to ${status}`
     );
   }
 
+  const frozenByAdmin =
+    status === "frozen";
+
   const updated =
     await repo.updateStatus({
-      tenantId: auth.tenantId,
+      tenantId:
+        auth.tenantId,
+
       cardId,
+
       status,
+
+      frozenByAdmin,
     });
 
   await repo.createEvent({
-    tenantId: auth.tenantId,
+    tenantId:
+      auth.tenantId,
+
     cardId,
-    userId: card.user_id,
-    actorUserId: auth.userId,
-    eventType: `card_${status}`,
-    metadata: reason
-      ? { reason }
-      : null,
+
+    userId:
+      card.user_id,
+
+    actorUserId:
+      auth.userId,
+
+    eventType:
+      `card_${status}`,
+
+    metadata:
+      reason
+        ? {
+            reason,
+            previousStatus:
+              card.status,
+            changedByBank:
+              true,
+          }
+        : {
+            previousStatus:
+              card.status,
+            changedByBank:
+              true,
+          },
   });
+
+  const notificationContent = {
+    frozen: {
+      type:
+        "card_frozen",
+
+      title:
+        "Card frozen",
+
+      message:
+        reason
+          ? `Your ${card.card_type} card ending in ${card.pan_last4} was frozen by your bank. Reason: ${reason}`
+          : `Your ${card.card_type} card ending in ${card.pan_last4} was frozen by your bank.`,
+    },
+
+    active: {
+      type:
+        card.status ===
+        "blocked"
+          ? "card_unblocked"
+          : card.status ===
+              "frozen"
+            ? "card_unfrozen"
+            : "card_activated",
+
+      title:
+        card.status ===
+        "blocked"
+          ? "Card unblocked"
+          : card.status ===
+              "frozen"
+            ? "Card unfrozen"
+            : "Card activated",
+
+      message:
+        card.status ===
+        "blocked"
+          ? `Your ${card.card_type} card ending in ${card.pan_last4} has been unblocked by your bank.`
+          : card.status ===
+              "frozen"
+            ? `Your ${card.card_type} card ending in ${card.pan_last4} has been unfrozen by your bank.`
+            : `Your ${card.card_type} card ending in ${card.pan_last4} is now active.`,
+    },
+
+    blocked: {
+      type:
+        "card_blocked",
+
+      title:
+        "Card blocked",
+
+      message:
+        reason
+          ? `Your ${card.card_type} card ending in ${card.pan_last4} was blocked by your bank. Reason: ${reason}`
+          : `Your ${card.card_type} card ending in ${card.pan_last4} was blocked by your bank.`,
+    },
+
+    inactive: {
+      type:
+        "card_deactivated",
+
+      title:
+        "Card deactivated",
+
+      message:
+        reason
+          ? `Your ${card.card_type} card ending in ${card.pan_last4} was deactivated by your bank. Reason: ${reason}`
+          : `Your ${card.card_type} card ending in ${card.pan_last4} was deactivated by your bank.`,
+    },
+  }[status];
+
+  if (
+    notificationContent
+  ) {
+    await notifications.create({
+      tenantId:
+        auth.tenantId,
+
+      userId:
+        card.user_id,
+
+      notificationType:
+        notificationContent.type,
+
+      title:
+        notificationContent.title,
+
+      message:
+        notificationContent.message,
+
+      entityType:
+        "card",
+
+      entityId:
+        card.id,
+
+      priority:
+        status ===
+          "blocked" ||
+        status ===
+          "inactive"
+          ? "high"
+          : "normal",
+
+      actionUrl:
+        `/cards/details/${card.id}`,
+
+      metadata: {
+        cardId:
+          card.id,
+
+        cardType:
+          card.card_type,
+
+        panLast4:
+          card.pan_last4,
+
+        previousStatus:
+          card.status,
+
+        newStatus:
+          status,
+
+        reason:
+          reason || null,
+
+        changedByBank:
+          true,
+      },
+    });
+  }
 
   return updated;
 };
@@ -897,4 +1359,6 @@ module.exports = {
   changeOwnStatus,
   changeOwnLimit,
   changeStatusAsAdmin,
+  listTenantCards,
+  getTenantCard,
 };

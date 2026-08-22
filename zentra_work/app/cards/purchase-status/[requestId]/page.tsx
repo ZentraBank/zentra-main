@@ -48,47 +48,56 @@ export default function CardPurchaseStatusPage() {
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState("");
 
-  const load = useCallback(async () => {
-    if (!requestId) return;
+const load = useCallback(async (silent = false) => {
+  if (!requestId) return;
 
+  if (!silent) {
     setLoading(true);
-    setError("");
+  }
 
-    try {
-      const result =
-        await cardService.getMyPurchaseRequest(
-          requestId,
-        );
+  setError("");
 
-      setRequest(result);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to load the card request.",
+  try {
+    const result =
+      await cardService.getMyPurchaseRequest(
+        requestId,
       );
-    } finally {
+
+    setRequest(result);
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Unable to load the card request.",
+    );
+  } finally {
+    if (!silent) {
       setLoading(false);
     }
-  }, [requestId]);
+  }
+}, [requestId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  useEffect(() => {
-    if (!request || request.status !== "pending") {
-      return;
-    }
+useEffect(() => {
+  if (
+    !request ||
+    request.status !== "pending"
+  ) {
+    return;
+  }
 
-    const interval = window.setInterval(() => {
-      void load();
+  const interval =
+    window.setInterval(() => {
+      void load(true);
     }, 10000);
 
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [load, request]);
+  return () => {
+    window.clearInterval(interval);
+  };
+}, [load, request, request?.status]);
 
   const cancelRequest = async () => {
     if (!request || request.status !== "pending") {
@@ -248,16 +257,23 @@ export default function CardPurchaseStatusPage() {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={cancelRequest}
-                    disabled={cancelling}
-                    className="mt-5 flex h-11 w-full items-center justify-center rounded-[14px] border border-red-200 bg-white text-sm font-bold text-red-600 disabled:opacity-50"
-                  >
-                    {cancelling
-                      ? "Cancelling..."
-                      : "Cancel request"}
-                  </button>
+                  {/* Cancel Button */}
+<button
+  type="button"
+  onClick={cancelRequest}
+  disabled={cancelling}
+  className="mt-5 flex h-11 w-full items-center justify-center rounded-[14px] border border-red-200 bg-white text-sm font-bold text-red-600 transition active:scale-[0.99] disabled:opacity-50"
+>
+  {cancelling ? "Cancelling..." : "Cancel request"}
+</button>
+
+{/* Return Button */}
+<Link
+  href="/cards/cards-purchase"
+  className="mt-5 flex h-11 w-full items-center justify-center rounded-[14px] border border-[#2458E8] bg-[#2458E8] text-sm font-bold text-white transition active:scale-[0.99]"
+>
+  Return to card catalogue
+</Link>
                 </div>
               )}
 

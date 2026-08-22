@@ -80,12 +80,23 @@ const audienceUsers = async ({ tenantId,audienceType,audienceValue }) => {
            WHERE tenant_id=? AND status='active'`;
     params = [tenantId];
   } else if (audienceType === "role") {
-    sql = `SELECT DISTINCT tm.user_id FROM tenant_memberships tm
-           JOIN membership_roles mr ON mr.membership_id=tm.id
-           JOIN roles r ON r.id=mr.role_id
-           WHERE tm.tenant_id=? AND tm.status='active' AND r.code=?`;
-    params = [tenantId,audienceValue];
-  } else {
+  sql = `
+    SELECT DISTINCT
+      tm.user_id
+    FROM tenant_memberships tm
+    INNER JOIN roles r
+      ON r.id = tm.role_id
+    WHERE tm.tenant_id = ?
+      AND tm.status = 'active'
+      AND r.code = ?
+      AND r.is_active = 1
+  `;
+
+  params = [
+    tenantId,
+    audienceValue,
+  ];
+} else {
     sql = `SELECT DISTINCT us.user_id FROM user_subscriptions us
            JOIN subscription_plans sp ON sp.id=us.plan_id
            WHERE us.tenant_id=? AND us.status='active'

@@ -1,287 +1,1925 @@
 "use client";
 
-import { useState } from "react";
-import Image from "next/image";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import Link from "next/link";
-import { ArrowLeft, Lock, Unlock } from "lucide-react";
 
-const cards = [
-  {
-    title: "Celebrity card",
-    emoji: "🏵️",
-    img: "/images/crypto-card.jpeg",
-    number: "5382 **** **** 9021",
-    cvv: "4XX",
-    expiry: "09/28",
-    cardType: "Premium credit card",
-  },
-  {
-    title: "Cryptocurrency card",
-    emoji: "💳",
-    img: "/images/cryptocurrency.jpeg",
-    number: "7821 **** **** 4478",
-    cvv: "9XX",
-    expiry: "12/27",
-    cardType: "Crypto debit card",
-  },
-  {
-    title: "Official card",
-    emoji: "🏆",
-    img: "/images/official-card.jpeg",
-    number: "4197 **** **** 1185",
-    cvv: "2XX",
-    expiry: "04/29",
-    cardType: "Business credit card",
-  },
-  {
-    title: "Merchant card",
-    emoji: "🤠",
-    img: "/images/merchant-card.jpeg",
-    number: "6305 **** **** 7362",
-    cvv: "6XX",
-    expiry: "07/30",
-    cardType: "Merchant debit card",
-  },
-];
+import {
+  ArrowLeft,
+  Ban,
+  Check,
+  Clock3,
+  CreditCard,
+  Loader2,
+  Lock,
+  RefreshCw,
+  ShieldOff,
+  Snowflake,
+  Sun,
+  X,
+  XCircle,
+} from "lucide-react";
 
-const actions = [
-  { label: "Deactivate", key: "deactivate" },
-  { label: "Unblock card", key: "unblock" },
-  { label: "Unfreeze card", key: "unfreeze" },
-  { label: "Disapprove", key: "disapprove" },
-] as const;
+import {
+  cardService,
+  type TenantCard,
+  type TenantCardPurchaseRequest,
+} from "@/services/card.service";
 
-type ActionKey = (typeof actions)[number]["key"];
+import { getApiErrorMessage } from "@/lib/api";
 
-const actionColors: Record<ActionKey, string> = {
-  deactivate: "bg-red-500",
-  unblock: "bg-green-500",
-  unfreeze: "bg-sky-500",
-  disapprove: "bg-orange-500",
+type MainTab =
+  | "requests"
+  | "cards";
+
+type RequestTab =
+  | "pending"
+  | "approved"
+  | "rejected";
+
+type CardStatusFilter =
+  | "all"
+  | "active"
+  | "frozen"
+  | "blocked"
+  | "inactive";
+
+type CardAction = {
+  status:
+    | "active"
+    | "frozen"
+    | "blocked"
+    | "inactive";
+
+  label: string;
+
+  tone:
+    | "blue"
+    | "amber"
+    | "red"
+    | "green";
+
+  icon:
+    React.ReactNode;
 };
 
-function ToggleSwitch({
-  enabled,
-  color = "bg-green-500",
-  disabled = false,
-  onToggle,
+export default function CardsManagementPage() {
+  const [
+    mainTab,
+    setMainTab,
+  ] =
+    useState<MainTab>(
+      "requests",
+    );
+
+  const [
+    requestTab,
+    setRequestTab,
+  ] =
+    useState<RequestTab>(
+      "pending",
+    );
+
+  const [
+    cardFilter,
+    setCardFilter,
+  ] =
+    useState<CardStatusFilter>(
+      "all",
+    );
+
+  const [
+    requests,
+    setRequests,
+  ] =
+    useState<
+      TenantCardPurchaseRequest[]
+    >([]);
+
+  const [
+    cards,
+    setCards,
+  ] =
+    useState<
+      TenantCard[]
+    >([]);
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(true);
+
+  const [
+    actionId,
+    setActionId,
+  ] =
+    useState("");
+
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
+
+  const [
+    message,
+    setMessage,
+  ] =
+    useState("");
+
+  const [
+    rejectingRequest,
+    setRejectingRequest,
+  ] =
+    useState<
+      TenantCardPurchaseRequest | null
+    >(null);
+
+  const [
+    cardAction,
+    setCardAction,
+  ] =
+    useState<{
+      card: TenantCard;
+      status:
+        | "active"
+        | "frozen"
+        | "blocked"
+        | "inactive";
+      label: string;
+    } | null>(
+      null,
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load purchase requests
+  |--------------------------------------------------------------------------
+  */
+
+  const loadRequests =
+    useCallback(
+      async (
+        silent = false,
+      ) => {
+        if (!silent) {
+          setLoading(true);
+        }
+
+        setError("");
+
+        try {
+          const result =
+            await cardService.listPurchaseRequests(
+              requestTab,
+              1,
+              50,
+            );
+
+          setRequests(
+            result.requests,
+          );
+        } catch (
+          requestError
+        ) {
+          setError(
+            getApiErrorMessage(
+              requestError,
+              "Unable to load card requests.",
+            ),
+          );
+        } finally {
+          if (!silent) {
+            setLoading(false);
+          }
+        }
+      },
+      [requestTab],
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load issued cards
+  |--------------------------------------------------------------------------
+  */
+
+  const loadCards =
+    useCallback(
+      async (
+        silent = false,
+      ) => {
+        if (!silent) {
+          setLoading(true);
+        }
+
+        setError("");
+
+        try {
+          const result =
+            await cardService.listIssuedCards(
+              1,
+              100,
+            );
+
+          setCards(
+            result.cards,
+          );
+        } catch (
+          requestError
+        ) {
+          setError(
+            getApiErrorMessage(
+              requestError,
+              "Unable to load issued cards.",
+            ),
+          );
+        } finally {
+          if (!silent) {
+            setLoading(false);
+          }
+        }
+      },
+      [],
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Initial / tab load
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    if (
+      mainTab ===
+      "requests"
+    ) {
+      void loadRequests();
+    } else {
+      void loadCards();
+    }
+  }, [
+    mainTab,
+    loadRequests,
+    loadCards,
+  ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Request actions
+  |--------------------------------------------------------------------------
+  */
+
+  const approveRequest =
+    async (
+      request:
+        TenantCardPurchaseRequest,
+    ) => {
+      setActionId(
+        request.id,
+      );
+
+      setError("");
+      setMessage("");
+
+      try {
+        await cardService.approvePurchaseRequest(
+          request.id,
+        );
+
+        setMessage(
+          `${request.customer_name}'s ${prettyCardType(
+            request.card_type,
+          )} has been approved and issued.`,
+        );
+
+        await loadRequests(
+          true,
+        );
+      } catch (
+        requestError
+      ) {
+        setError(
+          getApiErrorMessage(
+            requestError,
+            "Unable to approve card request.",
+          ),
+        );
+      } finally {
+        setActionId("");
+      }
+    };
+
+  const rejectRequest =
+    async (
+      requestId: string,
+      reason: string,
+    ) => {
+      setActionId(
+        requestId,
+      );
+
+      setError("");
+      setMessage("");
+
+      try {
+        await cardService.rejectPurchaseRequest(
+          requestId,
+          reason,
+        );
+
+        setRejectingRequest(
+          null,
+        );
+
+        setMessage(
+          "Card request rejected.",
+        );
+
+        await loadRequests(
+          true,
+        );
+      } catch (
+        requestError
+      ) {
+        setError(
+          getApiErrorMessage(
+            requestError,
+            "Unable to reject card request.",
+          ),
+        );
+      } finally {
+        setActionId("");
+      }
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Issued card actions
+  |--------------------------------------------------------------------------
+  */
+
+  const updateCardStatus =
+    async (
+      card: TenantCard,
+      status:
+        | "active"
+        | "frozen"
+        | "blocked"
+        | "inactive",
+      reason?: string,
+    ) => {
+      setActionId(
+        card.id,
+      );
+
+      setError("");
+      setMessage("");
+
+      try {
+        const updated =
+          await cardService.changeIssuedCardStatus(
+            card.id,
+            status,
+            reason,
+          );
+
+        setCards(
+          (
+            current,
+          ) =>
+            current.map(
+              (
+                item,
+              ) =>
+                item.id ===
+                updated.id
+                  ? {
+                      ...item,
+                      ...updated,
+                    }
+                  : item,
+            ),
+        );
+
+        setCardAction(
+          null,
+        );
+
+        setMessage(
+          `${prettyCardType(
+            card.card_type,
+          )} status changed to ${status}.`,
+        );
+      } catch (
+        requestError
+      ) {
+        setError(
+          getApiErrorMessage(
+            requestError,
+            "Unable to update card status.",
+          ),
+        );
+      } finally {
+        setActionId("");
+      }
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Filter issued cards
+  |--------------------------------------------------------------------------
+  */
+
+  const filteredCards =
+    useMemo(() => {
+      if (
+        cardFilter ===
+        "all"
+      ) {
+        return cards;
+      }
+
+      return cards.filter(
+        (card) =>
+          card.status ===
+          cardFilter,
+      );
+    }, [
+      cards,
+      cardFilter,
+    ]);
+
+  const cardCounts =
+    useMemo(
+      () => ({
+        all:
+          cards.length,
+
+        active:
+          cards.filter(
+            (card) =>
+              card.status ===
+              "active",
+          ).length,
+
+        frozen:
+          cards.filter(
+            (card) =>
+              card.status ===
+              "frozen",
+          ).length,
+
+        blocked:
+          cards.filter(
+            (card) =>
+              card.status ===
+              "blocked",
+          ).length,
+
+        inactive:
+          cards.filter(
+            (card) =>
+              card.status ===
+              "inactive",
+          ).length,
+      }),
+      [cards],
+    );
+
+  const refresh =
+    () => {
+      if (
+        mainTab ===
+        "requests"
+      ) {
+        void loadRequests();
+      } else {
+        void loadCards();
+      }
+    };
+
+  return (
+    <main className="min-h-screen bg-black px-4 py-8 text-white md:px-10 lg:px-16">
+      <div className="mx-auto max-w-[1200px]">
+
+        {/* TOP BAR */}
+
+        <div className="flex items-center justify-between">
+          <Link
+            href="/dashboard"
+            className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-white/15"
+          >
+            <ArrowLeft
+              size={20}
+            />
+          </Link>
+
+          <button
+            type="button"
+            onClick={
+              refresh
+            }
+            disabled={
+              loading
+            }
+            className="flex h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold transition hover:bg-white/15 disabled:opacity-50"
+          >
+            <RefreshCw
+              size={15}
+              className={
+                loading
+                  ? "animate-spin"
+                  : ""
+              }
+            />
+
+            Refresh
+          </button>
+        </div>
+
+        {/* HEADER */}
+
+        <header className="mt-8">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">
+            Card management
+          </p>
+
+          <h1 className="mt-2 text-3xl font-black text-[#2f73ff] md:text-5xl">
+            Client Cards
+          </h1>
+
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">
+            Review card applications and manage cards already issued to your customers.
+          </p>
+        </header>
+
+        {(error ||
+          message) && (
+          <div
+            className={`mt-6 rounded-2xl px-4 py-3 text-sm ${
+              error
+                ? "bg-red-950 text-red-100"
+                : "bg-green-950 text-green-100"
+            }`}
+          >
+            {error ||
+              message}
+          </div>
+        )}
+
+        {/* MAIN TAB */}
+
+        <div className="mt-8 grid grid-cols-2 rounded-2xl bg-white/5 p-1">
+          <button
+            type="button"
+            onClick={() =>
+              setMainTab(
+                "requests",
+              )
+            }
+            className={`h-12 rounded-xl text-sm font-black transition ${
+              mainTab ===
+              "requests"
+                ? "bg-white text-black"
+                : "text-white/50 hover:text-white"
+            }`}
+          >
+            Card Requests
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setMainTab(
+                "cards",
+              )
+            }
+            className={`h-12 rounded-xl text-sm font-black transition ${
+              mainTab ===
+              "cards"
+                ? "bg-white text-black"
+                : "text-white/50 hover:text-white"
+            }`}
+          >
+            Issued Cards
+          </button>
+        </div>
+
+        {mainTab ===
+        "requests" ? (
+          <>
+            {/* REQUEST FILTER */}
+
+            <div className="mt-5 flex overflow-x-auto rounded-2xl bg-white/5 p-1">
+              <RequestTabButton
+                active={
+                  requestTab ===
+                  "pending"
+                }
+                onClick={() =>
+                  setRequestTab(
+                    "pending",
+                  )
+                }
+                icon={
+                  <Clock3
+                    size={15}
+                  />
+                }
+                label="Pending"
+              />
+
+              <RequestTabButton
+                active={
+                  requestTab ===
+                  "approved"
+                }
+                onClick={() =>
+                  setRequestTab(
+                    "approved",
+                  )
+                }
+                icon={
+                  <Check
+                    size={15}
+                  />
+                }
+                label="Approved"
+              />
+
+              <RequestTabButton
+                active={
+                  requestTab ===
+                  "rejected"
+                }
+                onClick={() =>
+                  setRequestTab(
+                    "rejected",
+                  )
+                }
+                icon={
+                  <XCircle
+                    size={15}
+                  />
+                }
+                label="Rejected"
+              />
+            </div>
+
+            {loading ? (
+              <LoadingState
+                label="Loading card requests…"
+              />
+            ) : requests.length ===
+              0 ? (
+              <EmptyState
+                title={`No ${requestTab} card requests`}
+                description="Card applications will appear here when clients submit them."
+              />
+            ) : (
+              <section className="mt-6 grid gap-5 lg:grid-cols-2">
+                {requests.map(
+                  (
+                    request,
+                  ) => (
+                    <RequestCard
+                      key={
+                        request.id
+                      }
+                      request={
+                        request
+                      }
+                      busy={
+                        actionId ===
+                        request.id
+                      }
+                      onApprove={() =>
+                        void approveRequest(
+                          request,
+                        )
+                      }
+                      onReject={() =>
+                        setRejectingRequest(
+                          request,
+                        )
+                      }
+                    />
+                  ),
+                )}
+              </section>
+            )}
+          </>
+        ) : (
+          <>
+            {/* CARD FILTER */}
+
+            <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+              {(
+                [
+                  "all",
+                  "active",
+                  "frozen",
+                  "blocked",
+                  "inactive",
+                ] as const
+              ).map(
+                (
+                  status,
+                ) => (
+                  <button
+                    key={
+                      status
+                    }
+                    type="button"
+                    onClick={() =>
+                      setCardFilter(
+                        status,
+                      )
+                    }
+                    className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold capitalize transition ${
+                      cardFilter ===
+                      status
+                        ? "bg-[#2f73ff] text-white"
+                        : "bg-white/10 text-white/55 hover:bg-white/15 hover:text-white"
+                    }`}
+                  >
+                    {status}
+                    {" "}
+                    {
+                      cardCounts[
+                        status
+                      ]
+                    }
+                  </button>
+                ),
+              )}
+            </div>
+
+            {loading ? (
+              <LoadingState
+                label="Loading issued cards…"
+              />
+            ) : filteredCards.length ===
+              0 ? (
+              <EmptyState
+                title="No cards found"
+                description="Issued cards matching this status will appear here."
+              />
+            ) : (
+              <section className="mt-6 grid gap-5 lg:grid-cols-2">
+                {filteredCards.map(
+                  (
+                    card,
+                  ) => (
+                    <IssuedCard
+                      key={
+                        card.id
+                      }
+                      card={
+                        card
+                      }
+                      busy={
+                        actionId ===
+                        card.id
+                      }
+                      onAction={(
+                        status,
+                        label,
+                      ) =>
+                        setCardAction(
+                          {
+                            card,
+                            status,
+                            label,
+                          },
+                        )
+                      }
+                    />
+                  ),
+                )}
+              </section>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* REJECTION OVERLAY */}
+
+      <RejectOverlay
+        request={
+          rejectingRequest
+        }
+        busy={
+          Boolean(
+            rejectingRequest &&
+              actionId ===
+                rejectingRequest.id,
+          )
+        }
+        onClose={() =>
+          setRejectingRequest(
+            null,
+          )
+        }
+        onReject={(
+          reason,
+        ) => {
+          if (
+            rejectingRequest
+          ) {
+            void rejectRequest(
+              rejectingRequest.id,
+              reason,
+            );
+          }
+        }}
+      />
+
+      {/* CARD STATUS ACTION */}
+
+      <CardActionOverlay
+        action={
+          cardAction
+        }
+        busy={
+          Boolean(
+            cardAction &&
+              actionId ===
+                cardAction.card.id,
+          )
+        }
+        onClose={() =>
+          setCardAction(
+            null,
+          )
+        }
+        onConfirm={(
+          reason,
+        ) => {
+          if (
+            !cardAction
+          ) {
+            return;
+          }
+
+          void updateCardStatus(
+            cardAction.card,
+            cardAction.status,
+            reason,
+          );
+        }}
+      />
+    </main>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| PURCHASE REQUEST
+|--------------------------------------------------------------------------
+*/
+
+function RequestCard({
+  request,
+  busy,
+  onApprove,
+  onReject,
 }: {
-  enabled: boolean;
-  color?: string;
-  disabled?: boolean;
-  onToggle: () => void;
+  request:
+    TenantCardPurchaseRequest;
+
+  busy: boolean;
+
+  onApprove: () => void;
+
+  onReject: () => void;
+}) {
+  const pending =
+    request.status ===
+    "pending";
+
+  return (
+    <article className="overflow-hidden rounded-[24px] bg-white text-[#252525] shadow-xl">
+      <div className="flex items-start justify-between gap-4 border-b border-black/5 p-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#E8F0FF] text-[#2458E8]">
+            <CreditCard
+              size={21}
+            />
+          </div>
+
+          <div className="min-w-0">
+            <p className="truncate text-[16px] font-black">
+              {
+                request.customer_name
+              }
+            </p>
+
+            <p className="mt-1 truncate text-xs text-black/40">
+              {
+                request.customer_email
+              }
+            </p>
+          </div>
+        </div>
+
+        <StatusBadge
+          status={
+            request.status
+          }
+        />
+      </div>
+
+      <div className="p-5">
+        <h2 className="text-xl font-black">
+          {prettyCardType(
+            request.card_type,
+          )}
+        </h2>
+
+        <p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#2458E8]">
+          {request.card_brand ||
+            "Zentra"}
+        </p>
+
+        <div className="mt-5 grid gap-3 rounded-2xl bg-[#F8FAFC] p-4 text-sm">
+          <InfoRow
+            label="Linked account"
+            value={`${
+              request.account_name
+            } •••• ${request.account_number.slice(
+              -4,
+            )}`}
+          />
+
+          <InfoRow
+            label="Account currency"
+            value={
+              request.account_currency
+            }
+          />
+
+          <InfoRow
+            label="Price"
+            value={formatMoney(
+              request.price,
+              request.currency,
+            )}
+          />
+
+          <InfoRow
+            label="Payment"
+            value={
+              request.payment_method
+            }
+          />
+
+          <InfoRow
+            label="Reference"
+            value={
+              request.payment_reference ||
+              "Not supplied"
+            }
+            wrap
+          />
+
+          <InfoRow
+            label="Submitted"
+            value={new Date(
+              request.created_at,
+            ).toLocaleString()}
+          />
+        </div>
+
+        {request.status ===
+          "rejected" &&
+          request.rejection_reason && (
+            <div className="mt-4 rounded-2xl bg-red-50 p-4 text-sm text-red-700">
+              {
+                request.rejection_reason
+              }
+            </div>
+          )}
+
+        {request.status ===
+          "approved" &&
+          request.issued_card_id && (
+            <div className="mt-4 rounded-2xl bg-green-50 p-4 text-sm font-semibold text-green-700">
+              Card issued successfully.
+            </div>
+          )}
+
+        {pending && (
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={
+                onReject
+              }
+              disabled={
+                busy
+              }
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-50 text-sm font-bold text-red-600 disabled:opacity-50"
+            >
+              <X
+                size={16}
+              />
+              Reject
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                onApprove
+              }
+              disabled={
+                busy
+              }
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2458E8] text-sm font-bold text-white disabled:opacity-50"
+            >
+              {busy ? (
+                <Loader2
+                  size={16}
+                  className="animate-spin"
+                />
+              ) : (
+                <Check
+                  size={16}
+                />
+              )}
+
+              Approve
+            </button>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| ISSUED CARD
+|--------------------------------------------------------------------------
+*/
+
+function IssuedCard({
+  card,
+  busy,
+  onAction,
+}: {
+  card: TenantCard;
+
+  busy: boolean;
+
+  onAction: (
+    status:
+      | "active"
+      | "frozen"
+      | "blocked"
+      | "inactive",
+    label: string,
+  ) => void;
+}) {
+  const actions =
+    getCardActions(
+      card.status,
+    );
+
+  return (
+    <article className="overflow-hidden rounded-[26px] bg-white text-[#252525] shadow-xl">
+      <div className="bg-gradient-to-br from-[#1D4ED8] via-[#2458E8] to-[#12285f] p-5 text-white">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.15em] text-white/55">
+              {
+                card.card_brand
+              }
+            </p>
+
+            <h2 className="mt-1 text-xl font-black">
+              {prettyCardType(
+                card.card_type,
+              )}
+            </h2>
+          </div>
+
+          <StatusBadge
+            status={
+              card.status
+            }
+          />
+        </div>
+
+        <p className="mt-9 text-lg tracking-[0.14em]">
+          {
+            card.masked_pan
+          }
+        </p>
+
+        <div className="mt-5 flex items-end justify-between text-sm">
+          <div>
+            <p className="text-[10px] uppercase text-white/45">
+              Expires
+            </p>
+
+            <p className="font-bold">
+              {String(
+                card.expiry_month,
+              ).padStart(
+                2,
+                "0",
+              )}
+              /
+              {String(
+                card.expiry_year,
+              ).slice(-2)}
+            </p>
+          </div>
+
+          <div className="text-right">
+            <p className="text-[10px] uppercase text-white/45">
+              Linked account
+            </p>
+
+            <p className="font-bold">
+              ••••{" "}
+              {card.account_number?.slice(
+                -4,
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-5">
+        <div className="space-y-3 rounded-2xl bg-[#F8FAFC] p-4 text-sm">
+          {"customer_name" in
+            card &&
+            Boolean(
+              (
+                card as TenantCard & {
+                  customer_name?: string;
+                }
+              ).customer_name,
+            ) && (
+              <InfoRow
+                label="Customer"
+                value={
+                  (
+                    card as TenantCard & {
+                      customer_name?: string;
+                    }
+                  ).customer_name ||
+                  "—"
+                }
+              />
+            )}
+
+          <InfoRow
+            label="Account"
+            value={
+              card.account_name
+            }
+          />
+
+          <InfoRow
+            label="Currency"
+            value={
+              card.currency
+            }
+          />
+
+          <InfoRow
+            label="Daily limit"
+            value={formatMoney(
+              card.daily_spend_limit,
+              card.currency,
+            )}
+          />
+
+          <InfoRow
+            label="Card format"
+            value={
+              card.is_virtual
+                ? "Virtual"
+                : "Physical"
+            }
+          />
+        </div>
+
+        {actions.length >
+        0 ? (
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            {actions.map(
+              (
+                action,
+              ) => (
+                <button
+                  key={
+                    action.status
+                  }
+                  type="button"
+                  disabled={
+                    busy
+                  }
+                  onClick={() =>
+                    onAction(
+                      action.status,
+                      action.label,
+                    )
+                  }
+                  className={actionButtonClass(
+                    action.tone,
+                  )}
+                >
+                  {busy ? (
+                    <Loader2
+                      size={15}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    action.icon
+                  )}
+
+                  {
+                    action.label
+                  }
+                </button>
+              ),
+            )}
+          </div>
+        ) : (
+          <div className="mt-5 rounded-xl bg-gray-100 px-4 py-3 text-center text-xs font-semibold text-gray-500">
+            No further card actions are available.
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| ACTION RULES
+|--------------------------------------------------------------------------
+*/
+
+function getCardActions(
+  status: TenantCard["status"],
+): CardAction[] {
+  switch (status) {
+    case "active":
+      return [
+        {
+          status:
+            "frozen",
+          label:
+            "Freeze",
+          tone:
+            "amber",
+          icon:
+            <Snowflake
+              size={15}
+            />,
+        },
+
+        {
+          status:
+            "blocked",
+          label:
+            "Block",
+          tone:
+            "red",
+          icon:
+            <Ban
+              size={15}
+            />,
+        },
+
+        {
+          status:
+            "inactive",
+          label:
+            "Deactivate",
+          tone:
+            "red",
+          icon:
+            <ShieldOff
+              size={15}
+            />,
+        },
+      ];
+
+    case "frozen":
+      return [
+        {
+          status:
+            "active",
+          label:
+            "Unfreeze",
+          tone:
+            "green",
+          icon:
+            <Sun
+              size={15}
+            />,
+        },
+
+        {
+          status:
+            "blocked",
+          label:
+            "Block",
+          tone:
+            "red",
+          icon:
+            <Ban
+              size={15}
+            />,
+        },
+
+        {
+          status:
+            "inactive",
+          label:
+            "Deactivate",
+          tone:
+            "red",
+          icon:
+            <ShieldOff
+              size={15}
+            />,
+        },
+      ];
+
+    case "blocked":
+      return [
+        {
+          status:
+            "active",
+          label:
+            "Unblock",
+          tone:
+            "green",
+          icon:
+            <Lock
+              size={15}
+            />,
+        },
+
+        {
+          status:
+            "inactive",
+          label:
+            "Deactivate",
+          tone:
+            "red",
+          icon:
+            <ShieldOff
+              size={15}
+            />,
+        },
+      ];
+
+    default:
+      return [];
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| REQUEST TABS
+|--------------------------------------------------------------------------
+*/
+
+function RequestTabButton({
+  active,
+  icon,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  icon:
+    React.ReactNode;
+  label: string;
+  onClick: () => void;
 }) {
   return (
     <button
       type="button"
-      onClick={onToggle}
-      disabled={disabled}
-      aria-pressed={enabled}
-      className={`relative h-[16px] w-[32px] rounded-full transition-all duration-300 md:h-5 md:w-10 ${
-        enabled ? color : "bg-gray-300"
-      } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+      onClick={
+        onClick
+      }
+      className={`flex h-11 min-w-[120px] flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition ${
+        active
+          ? "bg-white text-black"
+          : "text-white/55 hover:text-white"
+      }`}
     >
-      <span
-        className={`absolute top-[2px] h-3 w-3 rounded-full bg-white shadow transition-all duration-300 md:h-4 md:w-4 ${
-          enabled ? "left-[18px] md:left-5" : "left-[2px]"
-        }`}
-      />
+      {icon}
+      {label}
     </button>
   );
 }
 
-export default function CardStatusPage() {
-  const [lockedCards, setLockedCards] = useState<boolean[]>(
-    cards.map(() => false)
-  );
+/*
+|--------------------------------------------------------------------------
+| STATUS
+|--------------------------------------------------------------------------
+*/
 
-  const [cardSettings, setCardSettings] = useState<
-    Record<ActionKey, boolean>[]
-  >(
-    cards.map(() => ({
-      deactivate: false,
-      unblock: false,
-      unfreeze: false,
-      disapprove: false,
-    }))
-  );
+function StatusBadge({
+  status,
+}: {
+  status: string;
+}) {
+  const classes =
+    status === "active" ||
+    status === "approved"
+      ? "bg-green-100 text-green-700"
 
-  const toggleCardLock = async (cardIndex: number) => {
-    const newValue = !lockedCards[cardIndex];
+      : status ===
+          "pending"
+        ? "bg-amber-100 text-amber-700"
 
-    /*
-      Backend later:
+        : status ===
+            "frozen"
+          ? "bg-sky-100 text-sky-700"
 
-      await fetch(`/api/cards/${cardIndex}/lock`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          locked: newValue,
-        }),
-      });
-    */
+          : status ===
+              "blocked"
+            ? "bg-orange-100 text-orange-700"
 
-    setLockedCards((prev) =>
-      prev.map((locked, index) => (index === cardIndex ? newValue : locked))
-    );
-  };
+            : status ===
+                "rejected" ||
+                status ===
+                  "inactive"
+              ? "bg-red-100 text-red-700"
 
-  const toggleSetting = async (cardIndex: number, key: ActionKey) => {
-    if (lockedCards[cardIndex]) return;
-
-    const newValue = !cardSettings[cardIndex][key];
-
-    /*
-      Backend later:
-
-      await fetch(`/api/cards/${cardIndex}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: key,
-          enabled: newValue,
-        }),
-      });
-    */
-
-    setCardSettings((prev) =>
-      prev.map((card, index) =>
-        index === cardIndex ? { ...card, [key]: newValue } : card
-      )
-    );
-  };
+              : "bg-gray-100 text-gray-600";
 
   return (
-    <main className="min-h-screen bg-black px-3 py-8 text-white md:px-10 lg:px-16">
-      <div className="mx-auto max-w-[1200px]">
-        <Link href="/dashboard" className="mb-6 inline-flex text-white">
-          <ArrowLeft size={22} />
-        </Link>
+    <span
+      className={`rounded-full px-3 py-1 text-xs font-bold capitalize ${classes}`}
+    >
+      {status}
+    </span>
+  );
+}
 
-        <div className="mx-auto mb-8 max-w-[720px] text-center md:mb-12">
-          <h1 className="text-[34px] font-black leading-[0.9] tracking-[-1px] text-[#2f73ff] drop-shadow-[0_2px_0_#ffffff] text-[42x] md:text-[58px] lg:text-[72px]">
-            Control Your client&apos;s
-            <br />
-            card status
-          </h1>
+/*
+|--------------------------------------------------------------------------
+| INFO
+|--------------------------------------------------------------------------
+*/
 
-          <p className="mx-auto mt-5 max-w-[480px] text-[14px] font-bold leading-tight md:text-base">
-            Control Your Client&apos;s Credit card or Debit card Status
-          </p>
+function InfoRow({
+  label,
+  value,
+  wrap = false,
+}: {
+  label: string;
+  value: string;
+  wrap?: boolean;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="shrink-0 text-black/40">
+        {label}
+      </span>
+
+      <span
+        className={`text-right font-bold ${
+          wrap
+            ? "max-w-[60%] break-all"
+            : ""
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| REJECT REQUEST
+|--------------------------------------------------------------------------
+*/
+
+function RejectOverlay({
+  request,
+  busy,
+  onClose,
+  onReject,
+}: {
+  request:
+    TenantCardPurchaseRequest | null;
+
+  busy: boolean;
+
+  onClose: () => void;
+
+  onReject: (
+    reason: string,
+  ) => void;
+}) {
+  const [
+    reason,
+    setReason,
+  ] =
+    useState("");
+
+  useEffect(() => {
+    if (!request) {
+      setReason("");
+    }
+  }, [request]);
+
+  if (!request) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 px-4">
+      <section className="w-full max-w-md rounded-[24px] bg-white p-6 text-[#252525] shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-xl font-black">
+              Reject card request
+            </h2>
+
+            <p className="mt-1 text-sm text-black/45">
+              {
+                request.customer_name
+              }
+              {" — "}
+              {prettyCardType(
+                request.card_type,
+              )}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            disabled={
+              busy
+            }
+            className="grid h-9 w-9 place-items-center rounded-full bg-gray-100"
+          >
+            <X
+              size={17}
+            />
+          </button>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2">
-          {cards.map((card, cardIndex) => {
-            const isLocked = lockedCards[cardIndex];
+        <textarea
+          value={
+            reason
+          }
+          onChange={(
+            event,
+          ) =>
+            setReason(
+              event.target
+                .value,
+            )
+          }
+          maxLength={
+            500
+          }
+          placeholder="Why is this card request being rejected?"
+          className="mt-6 h-28 w-full resize-none rounded-xl border border-gray-200 p-3 text-sm outline-none focus:border-red-400"
+        />
 
-            return (
-              <div
-                key={card.title}
-                className={`overflow-hidden rounded-[12px] border-[3px] border-white bg-white shadow-[0_0_0_2px_#bfa23a] transition-all duration-300 ${
-                  isLocked ? "opacity-75 grayscale" : "opacity-100"
-                }`}
-              >
-                <div className="relative h-[162px] overflow-hidden md:h-[180px] lg:h-[200px]">
-                  <Image
-                    src={card.img}
-                    alt={card.title}
-                    fill
-                    className="object-cover"
-                  />
+        <div className="mt-5 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            disabled={
+              busy
+            }
+            className="h-11 rounded-xl bg-gray-100 text-sm font-bold"
+          >
+            Cancel
+          </button>
 
-                  <div className="absolute inset-0 bg-black/25" />
+          <button
+            type="button"
+            onClick={() =>
+              onReject(
+                reason.trim(),
+              )
+            }
+            disabled={
+              busy ||
+              reason.trim()
+                .length <
+                3
+            }
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-bold text-white disabled:opacity-40"
+          >
+            {busy && (
+              <Loader2
+                size={15}
+                className="animate-spin"
+              />
+            )}
 
-                  {isLocked && (
-                    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/45">
-                      <div className="flex items-center gap-2 rounded-full bg-black/80 px-4 py-2 text-[12px] font-bold text-white">
-                        <Lock size={15} />
-                        Card Locked
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="absolute left-4 top-3 z-30 text-[24px] md:left-6 md:top-5 md:text-[38px]">
-                    {card.emoji}
-                  </div>
-
-                  <h2 className="absolute inset-x-0 top-5 z-30 text-center text-[15px] font-extrabold tracking-wide md:top-8 md:text-2xl">
-                    {card.title}
-                  </h2>
-
-                  <div className="absolute right-4 top-3 z-40 flex items-center gap-2 md:right-6 md:top-5">
-                    {isLocked ? (
-                      <Lock size={14} className="text-red-400" />
-                    ) : (
-                      <Unlock size={14} className="text-green-400" />
-                    )}
-
-                    <ToggleSwitch
-                      enabled={!isLocked}
-                      color="bg-green-500"
-                      onToggle={() => toggleCardLock(cardIndex)}
-                    />
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 z-50 bg-black/85 px-4 py-3 text-white">
-  <div className="grid grid-cols-[1.3fr_1fr_1fr] items-end gap-3 text-[10px] leading-tight md:text-sm">
-    <div>
-      <p className="font-bold">{card.number}</p>
-      <p className="mt-1 text-white/75">CVV: {card.cvv}</p>
-    </div>
-
-    <div>
-      <p className="text-white/75">Expiry</p>
-      <p className="font-bold">{card.expiry}</p>
-    </div>
-
-    <p className="text-right font-bold">
-      {card.cardType}
-    </p>
-  </div>
-</div>
-                </div>
-                <div className="grid grid-cols-2 gap-x-2 gap-y-1 bg-white/90 px-3 py-2 text-black md:gap-3 md:px-5 md:py-4">
-                  {actions.map((action) => {
-                    const isActive = cardSettings[cardIndex][action.key];
-
-                    return (
-                      <div
-                        key={action.key}
-                        className={`flex h-[20px] items-center justify-between rounded-sm px-1 text-[11px] shadow-sm transition-all duration-300 md:h-9 md:rounded-md md:px-3 md:text-sm ${
-                          isLocked
-                            ? "bg-gray-100 text-black/35"
-                            : isActive
-                            ? "bg-blue-50 ring-2 ring-[#2458e8]"
-                            : "bg-white"
-                        }`}
-                      >
-                        <span
-                          className={`transition-colors duration-300 ${
-                            isLocked
-                              ? "text-black/35"
-                              : isActive
-                              ? "font-bold text-[#2458e8]"
-                              : "text-black"
-                          }`}
-                        >
-                          {action.label}
-                        </span>
-
-                        <ToggleSwitch
-                          enabled={isActive}
-                          color={actionColors[action.key]}
-                          disabled={isLocked}
-                          onToggle={() => toggleSetting(cardIndex, action.key)}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+            Reject
+          </button>
         </div>
+      </section>
+    </div>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| CARD ACTION OVERLAY
+|--------------------------------------------------------------------------
+*/
+
+function CardActionOverlay({
+  action,
+  busy,
+  onClose,
+  onConfirm,
+}: {
+  action: {
+    card: TenantCard;
+
+    status:
+      | "active"
+      | "frozen"
+      | "blocked"
+      | "inactive";
+
+    label: string;
+  } | null;
+
+  busy: boolean;
+
+  onClose: () => void;
+
+  onConfirm: (
+    reason?: string,
+  ) => void;
+}) {
+  const [
+    reason,
+    setReason,
+  ] =
+    useState("");
+
+  useEffect(() => {
+    if (!action) {
+      setReason("");
+    }
+  }, [action]);
+
+  if (!action) {
+    return null;
+  }
+
+  const needsReason =
+    action.status ===
+      "blocked" ||
+    action.status ===
+      "inactive";
+
+  return (
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/70 px-4">
+      <section className="w-full max-w-md rounded-[24px] bg-white p-6 text-[#252525] shadow-2xl">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-xl font-black">
+              {action.label} card
+            </h2>
+
+            <p className="mt-1 text-sm text-black/45">
+              {prettyCardType(
+                action.card
+                  .card_type,
+              )}
+              {" • "}
+              {
+                action.card
+                  .masked_pan
+              }
+            </p>
+          </div>
+
+          <button
+            type="button"
+            disabled={
+              busy
+            }
+            onClick={
+              onClose
+            }
+            className="grid h-9 w-9 place-items-center rounded-full bg-gray-100"
+          >
+            <X
+              size={17}
+            />
+          </button>
+        </div>
+
+        {needsReason && (
+          <label className="mt-6 block">
+            <span className="text-sm font-bold">
+              Reason
+            </span>
+
+            <textarea
+              value={
+                reason
+              }
+              onChange={(
+                event,
+              ) =>
+                setReason(
+                  event.target
+                    .value,
+                )
+              }
+              maxLength={
+                500
+              }
+              placeholder={`Reason for ${action.label.toLowerCase()}ing this card`}
+              className="mt-2 h-24 w-full resize-none rounded-xl border border-gray-200 p-3 text-sm outline-none"
+            />
+          </label>
+        )}
+
+        <div className="mt-6 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            disabled={
+              busy
+            }
+            className="h-11 rounded-xl bg-gray-100 text-sm font-bold"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            disabled={
+              busy ||
+              (
+                needsReason &&
+                reason.trim()
+                  .length <
+                  3
+              )
+            }
+            onClick={() =>
+              onConfirm(
+                reason.trim() ||
+                  undefined,
+              )
+            }
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2458E8] text-sm font-bold text-white disabled:opacity-40"
+          >
+            {busy && (
+              <Loader2
+                size={15}
+                className="animate-spin"
+              />
+            )}
+
+            Confirm
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/*
+|--------------------------------------------------------------------------
+| COMMON UI
+|--------------------------------------------------------------------------
+*/
+
+function LoadingState({
+  label,
+}: {
+  label: string;
+}) {
+  return (
+    <div className="grid min-h-[350px] place-items-center">
+      <div className="text-center">
+        <Loader2 className="mx-auto animate-spin text-[#2f73ff]" />
+
+        <p className="mt-3 text-sm text-white/45">
+          {label}
+        </p>
       </div>
-    </main>
+    </div>
+  );
+}
+
+function EmptyState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="mt-6 grid min-h-[300px] place-items-center rounded-[24px] border border-dashed border-white/15 bg-white/5 px-5 text-center">
+      <div>
+        <CreditCard
+          size={36}
+          className="mx-auto text-white/20"
+        />
+
+        <p className="mt-4 font-black">
+          {title}
+        </p>
+
+        <p className="mt-2 text-sm text-white/40">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function actionButtonClass(
+  tone:
+    | "blue"
+    | "amber"
+    | "red"
+    | "green",
+) {
+  const styles = {
+    blue:
+      "bg-blue-50 text-blue-700",
+
+    amber:
+      "bg-amber-50 text-amber-700",
+
+    red:
+      "bg-red-50 text-red-600",
+
+    green:
+      "bg-green-50 text-green-700",
+  };
+
+  return `flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold disabled:opacity-50 ${styles[tone]}`;
+}
+
+function prettyCardType(
+  value: string,
+) {
+  return `${value
+    .charAt(0)
+    .toUpperCase()}${value.slice(
+    1,
+  )} Card`;
+}
+
+function formatMoney(
+  amount:
+    | string
+    | number,
+  currency: string,
+) {
+  return new Intl.NumberFormat(
+    "en-GB",
+    {
+      style:
+        "currency",
+
+      currency,
+
+      minimumFractionDigits:
+        0,
+
+      maximumFractionDigits:
+        2,
+    },
+  ).format(
+    Number(amount) ||
+      0,
   );
 }

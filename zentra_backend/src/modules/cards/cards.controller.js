@@ -63,6 +63,74 @@ const changeOwnLimit = asyncHandler(async (req, res) =>
   })
 );
 
+const listTenantCards = asyncHandler(
+  async (req, res) => {
+    const parsedPage =
+      Number.parseInt(
+        req.query.page,
+        10
+      );
+
+    const parsedPageSize =
+      Number.parseInt(
+        req.query.pageSize ||
+          req.query.limit,
+        10
+      );
+
+    const page =
+      Number.isInteger(
+        parsedPage
+      ) &&
+      parsedPage > 0
+        ? parsedPage
+        : 1;
+
+    const pageSize =
+      Number.isInteger(
+        parsedPageSize
+      ) &&
+      parsedPageSize > 0
+        ? Math.min(
+            parsedPageSize,
+            100
+          )
+        : 20;
+
+    return sendSuccess(
+      res,
+      {
+        message:
+          "Tenant cards retrieved successfully",
+
+        data:
+          await service.listTenantCards(
+            {
+              auth: req.auth,
+              page,
+              pageSize,
+            }
+          ),
+      }
+    );
+  }
+);
+
+const getTenantCard = asyncHandler(
+  async (req, res) =>
+    sendSuccess(res, {
+      message:
+        "Tenant card retrieved successfully",
+
+      data:
+        await service.getTenantCard({
+          auth: req.auth,
+          cardId:
+            req.params.cardId,
+        }),
+    })
+);
+
 const changeStatusAsAdmin = asyncHandler(async (req, res) =>
   sendSuccess(res, {
     message: "Card status updated successfully",
@@ -235,4 +303,6 @@ module.exports = {
   getTenantPurchaseRequest,
   approvePurchaseRequest,
   rejectPurchaseRequest,
+  listTenantCards,
+  getTenantCard,
 };

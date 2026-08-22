@@ -32,7 +32,7 @@ router.use(authenticate);
 router.post(
   "/purchase-requests",
   validate(schema.purchaseRequest),
-  requireAllPermissions("cards.create"),
+  requireAllPermissions("cards.request"),
   controller.submitPurchaseRequest
 );
 
@@ -112,16 +112,30 @@ router.get(
 router.patch(
   "/me/:cardId/status",
   validate(schema.ownStatus),
-  requireAllPermissions("cards.manage"),
+  requireAllPermissions("cards.update_own"),
   controller.changeOwnStatus
 );
+
 router.patch(
   "/me/:cardId/limit",
   validate(schema.ownLimit),
-  requireAllPermissions("cards.manage"),
+  requireAllPermissions("cards.update_own"),
   controller.changeOwnLimit
 );
 
+router.get(
+  "/admin",
+  validate(schema.adminCardList),
+  requireAllPermissions("cards.manage"),
+  controller.listTenantCards
+);
+
+router.get(
+  "/admin/:cardId",
+  validate(schema.id),
+  requireAllPermissions("cards.manage"),
+  controller.getTenantCard
+);
 router.patch(
   "/admin/:cardId/status",
   validate(schema.adminStatus),

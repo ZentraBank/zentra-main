@@ -29,29 +29,91 @@ export default function ActiveCardsPage() {
     virtual: cards.filter((card) => Boolean(card.is_virtual)).length,
   }), [cards]);
 
-  const toggleCard = async (card: ClientCard) => {
-    if (!["active", "frozen"].includes(card.status)) return;
-    setBusyId(card.id);
-    setError("");
-    try {
-      const updated = await cardService.changeStatus(card.id, card.status === "active" ? "frozen" : "active");
-      setCards((current) => current.map((item) => item.id === updated.id ? updated : item));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to update card status.");
-    } finally { setBusyId(""); }
-  };
+const toggleCard = async (
+  card: ClientCard,
+) => {
+  if (
+    !["active", "frozen"].includes(
+      card.status,
+    )
+  ) {
+    return;
+  }
+
+  if (
+    card.status === "frozen" &&
+    card.frozen_by_admin
+  ) {
+    setError(
+      "This card was frozen by your bank and cannot be unfrozen from your account.",
+    );
+
+    return;
+  }
+
+  setBusyId(card.id);
+  setError("");
+
+  try {
+    const updated =
+      await cardService.changeStatus(
+        card.id,
+        card.status === "active"
+          ? "frozen"
+          : "active",
+      );
+
+    setCards((current) =>
+      current.map((item) =>
+        item.id === updated.id
+          ? updated
+          : item,
+      ),
+    );
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Unable to update card status.",
+    );
+  } finally {
+    setBusyId("");
+  }
+};
 
   return (
     <main className="min-h-screen bg-[#E7EBF0]">
       <section className="mx-auto max-w-[430px] px-4 pb-[120px] pt-12 lg:max-w-[1180px] lg:px-8 lg:pb-12 lg:pt-10">
         <header className="relative flex items-center justify-center lg:justify-between">
           <Link href="/cards/cards-home" className="absolute left-0 lg:static lg:grid lg:h-11 lg:w-11 lg:place-items-center lg:rounded-full lg:bg-white lg:shadow-sm"><ArrowLeft size={20} /></Link>
-          <h1 className="font-heading text-[18px] font-bold lg:text-[24px]">Active cards</h1>
+          <h1 className="font-heading text-[18px] font-bold lg:text-[24px]">My cards</h1>
           <div className="flex gap-2">
             <button onClick={() => void load()} className="hidden h-11 w-11 place-items-center rounded-full bg-white shadow-sm lg:grid" aria-label="Refresh cards"><RefreshCw size={17} /></button>
+            <Link
+              href="/cards/purchase-requests"
+              className="hidden h-11 items-center gap-2 rounded-full bg-white px-5 text-[14px] font-semibold text-[#2458E8] shadow-sm lg:flex"
+            >
+              Pending requests
+            </Link>
             <Link href="/cards/cards-purchase" className="hidden h-11 items-center gap-2 rounded-full bg-[#2458E8] px-5 text-[14px] font-semibold text-white shadow-sm lg:flex"><Plus size={16} />New Card</Link>
           </div>
         </header>
+        <div className="mt-5 flex gap-3 lg:hidden">
+  <Link
+    href="/cards/cards-purchase"
+    className="flex h-11 flex-1 items-center justify-center rounded-xl bg-[#2458E8] text-sm font-bold text-white"
+  >
+    <Plus size={16} className="mr-2" />
+    New card
+  </Link>
+
+  <Link
+    href="/cards/purchase-requests"
+    className="flex h-11 flex-1 items-center justify-center rounded-xl bg-white text-sm font-bold text-[#2458E8] shadow-sm"
+  >
+    Requests
+  </Link>
+</div>
 
         {error && <div className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
 
@@ -77,7 +139,68 @@ export default function ActiveCardsPage() {
                     <div className="flex items-start justify-between"><div><p className="text-xs uppercase tracking-widest text-white/65">{card.card_brand}</p><h3 className="mt-1 text-xl font-black capitalize">{card.card_type.replaceAll("_", " ")}</h3></div><span className="rounded-full bg-white/15 px-3 py-1 text-xs capitalize">{card.status}</span></div>
                     <p className="mt-10 text-lg tracking-[0.16em]">{card.masked_pan}</p>
                     <div className="mt-5 flex items-end justify-between"><div><p className="text-[10px] uppercase text-white/50">Expires</p><p className="font-bold">{String(card.expiry_month).padStart(2, "0")}/{String(card.expiry_year).slice(-2)}</p></div><div className="text-right"><p className="text-[10px] uppercase text-white/50">Account</p><p className="text-sm font-semibold">•••• {card.account_number?.slice(-4)}</p></div></div>
-                    <Link href={`/cards/details/${card.id}`} className="mt-4 block text-sm font-bold text-white/80">View details →</Link>{(["active", "frozen"].includes(card.status)) && <button disabled={busyId === card.id} onClick={() => void toggleCard(card)} className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white/15 text-sm font-bold backdrop-blur disabled:opacity-60">{busyId === card.id ? <Loader2 size={16} className="animate-spin" /> : card.status === "active" ? <Snowflake size={16} /> : <Sun size={16} />}{card.status === "active" ? "Freeze card" : "Unfreeze card"}</button>}
+                    <Link href={`/cards/details/${card.id}`} className="mt-4 block text-sm font-bold text-white/80">View details →</Link>{card.status === "active" && (
+  <button
+    type="button"
+    disabled={
+      busyId === card.id
+    }
+    onClick={() =>
+      void toggleCard(card)
+    }
+    className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white/15 text-sm font-bold backdrop-blur disabled:opacity-60"
+  >
+    {busyId === card.id ? (
+      <Loader2
+        size={16}
+        className="animate-spin"
+      />
+    ) : (
+      <Snowflake size={16} />
+    )}
+
+    Freeze card
+  </button>
+)}
+
+{card.status === "frozen" &&
+  !card.frozen_by_admin && (
+    <button
+      type="button"
+      disabled={
+        busyId === card.id
+      }
+      onClick={() =>
+        void toggleCard(card)
+      }
+      className="mt-5 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-white/15 text-sm font-bold backdrop-blur disabled:opacity-60"
+    >
+      {busyId === card.id ? (
+        <Loader2
+          size={16}
+          className="animate-spin"
+        />
+      ) : (
+        <Sun size={16} />
+      )}
+
+      Unfreeze card
+    </button>
+  )}
+
+{card.status === "frozen" &&
+  card.frozen_by_admin && (
+    <div className="mt-5 rounded-xl border border-amber-200/30 bg-amber-500/15 px-4 py-3 text-center">
+      <p className="text-sm font-bold text-amber-100">
+        Frozen by bank
+      </p>
+
+      <p className="mt-1 text-[11px] leading-4 text-white/60">
+        This card can only be
+        unfrozen by your bank.
+      </p>
+    </div>
+  )}
                   </article>
                 ))}
               </section>
