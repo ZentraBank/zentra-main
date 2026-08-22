@@ -90,6 +90,36 @@ export default function NotificationsPage() {
     }
   };
 
+  function getActionLabel(
+  item: ClientNotification,
+) {
+  const type =
+    item.notification_type.toLowerCase();
+
+  if (
+    type ===
+    "donation_request_approved"
+  ) {
+    return "View donation";
+  }
+
+  if (
+    type ===
+    "donation_request_rejected"
+  ) {
+    return "View details";
+  }
+
+  if (
+    type ===
+    "donation_redemption_completed"
+  ) {
+    return "View donation";
+  }
+
+  return "Take action";
+}
+
   return (
     <main className="min-h-screen bg-[#E8EDF3] pb-[90px]">
       <section className="mx-auto max-w-[430px] px-5 pt-11 lg:max-w-[900px]">
@@ -157,9 +187,12 @@ export default function NotificationsPage() {
                   {expanded && (
                     <div className="mt-3 flex items-center justify-end gap-2 border-t border-[#D6D9DE] pt-3">
                       {item.action_url && (
-                        <Link href={item.action_url} className="rounded-full bg-[#2852D8] px-4 py-2 text-xs font-medium text-white">
-                          Take action
-                        </Link>
+                       <Link
+                      href={item.action_url}
+                      className="rounded-full bg-[#2852D8] px-4 py-2 text-xs font-medium text-white"
+                    >
+                      {getActionLabel(item)}
+                    </Link>
                       )}
                       <button type="button" onClick={() => void archive(item.id)} disabled={workingId === item.id} className="inline-flex items-center gap-1 rounded-full border border-[#D6D9DE] bg-white px-4 py-2 text-xs font-medium text-[#666]">
                         <Trash2 size={13} /> Archive

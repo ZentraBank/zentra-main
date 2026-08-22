@@ -323,7 +323,7 @@ for (const admin of tenantAdmins) {
       "high",
 
     actionUrl:
-      `/dashboard/donations?requestId=${request.id}`,
+      `/dashboard/donation?requestId=${request.id}`,
 
     metadata: {
       donorId:
@@ -495,7 +495,7 @@ const reviewRequest = async ({
       : "normal",
 
   actionUrl:
-    `/donations/requests/${request.id}`,
+  `/donations-gift/donations/donationsdetail?request=${request.id}`,
 
   metadata: {
     donorId:
@@ -664,7 +664,7 @@ for (const admin of tenantAdmins) {
       "normal",
 
     actionUrl:
-      `/dashboard/donations?redemptionId=${redemption.id}`,
+      `/dashboard/donation?redemptionId=${redemption.id}`,
 
     metadata: {
       donationRequestId:
@@ -837,7 +837,7 @@ for (const admin of tenantAdmins) {
       "high",
 
     actionUrl:
-      `/dashboard/donations?redemptionId=${redemption.id}`,
+      `/dashboard/donation?redemptionId=${redemption.id}`,
 
     metadata: {
       donationRequestId:
@@ -1070,8 +1070,8 @@ const completeRedemption = async ({
   priority:
     "normal",
 
-  actionUrl:
-    "/transactions",
+actionUrl:
+  `/donations-gift/donations/donationsdetail?request=${redemption.donation_request_id}`,
 
   metadata: {
     donationRequestId:
@@ -1191,6 +1191,8 @@ const listRedemptionsAdmin = async ({
     },
   };
 };
+
+
 module.exports = {
   createDonor,
   listDonors,
