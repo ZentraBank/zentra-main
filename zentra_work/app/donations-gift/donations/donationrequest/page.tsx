@@ -22,6 +22,9 @@ import {
   donationService,
   type Donor,
 } from "@/services/donation.service";
+import {
+  resolveMediaUrl,
+} from "@/lib/media";
 
 export default function DonationRequestPage() {
   const searchParams = useSearchParams();
@@ -175,18 +178,18 @@ export default function DonationRequestPage() {
           <section className="mt-7 overflow-hidden rounded-[7px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]">
             <div className="grid grid-cols-[1.05fr_1fr] gap-3 bg-[#eef5ff] p-2">
               <div className="relative h-[128px] overflow-hidden rounded-[3px]">
-                <Image
-                  src={
-                    selectedDonor.profile_image_url ||
-                    "/images/donations-avatar-2.png"
-                  }
-                  alt={
-                    selectedDonor.full_name
-                  }
-                  fill
-                  priority
-                  className="object-cover"
-                />
+               <Image
+  src={
+    resolveMediaUrl(
+      selectedDonor.profile_image_url,
+    ) ||
+    "/images/donations-avatar-2.png"
+  }
+  alt={`${selectedDonor.full_name} profile`}
+  fill
+  unoptimized
+  className="object-cover"
+/>
               </div>
 
               <div className="pt-1">
@@ -309,16 +312,17 @@ export default function DonationRequestPage() {
                   >
                     <div className="relative h-[60px] w-[60px] overflow-hidden rounded-[5px]">
                       <Image
-                        src={
-                          donor.profile_image_url ||
-                          "/images/donations-avatar-2.png"
-                        }
-                        alt={
-                          donor.full_name
-                        }
-                        fill
-                        className="object-cover"
-                      />
+  src={
+    resolveMediaUrl(
+      donor.profile_image_url,
+    ) ||
+    "/images/donations-avatar-2.png"
+  }
+  alt={`${donor.full_name} profile`}
+  fill
+  unoptimized
+  className="object-cover"
+/>
                     </div>
 
                     <div className="min-w-0 flex-1">

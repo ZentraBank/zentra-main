@@ -1,6 +1,35 @@
 const { randomUUID } = require("crypto");
 const db = require("../../config/db");
 
+const parseMetadata = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
+const normalizeDonor = (donor) => {
+  if (!donor) {
+    return null;
+  }
+
+  return {
+    ...donor,
+    metadata: parseMetadata(
+      donor.metadata
+    ),
+  };
+};
+
 const createDonor = async ({
   tenantId,
   createdBy,
@@ -57,10 +86,15 @@ const findDonorById = async ({
         AND tenant_id = ?
       LIMIT 1
     `,
-    [donorId, tenantId]
+    [
+      donorId,
+      tenantId,
+    ]
   );
 
-  return rows[0] || null;
+  return normalizeDonor(
+    rows[0] || null
+  );
 };
 
 const listDonors = async ({
@@ -127,7 +161,9 @@ const listDonors = async ({
     ]
   );
 
-  return rows;
+  return rows.map(
+  normalizeDonor
+);
 };
 
 const updateDonor = async ({
@@ -550,6 +586,319 @@ const createEvent = async ({
   );
 };
 
+const findOpenRedemptionByRequest = async ({
+  tenantId,
+  requestId,
+}) => {
+  const [rows] =
+    await db.query(
+      `
+        SELECT *
+        FROM donation_redemptions
+        WHERE tenant_id = ?
+          AND donation_request_id = ?
+          AND status IN (
+            'pending_otp',
+            'approved',
+            'completed'
+          )
+        ORDER BY created_at DESC
+        LIMIT 1
+      `,
+      [
+        tenantId,
+        requestId,
+      ]
+    );
+
+  return rows[0] || null;
+};
+
+const findDonationRequestForUpdate = async ({
+  connection,
+  tenantId,
+  requestId,
+}) => {
+  const [rows] =
+    await connection.query(
+      `
+        SELECT
+          dr.*,
+          a.balance AS account_balance,
+          a.status AS account_status,
+          a.currency AS account_currency
+        FROM donation_requests dr
+        INNER JOIN accounts a
+          ON a.id = dr.account_id
+        WHERE dr.id = ?
+          AND dr.tenant_id = ?
+        LIMIT 1
+        FOR UPDATE
+      `,
+      [
+        requestId,
+        tenantId,
+      ]
+    );
+
+  return rows[0] || null;
+};
+
+const creditDonationAccount = async ({
+  connection,
+  tenantId,
+  accountId,
+  amount,
+}) => {
+  const [result] =
+    await connection.query(
+      `
+        UPDATE accounts
+        SET
+          balance = balance + ?,
+          updated_at = NOW()
+        WHERE id = ?
+          AND tenant_id = ?
+          AND status = 'active'
+      `,
+      [
+        amount,
+        accountId,
+        tenantId,
+      ]
+    );
+
+  return result.affectedRows === 1;
+};
+const createDonationLedgerEntry = async ({
+  connection,
+  tenantId,
+  accountId,
+  amount,
+  balanceAfter,
+  requestId,
+  description,
+}) => {
+  const id =
+    randomUUID();
+
+  await connection.query(
+    `
+      INSERT INTO account_ledger_entries (
+        id,
+        tenant_id,
+        account_id,
+        transfer_id,
+        entry_type,
+        amount,
+        balance_after,
+        description
+      )
+      VALUES (
+        ?, ?, ?, NULL, 'credit', ?, ?, ?
+      )
+    `,
+    [
+      id,
+      tenantId,
+      accountId,
+      amount,
+      balanceAfter,
+      description ||
+        `Donation redemption ${requestId}`,
+    ]
+  );
+
+  return id;
+};
+const listRedemptions = async ({
+  tenantId,
+  status,
+  search,
+  limit,
+  offset,
+}) => {
+  const conditions = [
+    "r.tenant_id = ?",
+  ];
+
+  const values = [
+    tenantId,
+  ];
+
+  if (status) {
+    conditions.push(
+      "r.status = ?"
+    );
+
+    values.push(status);
+  }
+
+  if (search) {
+    conditions.push(`
+      (
+        d.full_name LIKE ?
+        OR u.first_name LIKE ?
+        OR u.last_name LIKE ?
+        OR u.email LIKE ?
+        OR a.account_number LIKE ?
+      )
+    `);
+
+    const term =
+      `%${search}%`;
+
+    values.push(
+      term,
+      term,
+      term,
+      term,
+      term
+    );
+  }
+
+  const [rows] =
+    await db.query(
+      `
+        SELECT
+          r.*,
+
+          dr.donor_id,
+          dr.beneficiary_user_id,
+          dr.account_id,
+          dr.purpose,
+          dr.appreciation,
+
+          d.full_name AS donor_name,
+
+          a.account_number,
+          a.account_name,
+          a.currency AS account_currency,
+
+          CONCAT_WS(
+            ' ',
+            u.first_name,
+            u.middle_name,
+            u.last_name
+          ) AS beneficiary_name,
+
+          u.email AS beneficiary_email
+
+        FROM donation_redemptions r
+
+        INNER JOIN donation_requests dr
+          ON dr.id =
+            r.donation_request_id
+
+        INNER JOIN donors d
+          ON d.id =
+            dr.donor_id
+
+        INNER JOIN accounts a
+          ON a.id =
+            dr.account_id
+
+        INNER JOIN users u
+          ON u.id =
+            dr.beneficiary_user_id
+
+        WHERE ${conditions.join(" AND ")}
+
+        ORDER BY
+          r.created_at DESC
+
+        LIMIT ?
+        OFFSET ?
+      `,
+      [
+        ...values,
+        limit,
+        offset,
+      ]
+    );
+
+  return rows;
+};
+
+const countRedemptions = async ({
+  tenantId,
+  status,
+  search,
+}) => {
+  const conditions = [
+    "r.tenant_id = ?",
+  ];
+
+  const values = [
+    tenantId,
+  ];
+
+  if (status) {
+    conditions.push(
+      "r.status = ?"
+    );
+
+    values.push(status);
+  }
+
+  if (search) {
+    conditions.push(`
+      (
+        d.full_name LIKE ?
+        OR u.first_name LIKE ?
+        OR u.last_name LIKE ?
+        OR u.email LIKE ?
+        OR a.account_number LIKE ?
+      )
+    `);
+
+    const term =
+      `%${search}%`;
+
+    values.push(
+      term,
+      term,
+      term,
+      term,
+      term
+    );
+  }
+
+  const [rows] =
+    await db.query(
+      `
+        SELECT
+          COUNT(*) AS total
+
+        FROM donation_redemptions r
+
+        INNER JOIN donation_requests dr
+          ON dr.id =
+            r.donation_request_id
+
+        INNER JOIN donors d
+          ON d.id =
+            dr.donor_id
+
+        INNER JOIN accounts a
+          ON a.id =
+            dr.account_id
+
+        INNER JOIN users u
+          ON u.id =
+            dr.beneficiary_user_id
+
+        WHERE ${conditions.join(" AND ")}
+      `,
+      values
+    );
+
+  return Number(
+    rows[0]?.total ||
+    0
+  );
+};
+
 module.exports = {
   db,
   createDonor,
@@ -567,4 +916,10 @@ module.exports = {
   markOtpVerified,
   completeRedemption,
   createEvent,
+  findOpenRedemptionByRequest,
+  findDonationRequestForUpdate,
+  creditDonationAccount,
+  createDonationLedgerEntry,
+  listRedemptions,
+  countRedemptions,
 };

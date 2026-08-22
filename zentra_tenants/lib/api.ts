@@ -1,103 +1,246 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
-import type { AuthSessionResponse } from "@/types/auth.types";
+import axios, {
+  AxiosError,
+  InternalAxiosRequestConfig,
+} from "axios";
+
+import type {
+  AuthSessionResponse,
+} from "@/types/auth.types";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000/api/v1";
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  "http://localhost:5000/api/v1";
+
 const TENANT_SLUG =
-  process.env.NEXT_PUBLIC_TENANT_SLUG || "zentra-bank";
+  process.env.NEXT_PUBLIC_TENANT_SLUG ||
+  "zentra-bank";
 
-let accessToken: string | null = null;
-let refreshPromise: Promise<AuthSessionResponse> | null = null;
-let sessionListener: ((session: AuthSessionResponse | null) => void) | null = null;
+let accessToken:
+  | string
+  | null = null;
 
-export const setAccessToken = (token: string | null) => {
+let refreshPromise:
+  | Promise<AuthSessionResponse>
+  | null = null;
+
+let sessionListener:
+  | ((
+      session:
+        | AuthSessionResponse
+        | null,
+    ) => void)
+  | null = null;
+
+export const setAccessToken = (
+  token: string | null,
+) => {
   accessToken = token;
 };
 
 export const setSessionListener = (
-  listener: (session: AuthSessionResponse | null) => void
+  listener: (
+    session:
+      | AuthSessionResponse
+      | null,
+  ) => void,
 ) => {
-  sessionListener = listener;
+  sessionListener =
+    listener;
+
   return () => {
-    if (sessionListener === listener) sessionListener = null;
+    if (
+      sessionListener ===
+      listener
+    ) {
+      sessionListener =
+        null;
+    }
   };
 };
 
-export const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-  headers: {
-  "Content-Type": "application/json",
-  "X-Zentra-App": "tenant",
-},
-});
+export const api =
+  axios.create({
+    baseURL:
+      API_BASE_URL,
 
-api.interceptors.request.use((config) => {
-  config.headers.set("X-Tenant-Slug", TENANT_SLUG);
-  if (accessToken) config.headers.set("Authorization", `Bearer ${accessToken}`);
-  return config;
-});
+    withCredentials:
+      true,
 
-const refreshSession = async (): Promise<AuthSessionResponse> => {
-  if (!refreshPromise) {
-    refreshPromise = axios
-      .post(
-        `${API_BASE_URL}/auth/refresh`,
-        {},
-        {
-          withCredentials: true,
-          headers: {
-  "X-Tenant-Slug": TENANT_SLUG,
-  "X-Zentra-App": "tenant",
-},
-        }
-      )
-      .then((response) => response.data.data as AuthSessionResponse)
-      .then((session) => {
-        setAccessToken(session.accessToken);
-        sessionListener?.(session);
-        return session;
-      })
-      .finally(() => {
-        refreshPromise = null;
-      });
-  }
+    headers: {
+      "X-Zentra-App":
+        "tenant",
+    },
+  });
 
-  return refreshPromise;
-};
+api.interceptors.request.use(
+  (config) => {
+    config.headers.set(
+      "X-Tenant-Slug",
+      TENANT_SLUG,
+    );
 
-api.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const original = error.config as (InternalAxiosRequestConfig & {
-      _retry?: boolean;
-    }) | undefined;
-
-    const isAuthEndpoint = original?.url?.includes("/auth/login") ||
-      original?.url?.includes("/auth/refresh");
-
-    if (error.response?.status !== 401 || !original || original._retry || isAuthEndpoint) {
-      return Promise.reject(error);
+    if (accessToken) {
+      config.headers.set(
+        "Authorization",
+        `Bearer ${accessToken}`,
+      );
     }
 
-    original._retry = true;
-
-    try {
-      const session = await refreshSession();
-      original.headers.set("Authorization", `Bearer ${session.accessToken}`);
-      return api(original);
-    } catch (refreshError) {
-      setAccessToken(null);
-      sessionListener?.(null);
-      return Promise.reject(refreshError);
+    if (
+      typeof FormData !==
+        "undefined" &&
+      config.data instanceof
+        FormData
+    ) {
+      config.headers.delete(
+        "Content-Type",
+      );
     }
-  }
+
+    return config;
+  },
 );
 
-export const getApiErrorMessage = (error: unknown) => {
-  if (axios.isAxiosError(error)) {
-    const data = error.response?.data as { message?: string } | undefined;
-    return data?.message || error.message || "Request failed";
+const refreshSession =
+  async (): Promise<AuthSessionResponse> => {
+    if (!refreshPromise) {
+      refreshPromise =
+        axios
+          .post(
+            `${API_BASE_URL}/auth/refresh`,
+            {},
+            {
+              withCredentials:
+                true,
+
+              headers: {
+                "X-Tenant-Slug":
+                  TENANT_SLUG,
+
+                "X-Zentra-App":
+                  "tenant",
+              },
+            },
+          )
+          .then(
+            (response) =>
+              response.data
+                .data as AuthSessionResponse,
+          )
+          .then(
+            (session) => {
+              setAccessToken(
+                session.accessToken,
+              );
+
+              sessionListener?.(
+                session,
+              );
+
+              return session;
+            },
+          )
+          .finally(() => {
+            refreshPromise =
+              null;
+          });
+    }
+
+    return refreshPromise;
+  };
+
+api.interceptors.response.use(
+  (response) =>
+    response,
+
+  async (
+    error: AxiosError,
+  ) => {
+    const original =
+      error.config as
+        | (InternalAxiosRequestConfig & {
+            _retry?: boolean;
+          })
+        | undefined;
+
+    const isAuthEndpoint =
+      original?.url?.includes(
+        "/auth/login",
+      ) ||
+      original?.url?.includes(
+        "/auth/refresh",
+      );
+
+    if (
+      error.response
+        ?.status !== 401 ||
+      !original ||
+      original._retry ||
+      isAuthEndpoint
+    ) {
+      return Promise.reject(
+        error,
+      );
+    }
+
+    original._retry =
+      true;
+
+    try {
+      const session =
+        await refreshSession();
+
+      original.headers.set(
+        "Authorization",
+        `Bearer ${session.accessToken}`,
+      );
+
+      return api(
+        original,
+      );
+    } catch (
+      refreshError
+    ) {
+      setAccessToken(
+        null,
+      );
+
+      sessionListener?.(
+        null,
+      );
+
+      return Promise.reject(
+        refreshError,
+      );
+    }
+  },
+);
+
+export const getApiErrorMessage = (
+  error: unknown,
+) => {
+  if (
+    axios.isAxiosError(
+      error,
+    )
+  ) {
+    const data =
+      error.response
+        ?.data as
+        | {
+            message?: string;
+          }
+        | undefined;
+
+    return (
+      data?.message ||
+      error.message ||
+      "Request failed"
+    );
   }
-  return error instanceof Error ? error.message : "Something went wrong";
+
+  return error instanceof
+    Error
+    ? error.message
+    : "Something went wrong";
 };

@@ -5,7 +5,7 @@ const compression = require("compression");
 const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const crypto = require("crypto");
-const path = require("path");
+// const path = require("path");
 
 const env = require("./config/env");
 const corsOptions = require("./config/cors");
@@ -195,6 +195,13 @@ const clientsRoutes = require(
   "./modules/clients/clients.routes"
 );
 
+const path =
+  require("path");
+
+const uploadsRoutes =
+  require(
+    "./modules/uploads/uploads.routes"
+  );
 
 
 const app = express();
@@ -388,6 +395,21 @@ app.use(
 app.use(
   `${env.apiPrefix}/chats`,
   chatRoutes
+);
+
+app.use(
+  "/uploads",
+  express.static(
+    path.join(
+      process.cwd(),
+      "uploads"
+    )
+  )
+);
+
+app.use(
+  "/api/v1/uploads",
+  uploadsRoutes
 );
 
 // app.use(

@@ -284,6 +284,43 @@ const complete =
     }
   );
 
+  const listRedemptionsAdmin =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.listRedemptionsAdmin({
+          auth:
+            req.auth,
+
+          query:
+            req.query,
+        });
+
+      res.status(200).json({
+        success: true,
+        message:
+          "Donation redemptions retrieved successfully",
+        data,
+      });
+    }
+  );
+
+  const parseMetadata = (value) => {
+  if (!value) {
+    return null;
+  }
+
+  if (typeof value === "object") {
+    return value;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
 module.exports = {
   createDonor,
   listDonors,
@@ -296,4 +333,6 @@ module.exports = {
   requestRedemption,
   verifyOtp,
   complete,
+  listRedemptionsAdmin,
+  parseMetadata,
 };

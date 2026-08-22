@@ -7,6 +7,10 @@ const crypto =
 const repo =
   require("./donations.repository");
 
+const notifications = require(
+  "../notifications/notifications.repository"
+);
+
 const httpError = (
   statusCode,
   message
@@ -36,27 +40,54 @@ const createDonor = ({
 
 const listDonors = ({
   auth,
-  query,
+  query = {},
 }) => {
+  const parsedPage =
+    Number.parseInt(
+      query.page,
+      10
+    );
+
+  const parsedPageSize =
+    Number.parseInt(
+      query.pageSize,
+      10
+    );
+
   const page =
-    Number(query.page) > 0
-      ? Number(query.page)
+    Number.isInteger(parsedPage) &&
+    parsedPage > 0
+      ? parsedPage
       : 1;
 
   const limit =
-    Number(query.pageSize) > 0
+    Number.isInteger(parsedPageSize) &&
+    parsedPageSize > 0
       ? Math.min(
-          Number(query.pageSize),
+          parsedPageSize,
           100
         )
       : 20;
+
+  /*
+   * Customers may only ever see
+   * active donors, regardless of
+   * query-string manipulation.
+   *
+   * Tenant admins can use the
+   * requested status filter.
+   */
+  const effectiveStatus =
+    auth.roleCode === "customer"
+      ? "active"
+      : query.status || null;
 
   return repo.listDonors({
     tenantId:
       auth.tenantId,
 
     status:
-      query.status || null,
+      effectiveStatus,
 
     search:
       query.search || null,
@@ -77,12 +108,29 @@ const getDonor = async ({
 }) => {
   const donor =
     await repo.findDonorById({
-      tenantId: auth.tenantId,
+      tenantId:
+        auth.tenantId,
+
       donorId,
     });
 
+  if (!donor) {
+    throw httpError(
+      404,
+      "Donor not found"
+    );
+  }
+
+  /*
+   * Customers may only retrieve
+   * active donors.
+   *
+   * Tenant admins may retrieve
+   * donors in any status so they
+   * can manage/edit them.
+   */
   if (
-    !donor ||
+    auth.roleCode === "customer" &&
     donor.status !== "active"
   ) {
     throw httpError(
@@ -236,6 +284,69 @@ const createDonationRequest =
       },
     });
 
+    const tenantAdmins =
+  await notifications.audienceUsers({
+    tenantId:
+      auth.tenantId,
+
+    audienceType:
+      "role",
+
+    audienceValue:
+      "tenant_admin",
+  });
+
+for (const admin of tenantAdmins) {
+  await notifications.create({
+    tenantId:
+      auth.tenantId,
+
+    userId:
+      admin.user_id,
+
+    notificationType:
+      "donation_request_received",
+
+    title:
+      "New donation request",
+
+    message:
+      `${request.account_name || "A client"} submitted a donation request for ${body.amount} ${body.currency}.`,
+
+    entityType:
+      "donation_request",
+
+    entityId:
+      request.id,
+
+    priority:
+      "high",
+
+    actionUrl:
+      `/dashboard/donations?requestId=${request.id}`,
+
+    metadata: {
+      donorId:
+        donor.id,
+
+      donorName:
+        donor.full_name,
+
+      accountId:
+        account.id,
+
+      amount:
+        body.amount,
+
+      currency:
+        body.currency,
+
+      status:
+        "pending",
+    },
+  });
+}
+
     return request;
   };
 
@@ -346,6 +457,65 @@ const reviewRequest = async ({
     },
   });
 
+  await notifications.create({
+  tenantId:
+    auth.tenantId,
+
+  userId:
+    request.beneficiary_user_id,
+
+  notificationType:
+    body.status === "approved"
+      ? "donation_request_approved"
+      : "donation_request_rejected",
+
+  title:
+    body.status === "approved"
+      ? "Donation request approved"
+      : "Donation request rejected",
+
+  message:
+    body.status === "approved"
+      ? `Your donation request for ${request.amount} ${request.currency} has been approved.`
+      : `Your donation request for ${request.amount} ${request.currency} was rejected.${
+          body.rejectionReason
+            ? ` Reason: ${body.rejectionReason}`
+            : ""
+        }`,
+
+  entityType:
+    "donation_request",
+
+  entityId:
+    request.id,
+
+  priority:
+    body.status === "rejected"
+      ? "high"
+      : "normal",
+
+  actionUrl:
+    `/donations/requests/${request.id}`,
+
+  metadata: {
+    donorId:
+      request.donor_id,
+
+    amount:
+      request.amount,
+
+    currency:
+      request.currency,
+
+    status:
+      body.status,
+
+    rejectionReason:
+      body.rejectionReason ||
+      null,
+  },
+});
+
   return updated;
 };
 
@@ -382,6 +552,21 @@ const requestRedemption = async ({
     );
   }
 
+  const existing =
+  await repo.findOpenRedemptionByRequest({
+    tenantId:
+      auth.tenantId,
+
+    requestId:
+      request.id,
+  });
+
+if (existing) {
+  throw httpError(
+    409,
+    "A redemption already exists for this donation request"
+  );
+}
   const otp =
     crypto.randomInt(
       100000,
@@ -439,6 +624,66 @@ const requestRedemption = async ({
     eventType:
       "donation_redemption_requested",
   });
+
+  const tenantAdmins =
+  await notifications.audienceUsers({
+    tenantId:
+      auth.tenantId,
+
+    audienceType:
+      "role",
+
+    audienceValue:
+      "tenant_admin",
+  });
+
+for (const admin of tenantAdmins) {
+  await notifications.create({
+    tenantId:
+      auth.tenantId,
+
+    userId:
+      admin.user_id,
+
+    notificationType:
+      "donation_redemption_requested",
+
+    title:
+      "Donation redemption requested",
+
+    message:
+      `${request.amount} ${request.currency} donation redemption has been requested.`,
+
+    entityType:
+      "donation_redemption",
+
+    entityId:
+      redemption.id,
+
+    priority:
+      "normal",
+
+    actionUrl:
+      `/dashboard/donations?redemptionId=${redemption.id}`,
+
+    metadata: {
+      donationRequestId:
+        request.id,
+
+      redemptionId:
+        redemption.id,
+
+      amount:
+        request.amount,
+
+      currency:
+        request.currency,
+
+      status:
+        "pending_otp",
+    },
+  });
+}
 
   return {
     redemptionId:
@@ -553,101 +798,405 @@ const verifyRedemptionOtp =
         "donation_redemption_otp_verified",
     });
 
+    const tenantAdmins =
+  await notifications.audienceUsers({
+    tenantId:
+      auth.tenantId,
+
+    audienceType:
+      "role",
+
+    audienceValue:
+      "tenant_admin",
+  });
+
+for (const admin of tenantAdmins) {
+  await notifications.create({
+    tenantId:
+      auth.tenantId,
+
+    userId:
+      admin.user_id,
+
+    notificationType:
+      "donation_redemption_verified",
+
+    title:
+      "Redemption ready for completion",
+
+    message:
+      `${redemption.amount} ${redemption.currency} donation redemption passed OTP verification.`,
+
+    entityType:
+      "donation_redemption",
+
+    entityId:
+      redemption.id,
+
+    priority:
+      "high",
+
+    actionUrl:
+      `/dashboard/donations?redemptionId=${redemption.id}`,
+
+    metadata: {
+      donationRequestId:
+        redemption.donation_request_id,
+
+      redemptionId:
+        redemption.id,
+
+      amount:
+        redemption.amount,
+
+      currency:
+        redemption.currency,
+
+      status:
+        "approved",
+    },
+  });
+}
+
     return verified;
   };
 
-const completeRedemption =
-  async ({
-    auth,
-    redemptionId,
-  }) => {
-    const connection =
-      await repo.db.getConnection();
+const completeRedemption = async ({
+  auth,
+  redemptionId,
+}) => {
+  const connection =
+    await repo.db.getConnection();
 
-    try {
-      await connection.beginTransaction();
+  try {
+    await connection.beginTransaction();
 
-      const redemption =
-        await repo.findRedemptionById({
-          tenantId:
-            auth.tenantId,
-
-          redemptionId,
-        });
-
-      if (!redemption) {
-        throw httpError(
-          404,
-          "Redemption request not found"
-        );
-      }
-
-      if (
-        redemption.status !==
-          "approved"
-      ) {
-        throw httpError(
-          409,
-          "Redemption must pass OTP verification before completion"
-        );
-      }
-
-      await repo.completeRedemption({
-        connection,
-
+    const redemption =
+      await repo.findRedemptionById({
         tenantId:
           auth.tenantId,
 
         redemptionId,
-
-        requestId:
-          redemption.donation_request_id,
       });
 
-      await repo.createEvent({
-        connection,
-
-        tenantId:
-          auth.tenantId,
-
-        requestId:
-          redemption.donation_request_id,
-
-        redemptionId,
-
-        actorUserId:
-          auth.userId,
-
-        eventType:
-          "donation_redemption_completed",
-      });
-
-      await connection.commit();
-
-      return {
-        redemptionId,
-        status:
-          "completed",
-      };
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
+    if (!redemption) {
+      throw httpError(
+        404,
+        "Redemption request not found"
+      );
     }
-  };
 
+    if (
+      redemption.status !==
+      "approved"
+    ) {
+      throw httpError(
+        409,
+        "Redemption must pass OTP verification before completion"
+      );
+    }
+
+    const request =
+      await repo.findDonationRequestForUpdate({
+        connection,
+
+        tenantId:
+          auth.tenantId,
+
+        requestId:
+          redemption.donation_request_id,
+      });
+
+    if (!request) {
+      throw httpError(
+        404,
+        "Donation request not found"
+      );
+    }
+
+    if (
+      request.status ===
+      "redeemed"
+    ) {
+      throw httpError(
+        409,
+        "Donation has already been redeemed"
+      );
+    }
+
+    if (
+      request.account_status !==
+      "active"
+    ) {
+      throw httpError(
+        409,
+        "Destination account is not active"
+      );
+    }
+
+    if (
+      request.account_currency !==
+      redemption.currency
+    ) {
+      throw httpError(
+        409,
+        "Redemption currency no longer matches the destination account"
+      );
+    }
+
+    const amount =
+      Number(
+        redemption.amount
+      );
+
+    const currentBalance =
+      Number(
+        request.account_balance ||
+        0
+      );
+
+    const nextBalance =
+      currentBalance +
+      amount;
+
+    const credited =
+      await repo.creditDonationAccount({
+        connection,
+
+        tenantId:
+          auth.tenantId,
+
+        accountId:
+          request.account_id,
+
+        amount,
+      });
+
+    if (!credited) {
+      throw httpError(
+        500,
+        "Unable to credit donation to destination account"
+      );
+    }
+
+    await repo.createDonationLedgerEntry({
+      connection,
+
+      tenantId:
+        auth.tenantId,
+
+      accountId:
+        request.account_id,
+
+      amount,
+
+      balanceAfter:
+        nextBalance,
+
+      requestId:
+        request.id,
+
+      description:
+        `Donation received from ${request.donor_name || 
+  "Donation redemption credit"}`,
+    });
+
+    await repo.completeRedemption({
+      connection,
+
+      tenantId:
+        auth.tenantId,
+
+      redemptionId,
+
+      requestId:
+        redemption.donation_request_id,
+    });
+
+    await repo.createEvent({
+      connection,
+
+      tenantId:
+        auth.tenantId,
+
+      requestId:
+        redemption.donation_request_id,
+
+      redemptionId,
+
+      actorUserId:
+        auth.userId,
+
+      eventType:
+        "donation_redemption_completed",
+
+      metadata: {
+        amount,
+        currency:
+          redemption.currency,
+
+        accountId:
+          request.account_id,
+
+        balanceAfter:
+          nextBalance,
+      },
+    });
+
+    await notifications.create({
+  connection,
+
+  tenantId:
+    auth.tenantId,
+
+  userId:
+    request.beneficiary_user_id,
+
+  notificationType:
+    "donation_redemption_completed",
+
+  title:
+    "Donation credited",
+
+  message:
+    `${amount.toFixed(2)} ${redemption.currency} has been credited to your account.`,
+
+  entityType:
+    "donation_redemption",
+
+  entityId:
+    redemptionId,
+
+  priority:
+    "normal",
+
+  actionUrl:
+    "/transactions",
+
+  metadata: {
+    donationRequestId:
+      redemption.donation_request_id,
+
+    redemptionId,
+
+    accountId:
+      request.account_id,
+
+    amount,
+
+    currency:
+      redemption.currency,
+
+    balanceAfter:
+      nextBalance,
+
+    status:
+      "completed",
+  },
+});
+
+    await connection.commit();
+
+    return {
+      redemptionId,
+      requestId:
+        redemption.donation_request_id,
+
+      accountId:
+        request.account_id,
+
+      amount,
+
+      currency:
+        redemption.currency,
+
+      balanceAfter:
+        nextBalance,
+
+      status:
+        "completed",
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const listRedemptionsAdmin = async ({
+  auth,
+  query,
+}) => {
+  const page =
+    Number(query.page) > 0
+      ? Number(query.page)
+      : 1;
+
+  const pageSize =
+    Number(query.pageSize) > 0
+      ? Math.min(
+          Number(query.pageSize),
+          100
+        )
+      : 20;
+
+  const [
+    redemptions,
+    total,
+  ] =
+    await Promise.all([
+      repo.listRedemptions({
+        tenantId:
+          auth.tenantId,
+
+        status:
+          query.status || null,
+
+        search:
+          query.search || null,
+
+        limit:
+          pageSize,
+
+        offset:
+          (page - 1) *
+          pageSize,
+      }),
+
+      repo.countRedemptions({
+        tenantId:
+          auth.tenantId,
+
+        status:
+          query.status || null,
+
+        search:
+          query.search || null,
+      }),
+    ]);
+
+  return {
+    redemptions,
+
+    pagination: {
+      page,
+      pageSize,
+      total,
+      totalPages:
+        Math.ceil(
+          total /
+          pageSize
+        ),
+    },
+  };
+};
 module.exports = {
   createDonor,
   listDonors,
   updateDonor,
   getDonor,
-  createDonationRequest,
-  listRequests,
-  reviewRequest,
-  requestRedemption,
-  verifyRedemptionOtp,
-  completeRedemption,
+  listRedemptionsAdmin,
   createDonationRequest,
   listRequests,
   reviewRequest,

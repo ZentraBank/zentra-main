@@ -24,6 +24,7 @@ import {
   donationService,
   type Donor,
 } from "@/services/donation.service";
+import { resolveMediaUrl } from "@/lib/media";
 
 export default function DonationDetailsPage() {
   const [donors, setDonors] = useState<Donor[]>([]);
@@ -522,15 +523,18 @@ function MobileDonorCard({
   return (
     <article className="flex min-h-[82px] items-center gap-3 rounded-[7px] bg-[#eef5ff] px-2 py-2 shadow-sm">
       <div className="relative h-[66px] w-[66px] shrink-0 overflow-hidden rounded-[5px] bg-white">
-        <Image
-          src={
-            donor.profile_image_url ||
-            "/images/donations-avatar-2.png"
-          }
-          alt={donor.full_name}
-          fill
-          className="object-cover"
-        />
+<Image
+  src={
+    resolveMediaUrl(
+      donor.profile_image_url,
+    ) ||
+    "/images/donations-avatar-2.png"
+  }
+  alt={`${donor.full_name} profile`}
+  fill
+  unoptimized
+  className="object-cover"
+/>
       </div>
 
       <div className="min-w-0 flex-1">
@@ -583,15 +587,18 @@ function DesktopDonorCard({
     <article className="group overflow-hidden rounded-[22px] border border-black/[0.06] bg-white shadow-[0_10px_28px_rgba(31,54,89,0.07)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_18px_38px_rgba(31,54,89,0.12)]">
       <div className="flex gap-4 p-4 xl:p-5">
         <div className="relative h-[104px] w-[104px] shrink-0 overflow-hidden rounded-[17px] bg-[#EFF5FF]">
-          <Image
-            src={
-              donor.profile_image_url ||
-              "/images/donations-avatar-2.png"
-            }
-            alt={donor.full_name}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-          />
+         <Image
+  src={
+    resolveMediaUrl(
+      donor.profile_image_url,
+    ) ||
+    "/images/donations-avatar-2.png"
+  }
+  alt={`${donor.full_name} profile`}
+  fill
+  unoptimized
+  className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+/>
         </div>
 
         <div className="min-w-0 flex-1">

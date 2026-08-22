@@ -25,10 +25,17 @@ module.exports = {
         .max(40)
         .optional(),
 
-      profileImageUrl: Joi.string()
-        .uri()
-        .max(1000)
-        .optional(),
+  profileImageUrl: Joi.string()
+  .trim()
+  .max(1000)
+  .pattern(
+    /^(https?:\/\/.+|\/uploads\/images\/.+)$/i
+  )
+  .optional()
+  .messages({
+    "string.pattern.base":
+      "profileImageUrl must be a valid image URL or uploaded image path",
+  }),
 
       address: Joi.string()
         .trim()
@@ -256,4 +263,33 @@ module.exports = {
         .required(),
     }),
   },
+adminRedemptionList: {
+  query: Joi.object({
+    page: Joi.number()
+      .integer()
+      .min(1)
+      .default(1),
+
+    pageSize: Joi.number()
+      .integer()
+      .min(1)
+      .max(100)
+      .default(20),
+
+    status: Joi.string()
+      .valid(
+        "pending_otp",
+        "approved",
+        "completed"
+      )
+      .optional(),
+
+    search: Joi.string()
+      .trim()
+      .max(160)
+      .allow("")
+      .optional(),
+  }),
+},
+
 };

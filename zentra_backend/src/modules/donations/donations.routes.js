@@ -156,6 +156,17 @@ router.post(
   controller.verifyOtp
 );
 
+router.get(
+  "/admin/redemptions",
+  validate(
+    schemas.adminRedemptionList
+  ),
+  requireAllPermissions(
+    "donations.redemptions.complete"
+  ),
+  controller.listRedemptionsAdmin
+);
+
 router.post(
   "/admin/redemptions/:redemptionId/complete",
   validate(

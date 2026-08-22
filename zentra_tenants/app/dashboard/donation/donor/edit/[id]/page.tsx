@@ -9,23 +9,24 @@ import {
   Camera,
   ChevronDown,
   Save,
+  Loader2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import {
+  donationService,
+} from "@/services/donation.service";
 
-type Donor = {
-  id: string;
-  fullName: string;
-  nationality: string;
-  title: string;
-  gender: string;
-  profileImage: string;
-  fundingMethods: string[];
-  transactionDate: string;
-  major: string;
-};
+import {
+  uploadService,
+} from "@/services/upload.service";
 
-const STORAGE_KEY = "zentra_donors";
-const fundingOptions = ["Cryptocurrency", "Gift card", "Direct bank transfer"];
+import {
+  resolveMediaUrl,
+} from "@/lib/media";
+
+
+
+const fundingOptions = ["Cryptocurrency", "Gift card", "Direct bank transfer", "Cash", "Cheque", "Mobile money", "Other"];
 const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const years = ["2024", "2025", "2026", "2027", "2028"];
@@ -34,6 +35,21 @@ export default function EditDonorPage() {
   const router = useRouter();
   const params = useParams(); // Gets the [id] from the URL
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [loading, setLoading] =
+  useState(true);
+
+const [saving, setSaving] =
+  useState(false);
+
+const [error, setError] =
+  useState("");
+
+const [
+  profileImageFile,
+  setProfileImageFile,
+] = useState<File | null>(
+  null,
+);
 
   const [profileImage, setProfileImage] = useState("/images/David.png");
   const [fullName, setFullName] = useState("");
@@ -47,33 +63,113 @@ export default function EditDonorPage() {
   const [major, setMajor] = useState("");
 
   // Load the donor's existing data when the page loads
-  useEffect(() => {
-    if (!params.id) return;
+useEffect(() => {
+  const donorId =
+    typeof params.id === "string"
+      ? params.id
+      : Array.isArray(params.id)
+        ? params.id[0]
+        : null;
 
-    const storedDonors = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]") as Donor[];
-    const donorToEdit = storedDonors.find((d) => d.id === params.id);
+  if (!donorId) {
+    return;
+  }
 
-    if (donorToEdit) {
-      setProfileImage(donorToEdit.profileImage);
-      setFullName(donorToEdit.fullName);
-      setNationality(donorToEdit.nationality);
-      setTitle(donorToEdit.title);
-      setGender(donorToEdit.gender);
-      setFundingMethods(donorToEdit.fundingMethods);
-      setMajor(donorToEdit.major);
+  let cancelled = false;
 
-      // Split the transaction date back into day, month, year
-      if (donorToEdit.transactionDate) {
-        const [d, m, y] = donorToEdit.transactionDate.split(" ");
-        if (d) setDay(d);
-        if (m) setMonth(m);
-        if (y) setYear(y);
+  const loadDonor =
+    async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const donor =
+          await donationService.getDonor(
+            donorId,
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        setFullName(
+          donor.full_name || "",
+        );
+
+        setNationality(
+          donor.country ||
+            donor.metadata?.nationality ||
+            "",
+        );
+
+        setTitle(
+          donor.metadata?.title ||
+            "",
+        );
+
+        setGender(
+          donor.metadata?.gender ||
+            "Male",
+        );
+
+        setFundingMethods(
+          Array.isArray(
+            donor.metadata?.fundingMethods,
+          )
+            ? donor.metadata.fundingMethods
+            : [],
+        );
+
+        setMajor(
+          donor.metadata?.major ||
+            "",
+        );
+
+        setProfileImage(
+          resolveMediaUrl(
+            donor.profile_image_url,
+          ) ||
+            "/images/David.png",
+        );
+
+        const transactionDate =
+          donor.metadata?.transactionDate;
+
+        if (
+          typeof transactionDate ===
+            "string" &&
+          transactionDate.trim()
+        ) {
+          const [d, m, y] =
+            transactionDate.split(" ");
+
+          setDay(d || "");
+          setMonth(m || "");
+          setYear(y || "");
+        }
+      } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load donor.",
+        );
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    } else {
-      // If someone types a random ID in the URL, send them back
-      router.push("/dashboard/donation");
-    }
-  }, [params.id, router]);
+    };
+
+  void loadDonor();
+
+  return () => {
+    cancelled = true;
+  };
+}, [params.id]);
 
   const toggleFundingMethod = (method: string) => {
     setFundingMethods((prev) =>
@@ -83,44 +179,146 @@ export default function EditDonorPage() {
     );
   };
 
-  const handleImageChange = (file?: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      if (typeof reader.result === "string") {
-        setProfileImage(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
+const handleImageChange = (
+  file?: File,
+) => {
+  if (!file) {
+    return;
+  }
 
-  const handleUpdateDonor = () => {
-    const storedDonors = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]") as Donor[];
-    
-    // Map through existing donors and update the one that matches our ID
-    const updatedDonors = storedDonors.map((donor) => {
-      if (donor.id === params.id) {
-        return {
-          ...donor,
-          fullName,
-          nationality,
-          title,
-          gender,
-          profileImage,
-          fundingMethods,
-          transactionDate: `${day} ${month} ${year}`.trim(),
-          major,
-        };
-      }
-      return donor;
-    });
+  setProfileImageFile(
+    file,
+  );
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedDonors));
-    router.push("/dashboard/donation");
+  const previewUrl =
+    URL.createObjectURL(
+      file,
+    );
+
+  setProfileImage(
+    previewUrl,
+  );
+};
+
+const handleUpdateDonor =
+  async () => {
+    const donorId =
+      typeof params.id === "string"
+        ? params.id
+        : Array.isArray(params.id)
+          ? params.id[0]
+          : null;
+
+    if (!donorId) {
+      setError(
+        "Invalid donor ID.",
+      );
+      return;
+    }
+
+    if (!fullName.trim()) {
+      setError(
+        "Donor name is required.",
+      );
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      let profileImageUrl:
+        | string
+        | undefined;
+
+      /*
+       * Only upload another image
+       * when the admin actually
+       * selected a new one.
+       */
+      if (profileImageFile) {
+        profileImageUrl =
+          await uploadService.image(
+            profileImageFile,
+          );
+      }
+
+      await donationService.updateDonor(
+        donorId,
+        {
+          fullName:
+            fullName.trim(),
+
+          country:
+            nationality.trim() ||
+            undefined,
+
+          ...(profileImageUrl
+            ? {
+                profileImageUrl,
+              }
+            : {}),
+
+          metadata: {
+            nationality:
+              nationality.trim() ||
+              null,
+
+            title:
+              title.trim() ||
+              null,
+
+            gender:
+              gender || null,
+
+            fundingMethods,
+
+            transactionDate:
+              `${day} ${month} ${year}`.trim() ||
+              null,
+
+            major:
+              major.trim() ||
+              null,
+          },
+        },
+      );
+
+      router.push(
+        "/dashboard/donation",
+      );
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to update donor.",
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
+    
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      {loading && (
+  <div className="mt-10 flex items-center justify-center gap-3 text-white">
+    <Loader2
+      size={20}
+      className="animate-spin"
+    />
+
+    <span className="text-sm font-bold">
+      Loading donor...
+    </span>
+  </div>
+)}
+
+{error && (
+  <div className="mx-auto mt-6 max-w-[980px] rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+    {error}
+  </div>
+)}
       <Image src="/images/Background_1.png" alt="Background" fill priority className="object-cover" />
 
       <div className="relative z-10 mx-auto min-h-screen max-w-[430px] px-3 pb-10 pt-10 md:max-w-[1180px] md:px-10">
@@ -136,18 +334,20 @@ export default function EditDonorPage() {
           Edit <span className="underline underline-offset-4 text-[#d6c51f]">Funds Donator</span>
         </h1>
 
-        <section className="mx-auto mt-6 grid max-w-[980px] gap-4 md:mt-10 md:grid-cols-[360px_1fr]">
+       {!loading && (
+  <section className="mx-auto mt-6 grid max-w-[980px] gap-4 md:mt-10 md:grid-cols-[360px_1fr]">
           <div className="rounded-xl bg-white p-3 text-black/90 md:p-4">
             <h2 className="mb-3 text-[13px] font-black pt-4">Editable Donor Profile</h2>
             <div className="grid grid-cols-[96px_1fr] gap-3 md:grid-cols-1">
               <div className="relative">
-                <Image
-                  src={profileImage}
-                  alt="Donor profile"
-                  width={300}
-                  height={300}
-                  className="h-[200px] w-[200px] rounded-[9px] object-cover md:h-[230px] md:w-full md:rounded-xl"
-                />
+              <Image
+                src={profileImage}
+                alt="Donor profile"
+                width={300}
+                height={300}
+                unoptimized
+                className="h-[200px] w-[200px] rounded-[9px] object-cover md:h-[230px] md:w-full md:rounded-xl"
+              />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -246,20 +446,40 @@ export default function EditDonorPage() {
                 className="mt-1 min-h-[140px] w-full resize-none rounded-lg bg-white p-3 text-[13px] text-black outline-none md:min-h-[190px]"
               />
             </section>
-          </div>
+                   </div>
         </section>
+)}
 
-        <div className="mt-8 flex justify-center md:mt-12">
+{!loading && (
+  <div className="mt-8 flex justify-center md:mt-12">
           <button
-            type="button"
-            onClick={handleUpdateDonor}
-            className="flex h-[45px] w-[300px] max-w-full items-center justify-center gap-3 rounded-lg !bg-[#2447d8] text-[15px] font-bold text-white transition-transform hover:scale-105 active:scale-95 md:h-14 md:w-[400px]"
-          >
-            <Save size={18} />
-            Update Donor
-            <ArrowRight size={19} />
-          </button>
+  type="button"
+  onClick={() =>
+    void handleUpdateDonor()
+  }
+  disabled={
+    saving || loading
+  }
+  className="flex h-[45px] w-[300px] max-w-full items-center justify-center gap-3 rounded-lg !bg-[#2447d8] text-[15px] font-bold text-white transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 md:h-14 md:w-[400px]"
+>
+  {saving ? (
+    <>
+      <Loader2
+        size={18}
+        className="animate-spin"
+      />
+      Updating...
+    </>
+  ) : (
+    <>
+      <Save size={18} />
+      Update Donor
+      <ArrowRight size={19} />
+    </>
+  )}
+</button>
         </div>
+)}
       </div>
     </main>
   );

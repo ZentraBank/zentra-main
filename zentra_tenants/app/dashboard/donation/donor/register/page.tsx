@@ -11,6 +11,10 @@ import {
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { donationService } from "@/services/donation.service";
+import {
+  uploadService,
+} from "@/services/upload.service";
 
 type Donor = {
   id: string;
@@ -24,30 +28,14 @@ type Donor = {
   major: string;
 };
 
-const STORAGE_KEY = "zentra_donors";
 
-const fundingOptions = ["Cryptocurrency", "Gift card", "Direct bank transfer"];
+const fundingOptions = ["Cryptocurrency", "Gift card", "Direct bank transfer", "Cash", "Cheque", "Mobile money", "Other"];
 
-const days = Array.from({ length: 31 }, (_, i) =>
-  String(i + 1).padStart(2, "0")
-);
 
-const months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-
+const days = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, "0"));
+const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const years = ["2024", "2025", "2026", "2027", "2028"];
+
 
 export default function FundsDonorRegistrationPage() {
   const router = useRouter();
@@ -63,6 +51,8 @@ export default function FundsDonorRegistrationPage() {
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [major, setMajor] = useState("");
+  const [saving, setSaving] = useState(false);
+const [error, setError] = useState("");
 
   const toggleFundingMethod = (method: string) => {
     setFundingMethods((prev) =>
@@ -72,44 +62,105 @@ export default function FundsDonorRegistrationPage() {
     );
   };
 
-  const handleImageChange = (file?: File) => {
-    if (!file) return;
+const [
+  profileImageFile,
+  setProfileImageFile,
+] =
+  useState<File | null>(
+    null,
+  );
 
-    const reader = new FileReader();
+const handleImageChange = (
+  file?: File,
+) => {
+  if (!file) {
+    return;
+  }
 
-    reader.onloadend = () => {
-      if (typeof reader.result === "string") {
-        setProfileImage(reader.result);
-      }
-    };
+  setProfileImageFile(
+    file,
+  );
 
-    reader.readAsDataURL(file);
-  };
-
-  const handleSaveDonor = () => {
-    const newDonor: Donor = {
-      id: crypto.randomUUID(),
-      fullName,
-      nationality,
-      title,
-      gender,
-      profileImage,
-      fundingMethods,
-      transactionDate: `${day} ${month} ${year}`.trim(),
-      major,
-    };
-
-    const existingDonors = JSON.parse(
-      localStorage.getItem(STORAGE_KEY) || "[]"
-    ) as Donor[];
-
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify([newDonor, ...existingDonors])
+  const previewUrl =
+    URL.createObjectURL(
+      file,
     );
 
-    router.push("/dashboard/donation");
-  };
+  setProfileImage(
+    previewUrl,
+  );
+};
+
+const handleSaveDonor = async () => {
+  let profileImageUrl:
+  | string
+  | undefined;
+
+if (profileImageFile) {
+  profileImageUrl =
+    await uploadService.image(
+      profileImageFile,
+    );
+}
+  if (!fullName.trim()) {
+    setError("Donor name is required.");
+    return;
+  }
+
+  setSaving(true);
+  setError("");
+
+  try {
+    const transactionDate =
+      day && month && year
+        ? `${day} ${month} ${year}`
+        : null;
+
+await donationService.createDonor({
+  fullName:
+    fullName.trim(),
+
+  country:
+    nationality.trim() ||
+    undefined,
+
+  profileImageUrl,
+
+  metadata: {
+    nationality:
+      nationality.trim() ||
+      null,
+
+    title:
+      title.trim() ||
+      null,
+
+    gender:
+      gender || null,
+
+    fundingMethods,
+
+    transactionDate,
+
+    major:
+      major.trim() ||
+      null,
+  },
+});
+
+    router.push(
+      "/dashboard/donation"
+    );
+  } catch (err) {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Unable to register donor."
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
@@ -293,18 +344,29 @@ export default function FundsDonorRegistrationPage() {
             </section>
           </div>
         </section>
-
+                  {error && (
+  <div className="mx-auto mt-6 max-w-[980px] rounded-xl bg-red-500/15 px-4 py-3 text-sm font-medium text-red-200">
+    {error}
+  </div>
+)}
         {/* Separated Button Container */}
         <div className="mt-8 flex justify-center md:mt-12">
           <button
-            type="button"
-            onClick={handleSaveDonor}
-            className="flex h-[35px] w-[280px] max-w-full items-center justify-center gap-3 rounded-lg !bg-[#2447d8] text-[15px] font-bold text-white transition-transform hover:scale-105 active:scale-95 md:h-14 md:w-[400px]"
-          >
-            <Save size={18} />
-            Save Donor
+          type="button"
+          onClick={() => void handleSaveDonor()}
+          disabled={saving}
+          className="flex h-[35px] w-[280px] max-w-full items-center justify-center gap-3 rounded-lg !bg-[#2447d8] text-[15px] font-bold text-white transition-transform hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60 md:h-14 md:w-[400px]"
+        >
+          <Save size={18} />
+
+          {saving
+            ? "Saving donor..."
+            : "Save Donor"}
+
+          {!saving && (
             <ArrowRight size={19} />
-          </button>
+          )}
+        </button>
         </div>
       </div>
     </main>
