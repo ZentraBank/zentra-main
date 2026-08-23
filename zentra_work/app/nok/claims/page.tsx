@@ -147,7 +147,34 @@ export default function PodClaimsPage() {
                   </div>
 
                   <StatusBadge status={claim.status} />
+
+                  <Detail
+                  label="Submitted"
+                  value={formatDate(claim.submitted_at ?? claim.created_at)}
+                />
+
+                {claim.reviewed_at && (
+                  <Detail
+                    label="Reviewed"
+                    value={formatDate(claim.reviewed_at)}
+                  />
+                )}
+
+                {claim.approved_at && (
+                  <Detail
+                    label="Approved"
+                    value={formatDate(claim.approved_at)}
+                  />
+                )}
+
+                {claim.completed_at && (
+                  <Detail
+                    label="Completed"
+                    value={formatDate(claim.completed_at)}
+                  />
+                )}
                 </div>
+                
 
                 <div className="px-4 py-4">
                   <InfoRow
@@ -246,6 +273,23 @@ function StatusBadge({
       <Icon size={12} />
       {current.label}
     </span>
+  );
+}
+
+function Detail({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0 text-left">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.06em] text-black/35">
+        {label}
+      </p>
+      <p className="mt-1 text-[12px] font-semibold text-[#333]">{value}</p>
+    </div>
   );
 }
 

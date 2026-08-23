@@ -54,8 +54,7 @@ export default function NextOfKinManagementPage() {
 
           <p className="mx-auto mt-3 max-w-[370px] text-center font-lato text-[14px] font-medium leading-[1.25] text-white md:text-sm">
             Control and act as a next-of-kin funds account manager for your
-            clients, McGregory Thylaren. Give them exactly what they want to see
-            and get your massive cashout in a couple of days!
+            clients. View their death certificate, valid ID, and POD form.
           </p>
 
           <div className="mt-3 space-y-3">

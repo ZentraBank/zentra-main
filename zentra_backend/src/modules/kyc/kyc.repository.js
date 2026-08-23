@@ -25,17 +25,32 @@ const findById = async ({
 }) => {
   const [rows] = await db.query(
     `
-      SELECT kp.*,
-        u.email AS user_email,
-        u.full_name AS user_name
+      SELECT
+        kp.*,
+
+        CONCAT_WS(
+          ' ',
+          u.first_name,
+          u.middle_name,
+          u.last_name
+        ) AS customer_name,
+
+        u.email AS customer_email
+
       FROM kyc_profiles kp
-      LEFT JOIN users u
+
+      INNER JOIN users u
         ON u.id = kp.user_id
+
       WHERE kp.id = ?
         AND kp.tenant_id = ?
+
       LIMIT 1
     `,
-    [profileId, tenantId]
+    [
+      profileId,
+      tenantId,
+    ]
   );
 
   return rows[0] || null;
@@ -245,6 +260,32 @@ const listDocuments = async ({
   return rows;
 };
 
+const findAdminApplicationById = async ({
+  tenantId,
+  profileId,
+}) => {
+  const profile =
+    await findById({
+      tenantId,
+      profileId,
+    });
+
+  if (!profile) {
+    return null;
+  }
+
+  const documents =
+    await listDocuments({
+      tenantId,
+      profileId,
+    });
+
+  return {
+    ...profile,
+    documents,
+  };
+};
+
 const submit = async ({
   tenantId,
   profileId,
@@ -315,8 +356,13 @@ const listPending = async ({
   const [rows] = await db.query(
     `
       SELECT kp.*,
-        u.email AS user_email,
-        u.full_name AS user_name
+        CONCAT_WS(
+          ' ',
+          u.first_name,
+          u.middle_name,
+          u.last_name
+        ) AS customer_name,
+        u.email AS customer_email
       FROM kyc_profiles kp
       LEFT JOIN users u
         ON u.id = kp.user_id
@@ -382,4 +428,5 @@ module.exports = {
   setReviewStatus,
   listPending,
   createEvent,
+  findAdminApplicationById,
 };

@@ -44,6 +44,11 @@ import type {
   CardPurchaseRequest,
 } from "@/services/card.service";
 
+import {
+  connectSocket,
+  getSocket,
+} from "@/lib/socket";
+
 export function useClientOverview() {
   const [
     accounts,
@@ -254,6 +259,120 @@ export function useClientOverview() {
     void load();
   }, [load]);
 
+useEffect(() => {
+  const handleNotificationChange =
+    async () => {
+      try {
+        const [
+          latestNotifications,
+          latestUnreadCount,
+        ] =
+          await Promise.all([
+            notificationService.list(
+              1,
+              5,
+            ),
+
+            notificationService.unreadCount(),
+          ]);
+
+        setNotifications(
+          latestNotifications,
+        );
+
+        setUnreadNotificationCount(
+          latestUnreadCount,
+        );
+      } catch (error) {
+        console.error(
+          "Unable to refresh notification state:",
+          error,
+        );
+      }
+    };
+
+  window.addEventListener(
+    "zentra:notifications-changed",
+    handleNotificationChange,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "zentra:notifications-changed",
+      handleNotificationChange,
+    );
+  };
+}, []);
+
+useEffect(() => {
+  const socket =
+    getSocket();
+
+  const handleNotification =
+    (
+      notification:
+        ClientNotification,
+    ) => {
+      setNotifications(
+        (current) => {
+          const remaining =
+            current.filter(
+              (item) =>
+                item.id !==
+                notification.id,
+            );
+
+          return [
+            notification,
+            ...remaining,
+          ].slice(
+            0,
+            5,
+          );
+        },
+      );
+
+      if (
+        !Boolean(
+          notification.is_read,
+        )
+      ) {
+        setUnreadNotificationCount(
+          (current) =>
+            current + 1,
+        );
+      }
+    };
+
+  socket.on(
+    "notification:new",
+    handleNotification,
+  );
+
+  socket.on(
+    "connect_error",
+    (error) => {
+      console.error(
+        "Realtime connection error:",
+        error.message,
+      );
+    },
+  );
+
+  connectSocket();
+
+  return () => {
+    socket.off(
+      "notification:new",
+      handleNotification,
+    );
+
+    socket.off(
+      "connect_error",
+    );
+  };
+}, []);
+
   return {
     accounts,
 
@@ -280,4 +399,6 @@ export function useClientOverview() {
     reload:
       load,
   };
+
+  
 }

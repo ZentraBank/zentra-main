@@ -109,4 +109,15 @@ router.patch(
   controller.review
 );
 
+router.get(
+  "/admin/applications/:profileId",
+  validate(
+    schemas.applicationIdSchema
+  ),
+  requireAllPermissions(
+    "kyc.review"
+  ),
+  controller.getAdminApplication
+);
+
 module.exports = router;

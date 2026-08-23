@@ -3,6 +3,10 @@ const path = require("path");
 const crypto = require("crypto");
 const repo =
   require("./kyc.repository");
+const notifications =
+  require(
+    "../notifications/notifications.repository"
+  );
 
 const httpError = (
   statusCode,
@@ -365,28 +369,105 @@ const submit = async ({
       "kyc_submitted",
   });
 
+  const tenantAdmins =
+  await notifications.audienceUsers({
+    tenantId:
+      auth.tenantId,
+
+    audienceType:
+      "role",
+
+    audienceValue:
+      "tenant_admin",
+  });
+
+for (
+  const admin
+  of tenantAdmins
+) {
+  await notifications.create({
+    tenantId:
+      auth.tenantId,
+
+    userId:
+      admin.user_id,
+
+    notificationType:
+      "kyc_submitted",
+
+    title:
+      "New KYC application",
+
+    message:
+      "A client submitted a KYC application for review.",
+
+    entityType:
+      "kyc_profile",
+
+    entityId:
+      profile.id,
+
+    priority:
+      "high",
+
+    actionUrl:
+      `/dashboard/kyc?profileId=${profile.id}`,
+
+    metadata: {
+      profileId:
+        profile.id,
+
+      applicantUserId:
+        auth.userId,
+
+      status:
+        "submitted",
+    },
+  });
+}
+
   return submitted;
 };
 
 const listPending = ({
   auth,
-  query,
+  query = {},
 }) => {
+  const parsedPage =
+    Number.parseInt(
+      query.page,
+      10
+    );
+
+  const parsedPageSize =
+    Number.parseInt(
+      query.pageSize,
+      10
+    );
+
   const page =
-    Number(query.page);
+    Number.isInteger(parsedPage) &&
+    parsedPage > 0
+      ? parsedPage
+      : 1;
 
   const limit =
-    Math.min(
-      Number(query.pageSize),
-      100
-    );
+    Number.isInteger(
+      parsedPageSize
+    ) &&
+    parsedPageSize > 0
+      ? Math.min(
+          parsedPageSize,
+          100
+        )
+      : 20;
 
   return repo.listPending({
     tenantId:
       auth.tenantId,
 
     status:
-      query.status,
+      query.status || null,
 
     limit,
 
@@ -395,6 +476,8 @@ const listPending = ({
       limit,
   });
 };
+
+
 
 const review = async ({
   auth,
@@ -480,7 +563,90 @@ const review = async ({
     },
   });
 
+  await notifications.create({
+  tenantId:
+    auth.tenantId,
+
+  userId:
+    profile.user_id,
+
+  notificationType:
+    body.status ===
+      "approved"
+      ? "kyc_approved"
+      : "kyc_rejected",
+
+  title:
+    body.status ===
+      "approved"
+      ? "KYC approved"
+      : "KYC rejected",
+
+  message:
+    body.status ===
+      "approved"
+      ? "Your identity verification has been approved."
+      : `Your identity verification was rejected.${
+          body.rejectionReason
+            ? ` Reason: ${body.rejectionReason}`
+            : ""
+        }`,
+
+  entityType:
+    "kyc_profile",
+
+  entityId:
+    profile.id,
+
+  priority:
+    body.status ===
+      "rejected"
+      ? "high"
+      : "normal",
+
+  actionUrl:
+    "/profile/kyc",
+
+  metadata: {
+    profileId:
+      profile.id,
+
+    status:
+      body.status,
+
+    riskLevel:
+      body.riskLevel ||
+      null,
+
+    rejectionReason:
+      body.rejectionReason ||
+      null,
+  },
+});
+
   return updated;
+};
+
+const getAdminApplication = async ({
+  auth,
+  profileId,
+}) => {
+  const application =
+    await repo.findAdminApplicationById({
+      tenantId:
+        auth.tenantId,
+
+      profileId,
+    });
+
+  if (!application) {
+    throw httpError(
+      404,
+      "KYC application not found"
+    );
+  }
+
+  return application;
 };
 
 module.exports = {
@@ -491,4 +657,5 @@ module.exports = {
   submit,
   listPending,
   review,
+  getAdminApplication,
 };

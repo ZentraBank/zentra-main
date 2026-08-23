@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { kycService } from "@/services/kyc.service";
 import type { KycProfile } from "@/types/kyc";
 import {
@@ -42,6 +43,7 @@ type FormState = {
   houseNo: string;
   street: string;
   cityState: string;
+  postalCode: string;
   contactCountry: string;
   communicationFirstName: string;
   communicationLastName: string;
@@ -72,6 +74,11 @@ export default function ProfileSettingsPage() {
   const [selectedDocuments, setSelectedDocuments] = useState<Record<string, File>>({});
   const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
+  const [
+  profileRejectionReason,
+  setProfileRejectionReason,
+] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormState>({
     firstName: "",
@@ -93,6 +100,7 @@ export default function ProfileSettingsPage() {
     houseNo: "",
     street: "",
     cityState: "",
+    postalCode: "",
     contactCountry: "",
     communicationFirstName: "",
     communicationLastName: "",
@@ -113,8 +121,32 @@ export default function ProfileSettingsPage() {
     let active = true;
     kycService.getMine()
       .then((profile) => {
-        if (!active || !profile) return;
-        setStatus(profile.status);
+  if (!active || !profile) return;
+
+  setStatus(profile.status);
+
+  setProfileRejectionReason(
+    profile.rejection_reason || null,
+  );
+
+  const uploaded =
+    Object.fromEntries(
+      (profile.documents || []).map(
+        (document) => [
+          document.document_type,
+          document.file_name ||
+            document.file_url
+              .split("/")
+              .pop() ||
+            "Uploaded document",
+        ],
+      ),
+    );
+
+  setUploadedDocuments(
+    uploaded,
+  );
+setUploadedDocuments(uploaded);
         setForm((current) => ({
           ...current,
           firstName: profile.first_name || "",
@@ -181,6 +213,8 @@ export default function ProfileSettingsPage() {
   const phoneNumber =
     form.mobilePhone.trim() || form.homePhone.trim();
 
+  
+
   const residentialAddress = [
     form.houseNo.trim(),
     (form.street || form.mailingAddress).trim(),
@@ -203,6 +237,7 @@ export default function ProfileSettingsPage() {
     identityNumber: form.idNumber.trim(),
     identityExpiryDate:
       form.documentExpiryDate || undefined,
+    postalCode: form.postalCode.trim() || undefined,
   });
 };
 
@@ -212,21 +247,21 @@ const handleSave = async () => {
   setMessage("");
 
   try {
-    const saved = await saveProfileData();
+    const saved =
+      await saveProfileData();
+
     setStatus(saved.status);
 
     const documentCount =
-      Object.keys(selectedDocuments).length;
+      Object.keys(
+        selectedDocuments,
+      ).length;
 
     if (documentCount > 0) {
       await uploadSelectedDocuments();
-
-      setMessage(
-        `KYC profile saved and ${documentCount} document(s) uploaded successfully.`,
-      );
-    } else {
-      setMessage("KYC profile saved successfully.");
     }
+
+    router.push("/profile");
   } catch (err) {
     setError(
       err instanceof Error
@@ -257,6 +292,9 @@ const handleSubmit = async () => {
     const submitted = await kycService.submit();
 
     setStatus(submitted.status);
+    setProfileRejectionReason(
+  null,
+);
     setMessage(
       "KYC submitted successfully for review.",
     );
@@ -283,6 +321,18 @@ const handleSubmit = async () => {
           <div className="mb-4 rounded-xl bg-white px-4 py-3 text-sm shadow-sm">
             KYC status: <strong className="capitalize">{status.replace("_", " ")}</strong>
             {Object.keys(uploadedDocuments).length > 0 && <p className="mt-1 text-xs text-emerald-700">{Object.keys(uploadedDocuments).length} document(s) uploaded securely.</p>}
+          </div>
+                )}
+                {status === "rejected" && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <p className="font-bold">
+              KYC requires attention
+            </p>
+
+            <p className="mt-1">
+              {profileRejectionReason ||
+                "Your KYC application was rejected. Please update your information and resubmit."}
+            </p>
           </div>
         )}
         <header className="relative mb-4 flex items-center justify-center lg:mb-8 lg:justify-between">
@@ -558,6 +608,17 @@ const handleSubmit = async () => {
                       "China",
                     ]}
                     noMargin
+                  />
+                  <Input
+                    label="Postal code"
+                    value={form.postalCode}
+                    onChange={(value) =>
+                      updateForm(
+                        "postalCode",
+                        value,
+                      )
+                    }
+                    placeholder="e.g. M1 1AA"
                   />
                 </div>
               </AccordionBlock>

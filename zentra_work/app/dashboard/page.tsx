@@ -6,6 +6,13 @@ import type {
   AccountActivity,
 } from "@/services/account.service";
 import {
+  kycService,
+} from "@/services/kyc.service";
+
+import type {
+  KycProfile,
+} from "@/types/kyc";
+import {
   useMemo,
   useState,
   useEffect,
@@ -200,6 +207,11 @@ type AccountFormState = {
 
 export default function DashboardPage() {
   const [selectedAccountId, setSelectedAccountId] = useState("");
+  const [kyc, setKyc] =
+  useState<KycProfile | null>(null);
+
+const [kycLoading, setKycLoading] =
+  useState(true);
   
   const [
     showMoreServices,
@@ -527,6 +539,36 @@ const selectedCurrency =
   }
 }, [accounts, selectedAccountId]);
 
+useEffect(() => {
+  let active = true;
+
+  const loadKyc = async () => {
+    try {
+      const result =
+        await kycService.getMine();
+
+      if (!active) return;
+
+      setKyc(result);
+    } catch (error) {
+      console.error(
+        "Unable to load KYC status:",
+        error,
+      );
+    } finally {
+      if (active) {
+        setKycLoading(false);
+      }
+    }
+  };
+
+  void loadKyc();
+
+  return () => {
+    active = false;
+  };
+}, []);
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#E7EBF0] pb-[92px] text-[#333] md:pb-10">
       <section className="mx-auto w-full max-w-[390px] px-5 pt-12 md:max-w-[1180px] md:px-8 md:pt-8 xl:max-w-[1320px]">
@@ -557,10 +599,12 @@ const selectedCurrency =
                 </span>{" "}
 
                 <span className="text-[#2B945D]">
-                  {formatKycStatus(
-                    user?.kyc_status,
-                  )}
-                </span>
+                {kycLoading
+                  ? "Checking KYC..."
+                  : formatKycStatus(
+                      kyc?.status,
+                    )}
+              </span>
               </p>
             </div>
           </Link>

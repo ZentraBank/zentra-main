@@ -3,6 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  getSocket,
+  connectSocket,
+} from "@/lib/socket";
+import {
   ArrowLeft,
   BellRing,
   CheckCheck,
@@ -27,6 +31,7 @@ export default function NotificationsPage() {
   const [workingId, setWorkingId] = useState<string | null>(null);
   const [markingAll, setMarkingAll] = useState(false);
 
+  
   const unreadCount = useMemo(
     () => items.filter((item) => !Boolean(item.is_read)).length,
     [items],
@@ -47,6 +52,42 @@ export default function NotificationsPage() {
   useEffect(() => {
     void load();
   }, []);
+
+  useEffect(() => {
+  const socket = getSocket();
+
+  const handleNotification = (
+    notification: ClientNotification,
+  ) => {
+    setItems((current) => {
+      const withoutDuplicate =
+        current.filter(
+          (item) =>
+            item.id !==
+            notification.id,
+        );
+
+      return [
+        notification,
+        ...withoutDuplicate,
+      ];
+    });
+  };
+
+  socket.on(
+    "notification:new",
+    handleNotification,
+  );
+
+  connectSocket();
+
+  return () => {
+    socket.off(
+      "notification:new",
+      handleNotification,
+    );
+  };
+}, []);
 
   const openNotification = async (item: ClientNotification) => {
     const nextExpanded = expandedId === item.id ? null : item.id;
@@ -70,6 +111,11 @@ export default function NotificationsPage() {
     try {
       await notificationService.markAllRead();
       setItems((current) => current.map((item) => ({ ...item, is_read: true, read_at: item.read_at ?? new Date().toISOString() })));
+      window.dispatchEvent(
+  new CustomEvent(
+    "zentra:notifications-changed",
+  ),
+);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to mark all notifications as read.");
     } finally {
@@ -89,6 +135,11 @@ export default function NotificationsPage() {
       setWorkingId(null);
     }
   };
+  window.dispatchEvent(
+  new CustomEvent(
+    "zentra:notifications-changed",
+  ),
+);
 
   function getActionLabel(
   item: ClientNotification,

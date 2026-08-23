@@ -218,6 +218,16 @@ const reviewSchema = {
     }),
 };
 
+const applicationIdSchema = {
+  params:
+    Joi.object({
+      profileId:
+        Joi.string()
+          .uuid()
+          .required(),
+    }),
+};
+
 module.exports = {
   saveProfileSchema: {
     body:
@@ -228,4 +238,5 @@ module.exports = {
   uploadFileSchema,
   listSchema,
   reviewSchema,
+  applicationIdSchema
 };

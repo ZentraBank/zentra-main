@@ -1,20 +1,88 @@
 const { randomUUID } = require("crypto");
 const db = require("../../config/db");
 
+const {
+  emitToUser,
+} = require("../../realtime/socket");
+
 const create = async ({
-  connection = db, tenantId, userId, notificationType, title, message,
-  entityType = null, entityId = null, priority = "normal",
-  actionUrl = null, metadata = null
+  connection = db,
+  tenantId,
+  userId,
+  notificationType,
+  title,
+  message,
+  entityType = null,
+  entityId = null,
+  priority = "normal",
+  actionUrl = null,
+  metadata = null,
 }) => {
   const id = randomUUID();
+
   await connection.query(
-    `INSERT INTO notifications
-     (id,tenant_id,user_id,notification_type,title,message,entity_type,
-      entity_id,priority,action_url,metadata)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-    [id,tenantId,userId,notificationType,title,message,entityType,entityId,
-     priority,actionUrl,metadata ? JSON.stringify(metadata) : null]
+    `
+      INSERT INTO notifications (
+        id,
+        tenant_id,
+        user_id,
+        notification_type,
+        title,
+        message,
+        entity_type,
+        entity_id,
+        priority,
+        action_url,
+        metadata
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      id,
+      tenantId,
+      userId,
+      notificationType,
+      title,
+      message,
+      entityType,
+      entityId,
+      priority,
+      actionUrl,
+      metadata
+        ? JSON.stringify(metadata)
+        : null,
+    ],
   );
+
+  const [rows] =
+    await connection.query(
+      `
+        SELECT *
+        FROM notifications
+        WHERE id = ?
+          AND tenant_id = ?
+        LIMIT 1
+      `,
+      [
+        id,
+        tenantId,
+      ],
+    );
+
+  const notification =
+    rows[0] || null;
+
+  if (
+    notification &&
+    connection === db
+  ) {
+    emitToUser(
+      userId,
+      "notification:new",
+      notification,
+    );
+  }
+
   return id;
 };
 

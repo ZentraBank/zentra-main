@@ -367,9 +367,250 @@ const getMine = async ({
   };
 };
 
+/*
+|--------------------------------------------------------------------------
+| Tenant claim review
+|--------------------------------------------------------------------------
+*/
+
+const listClaims = async ({
+  auth,
+  query,
+}) => {
+  const page =
+    Number(query.page) > 0
+      ? Number(query.page)
+      : 1;
+
+  const pageSize =
+    Number(query.pageSize) > 0
+      ? Math.min(
+          Number(query.pageSize),
+          100
+        )
+      : 20;
+
+  const offset =
+    (page - 1) *
+    pageSize;
+
+  const [
+    claims,
+    total,
+  ] =
+    await Promise.all([
+      repo.findClaimsByTenant({
+        tenantId:
+          auth.tenantId,
+
+        status:
+          query.status || null,
+
+        limit:
+          pageSize,
+
+        offset,
+      }),
+
+      repo.countClaimsByTenant({
+        tenantId:
+          auth.tenantId,
+
+        status:
+          query.status || null,
+      }),
+    ]);
+
+  return {
+    claims,
+
+    pagination: {
+      page,
+      pageSize,
+      total,
+
+      totalPages:
+        Math.ceil(
+          total / pageSize
+        ),
+    },
+  };
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| Tenant claim details
+|--------------------------------------------------------------------------
+*/
+
+const getClaim = async ({
+  auth,
+  claimId,
+}) => {
+  const claim =
+    await repo.findClaimById({
+      tenantId:
+        auth.tenantId,
+
+      claimId,
+    });
+
+  if (!claim) {
+    throw httpError(
+      404,
+      "POD claim not found"
+    );
+  }
+
+  return {
+    ...claim,
+
+    documents:
+      await repo.findClaimDocuments({
+        tenantId:
+          auth.tenantId,
+
+        claimId,
+      }),
+  };
+};
+
+
+/*
+|--------------------------------------------------------------------------
+| Tenant claim status update
+|--------------------------------------------------------------------------
+*/
+
+const updateClaimStatus = async ({
+  auth,
+  claimId,
+  body,
+}) => {
+  const claim =
+    await repo.findClaimById({
+      tenantId:
+        auth.tenantId,
+
+      claimId,
+    });
+
+  if (!claim) {
+    throw httpError(
+      404,
+      "POD claim not found"
+    );
+  }
+
+  const allowedTransitions = {
+    draft: [
+      "submitted",
+      "cancelled",
+    ],
+
+    submitted: [
+      "under_review",
+      "more_information_required",
+      "approved",
+      "rejected",
+    ],
+
+    under_review: [
+      "more_information_required",
+      "approved",
+      "rejected",
+    ],
+
+    more_information_required: [
+      "under_review",
+      "approved",
+      "rejected",
+    ],
+
+    approved: [
+      "completed",
+    ],
+
+    rejected: [],
+
+    completed: [],
+
+    cancelled: [],
+  };
+
+  const allowed =
+    allowedTransitions[
+      claim.status
+    ] || [];
+
+  if (
+    !allowed.includes(
+      body.status
+    )
+  ) {
+    throw httpError(
+      422,
+      `POD claim cannot move from ${claim.status} to ${body.status}`
+    );
+  }
+
+  if (
+    body.status ===
+      "rejected" &&
+    !body.rejectionReason?.trim()
+  ) {
+    throw httpError(
+      422,
+      "A rejection reason is required when rejecting a POD claim"
+    );
+  }
+
+  const updated =
+    await repo.updateClaimStatus({
+      tenantId:
+        auth.tenantId,
+
+      claimId,
+
+      currentStatus:
+        claim.status,
+
+      status:
+        body.status,
+
+      rejectionReason:
+        body.status ===
+        "rejected"
+          ? body.rejectionReason.trim()
+          : null,
+    });
+
+  if (!updated) {
+    throw httpError(
+      409,
+      "The POD claim was updated by another request. Refresh and try again."
+    );
+  }
+
+  return {
+    ...updated,
+
+    documents:
+      await repo.findClaimDocuments({
+        tenantId:
+          auth.tenantId,
+
+        claimId,
+      }),
+  };
+};
 module.exports = {
   uploadFile,
   createClaim,
   listMine,
   getMine,
+  listClaims,
+  getClaim,
+  updateClaimStatus,
 };

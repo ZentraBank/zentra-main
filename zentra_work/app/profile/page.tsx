@@ -6,6 +6,9 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth.store";
 import { kycService } from "@/services/kyc.service";
 import type { KycProfile } from "@/types/kyc";
+import { notificationService } from "@/services/notification.service";import {
+  useClientOverview,
+} from "@/hooks/use-client-overview";
 import {
   Bell,
   Check,
@@ -30,6 +33,10 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [redeemOpen, setRedeemOpen] = useState(false);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const {
+  unreadNotificationCount,
+} = useClientOverview();
 
   const user = useAuthStore((state) => state.user);
   const [kyc, setKyc] = useState<KycProfile | null>(null);
@@ -75,6 +82,37 @@ export default function ProfilePage() {
     push: true,
   });
 
+  useEffect(() => {
+  let active = true;
+
+  const loadUnreadNotifications = async () => {
+    try {
+      const notifications =
+        await notificationService.list();
+
+      if (!active) return;
+
+      const unreadCount =
+        notifications.filter(
+          (notification) =>
+            !Boolean(notification.is_read),
+        ).length;
+
+      setUnreadNotifications(unreadCount);
+    } catch (error) {
+      console.error(
+        "Unable to load unread notifications:",
+        error,
+      );
+    }
+  };
+
+  void loadUnreadNotifications();
+
+  return () => {
+    active = false;
+  };
+}, []);
   const copyDonationCode = async () => {
     if (profile.donationCode === "Not available") return;
     await navigator.clipboard.writeText(profile.donationCode);
@@ -112,12 +150,21 @@ export default function ProfilePage() {
             </div>
 
             <div className="mt-1 flex items-center gap-2 text-[#2E8B57]">
-              <Link
-                href="/notifications"
-                className="grid h-9 w-9 place-items-center rounded-full bg-white shadow-sm lg:bg-[#E7EBF0]"
-              >
-                <Bell size={18} />
-              </Link>
+             <Link
+  href="/notifications"
+  aria-label="Notifications"
+  className="relative grid h-9 w-9 place-items-center rounded-full bg-white shadow-sm lg:bg-[#E7EBF0]"
+>
+  <Bell size={18} />
+
+  {unreadNotificationCount > 0 && (
+    <span className="absolute -right-1 -top-1 grid min-h-[16px] min-w-[16px] place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-none text-white">
+      {unreadNotificationCount > 99
+        ? "99+"
+        : unreadNotificationCount}
+    </span>
+  )}
+</Link>
 
               <Link
                 href="/settings"

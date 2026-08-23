@@ -69,8 +69,12 @@ module.exports = {
         .required(),
 
       claimantIdType: Joi.string()
-        .trim()
-        .max(100)
+        .valid(
+          "passport",
+          "drivers_license",
+          "national_id",
+          "residence_permit"
+        )
         .allow("")
         .optional(),
 
@@ -113,19 +117,20 @@ module.exports = {
         .optional(),
 
       documents: Joi.array()
-        .items(
-          Joi.object({
-            fileId: Joi.string()
-              .uuid()
-              .required(),
-
-            documentType: Joi.string()
-              .valid(...documentTypes)
-              .required(),
-          })
-        )
-        .min(3)
+  .items(
+    Joi.object({
+      fileId: Joi.string()
+        .uuid()
         .required(),
+
+      documentType: Joi.string()
+        .valid(...documentTypes)
+        .required(),
+    })
+  )
+  .min(3)
+  .max(10)
+  .required(),
     }),
   },
 

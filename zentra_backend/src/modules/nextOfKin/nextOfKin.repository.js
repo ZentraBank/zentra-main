@@ -263,7 +263,8 @@ const findClaimDocuments = async ({
           ncd.created_at
         FROM next_of_kin_claim_documents ncd
         INNER JOIN private_files pf
-          ON pf.id = ncd.file_id
+  ON pf.id = ncd.file_id
+ AND pf.tenant_id = ncd.tenant_id
         WHERE ncd.tenant_id = ?
           AND ncd.claim_id = ?
           AND pf.status = 'active'

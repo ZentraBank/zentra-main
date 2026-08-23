@@ -171,6 +171,27 @@ const review =
     }
   );
 
+  const getAdminApplication =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.getAdminApplication({
+          auth:
+            req.auth,
+
+          profileId:
+            req.params.profileId,
+        });
+
+      res.status(200).json({
+        success: true,
+        message:
+          "KYC application retrieved successfully",
+        data,
+      });
+    }
+  );
+
 module.exports = {
   saveProfile,
   getMine,
@@ -179,4 +200,5 @@ module.exports = {
   submit,
   listPending,
   review,
+  getAdminApplication,
 };

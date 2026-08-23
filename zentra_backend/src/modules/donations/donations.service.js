@@ -11,6 +11,10 @@ const notifications = require(
   "../notifications/notifications.repository"
 );
 
+const {
+  emitToUser,
+} = require("../../realtime/socket");
+
 const httpError = (
   statusCode,
   message
@@ -1043,59 +1047,77 @@ const completeRedemption = async ({
       },
     });
 
-    await notifications.create({
-  connection,
+const completedNotificationId =
+  await notifications.create({
+    connection,
 
-  tenantId:
-    auth.tenantId,
+    tenantId:
+      auth.tenantId,
 
-  userId:
-    request.beneficiary_user_id,
+    userId:
+      request.beneficiary_user_id,
 
-  notificationType:
-    "donation_redemption_completed",
+    notificationType:
+      "donation_redemption_completed",
 
-  title:
-    "Donation credited",
+    title:
+      "Donation credited",
 
-  message:
-    `${amount.toFixed(2)} ${redemption.currency} has been credited to your account.`,
+    message:
+      `${amount.toFixed(2)} ${redemption.currency} has been credited to your account.`,
 
-  entityType:
-    "donation_redemption",
+    entityType:
+      "donation_redemption",
 
-  entityId:
-    redemptionId,
+    entityId:
+      redemptionId,
 
-  priority:
-    "normal",
+    priority:
+      "normal",
 
-actionUrl:
-  `/donations-gift/donations/donationsdetail?request=${redemption.donation_request_id}`,
+    actionUrl:
+      `/donations-gift/donations/donationsdetail?request=${redemption.donation_request_id}`,
 
-  metadata: {
-    donationRequestId:
-      redemption.donation_request_id,
+    metadata: {
+      donationRequestId:
+        redemption.donation_request_id,
 
-    redemptionId,
+      redemptionId,
 
-    accountId:
-      request.account_id,
+      accountId:
+        request.account_id,
 
-    amount,
+      amount,
 
-    currency:
-      redemption.currency,
+      currency:
+        redemption.currency,
 
-    balanceAfter:
-      nextBalance,
+      balanceAfter:
+        nextBalance,
 
-    status:
-      "completed",
-  },
-});
+      status:
+        "completed",
+    },
+  });
 
     await connection.commit();
+
+    const completedNotification =
+  await notifications.findById({
+    tenantId:
+      auth.tenantId,
+
+    notificationId:
+      completedNotificationId,
+  });
+
+if (completedNotification) {
+  emitToUser(
+    request.beneficiary_user_id,
+    "notification:new",
+    completedNotification,
+  );
+}
 
     return {
       redemptionId,

@@ -4,6 +4,12 @@ const app = require("./app");
 const env = require("./config/env");
 
 const {
+  initialiseSocket,
+} = require(
+  "./realtime/socket"
+);
+
+const {
   testDatabaseConnection,
   closeDatabaseConnection,
 } = require("./config/db");
@@ -15,7 +21,17 @@ const startServer = async () => {
   try {
     await testDatabaseConnection();
 
-    server = http.createServer(app);
+    server =
+  http.createServer(app);
+
+/*
+ * Attach Socket.IO to the
+ * same HTTP server as Express.
+ */
+initialiseSocket(
+  server
+);
+
 
     server.listen(env.port, () => {
       console.log("---------------------------------------");

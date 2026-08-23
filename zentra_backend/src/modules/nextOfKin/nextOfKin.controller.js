@@ -116,9 +116,87 @@ const getMine =
     }
   );
 
+  const listClaims =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.listClaims({
+          auth:
+            req.auth,
+
+          query:
+            req.query,
+        });
+
+      return sendSuccess(
+        res,
+        {
+          message:
+            "Tenant POD claims retrieved successfully",
+
+          data,
+        }
+      );
+    }
+  );
+
+const getClaim =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.getClaim({
+          auth:
+            req.auth,
+
+          claimId:
+            req.params.claimId,
+        });
+
+      return sendSuccess(
+        res,
+        {
+          message:
+            "Tenant POD claim retrieved successfully",
+
+          data,
+        }
+      );
+    }
+  );
+
+const updateClaimStatus =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.updateClaimStatus({
+          auth:
+            req.auth,
+
+          claimId:
+            req.params.claimId,
+
+          body:
+            req.body,
+        });
+
+      return sendSuccess(
+        res,
+        {
+          message:
+            "POD claim status updated successfully",
+
+          data,
+        }
+      );
+    }
+  );
+
 module.exports = {
   uploadFile,
   createClaim,
   listMine,
   getMine,
+  listClaims,
+  getClaim,
+  updateClaimStatus,
 };

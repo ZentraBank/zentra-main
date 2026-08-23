@@ -97,5 +97,60 @@ router.get(
   controller.getMine
 );
 
+router.get(
+  "/claims/me",
+  validate(
+    schemas.listMine
+  ),
+  requireAllPermissions(
+    "next_of_kin.claims.read"
+  ),
+  controller.listMine
+);
+
+router.get(
+  "/claims/me/:claimId",
+  validate(
+    schemas.claimId
+  ),
+  requireAllPermissions(
+    "next_of_kin.claims.read"
+  ),
+  controller.getMine
+);
+
+router.get(
+  "/claims",
+  validate(
+    schemas.listClaims
+  ),
+  requireAllPermissions(
+    "next_of_kin.claims.review"
+  ),
+  controller.listClaims
+);
+
+router.get(
+  "/claims/:claimId",
+  validate(
+    schemas.claimId
+  ),
+  requireAllPermissions(
+    "next_of_kin.claims.review"
+  ),
+  controller.getClaim
+);
+
+router.patch(
+  "/claims/:claimId/status",
+  validate(
+    schemas.updateClaimStatus
+  ),
+  requireAllPermissions(
+    "next_of_kin.claims.review"
+  ),
+  controller.updateClaimStatus
+);
+
 module.exports =
   router;
