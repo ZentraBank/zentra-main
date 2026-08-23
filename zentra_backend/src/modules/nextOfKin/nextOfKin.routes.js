@@ -42,6 +42,13 @@ const {
   "../../middleware/upload.middleware"
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| Global middleware
+|--------------------------------------------------------------------------
+*/
+
 router.use(
   resolveTenantMiddleware
 );
@@ -50,107 +57,188 @@ router.use(
   authenticate
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| Client document upload
+|--------------------------------------------------------------------------
+*/
+
 router.post(
   "/files",
+
   requireApprovedKyc,
+
+  requireAllPermissions(
+    "next_of_kin.claims.create"
+  ),
+
   uploadSingleDocument,
+
   validate(
     schemas.uploadFile
   ),
-  requireAllPermissions(
-    "next_of_kin.claims.create"
-  ),
+
   controller.uploadFile
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| Client claim submission
+|--------------------------------------------------------------------------
+*/
+
 router.post(
   "/claims",
+
   requireApprovedKyc,
+
   validate(
     schemas.createClaim
   ),
+
   requireAllPermissions(
     "next_of_kin.claims.create"
   ),
+
   controller.createClaim
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| Client claims
+|--------------------------------------------------------------------------
+*/
+
 router.get(
   "/claims/me",
+
   validate(
     schemas.listMine
   ),
+
   requireAllPermissions(
     "next_of_kin.claims.read"
   ),
+
   controller.listMine
 );
 
 router.get(
   "/claims/me/:claimId",
+
   validate(
     schemas.claimId
   ),
+
   requireAllPermissions(
     "next_of_kin.claims.read"
   ),
+
   controller.getMine
 );
 
-router.get(
-  "/claims/me",
+router.post(
+  "/claims/me/:claimId/additional-information",
+
+  requireApprovedKyc,
+
   validate(
-    schemas.listMine
+    schemas.submitAdditionalInformation
   ),
+
   requireAllPermissions(
-    "next_of_kin.claims.read"
+    "next_of_kin.claims.create"
   ),
-  controller.listMine
+
+  controller.submitAdditionalInformation
 );
 
-router.get(
-  "/claims/me/:claimId",
-  validate(
-    schemas.claimId
-  ),
-  requireAllPermissions(
-    "next_of_kin.claims.read"
-  ),
-  controller.getMine
-);
+/*
+|--------------------------------------------------------------------------
+| Tenant claim review
+|--------------------------------------------------------------------------
+*/
 
 router.get(
   "/claims",
+
   validate(
     schemas.listClaims
   ),
+
   requireAllPermissions(
     "next_of_kin.claims.review"
   ),
+
   controller.listClaims
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| Tenant secure claim document
+|--------------------------------------------------------------------------
+*/
+
+router.get(
+  "/claims/:claimId/files/:fileId",
+
+  validate(
+    schemas.claimFile
+  ),
+
+  requireAllPermissions(
+    "next_of_kin.claims.review"
+  ),
+
+  controller.getClaimFile
+);
+
+
+/*
+|--------------------------------------------------------------------------
+| Tenant claim details
+|--------------------------------------------------------------------------
+*/
+
 router.get(
   "/claims/:claimId",
+
   validate(
     schemas.claimId
   ),
+
   requireAllPermissions(
     "next_of_kin.claims.review"
   ),
+
   controller.getClaim
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| Tenant claim status
+|--------------------------------------------------------------------------
+*/
+
 router.patch(
   "/claims/:claimId/status",
+
   validate(
     schemas.updateClaimStatus
   ),
+
   requireAllPermissions(
     "next_of_kin.claims.review"
   ),
+
   controller.updateClaimStatus
 );
+
 
 module.exports =
   router;

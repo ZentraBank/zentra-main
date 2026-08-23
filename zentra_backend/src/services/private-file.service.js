@@ -134,12 +134,16 @@ const readPrivateFile =
         storagePath
       );
 
-    /*
-     * Prevent directory traversal.
-     */
+    const relativePath =
+      path.relative(
+        STORAGE_ROOT,
+        absolutePath
+      );
+
     if (
-      !absolutePath.startsWith(
-        STORAGE_ROOT
+      relativePath.startsWith("..") ||
+      path.isAbsolute(
+        relativePath
       )
     ) {
       const error =
@@ -156,7 +160,6 @@ const readPrivateFile =
       absolutePath
     );
   };
-
 module.exports = {
   storePrivateFile,
   readPrivateFile,

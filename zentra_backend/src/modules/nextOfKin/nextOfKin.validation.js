@@ -162,6 +162,106 @@ module.exports = {
     }),
   },
 
+  listClaims: {
+  query: Joi.object({
+    page: Joi.number()
+      .integer()
+      .min(1)
+      .default(1),
+
+    pageSize: Joi.number()
+      .integer()
+      .min(1)
+      .max(100)
+      .default(20),
+
+    status: Joi.string()
+      .valid(
+        "draft",
+        "submitted",
+        "under_review",
+        "more_information_required",
+        "approved",
+        "rejected",
+        "completed",
+        "cancelled"
+      )
+      .optional(),
+  }),
+},
+
+updateClaimStatus: {
+  params: Joi.object({
+    claimId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+
+  body: Joi.object({
+    status: Joi.string()
+      .valid(
+        "submitted",
+        "under_review",
+        "more_information_required",
+        "approved",
+        "rejected",
+        "completed",
+        "cancelled"
+      )
+      .required(),
+
+    rejectionReason: Joi.when(
+      "status",
+      {
+        is: "rejected",
+
+        then: Joi.string()
+          .trim()
+          .min(3)
+          .max(2000)
+          .required(),
+
+        otherwise: Joi.string()
+          .trim()
+          .max(2000)
+          .allow("", null)
+          .optional(),
+      }
+    ),
+
+    moreInformationRequest: Joi.when(
+      "status",
+      {
+        is: "more_information_required",
+
+        then: Joi.string()
+          .trim()
+          .min(3)
+          .max(3000)
+          .required(),
+
+        otherwise: Joi.string()
+          .trim()
+          .max(3000)
+          .allow("", null)
+          .optional(),
+      }
+    ),
+  }),
+},
+
+claimFile: {
+  params: Joi.object({
+    claimId: Joi.string()
+      .uuid()
+      .required(),
+
+    fileId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+},
+
   claimId: {
     params: Joi.object({
       claimId: Joi.string()
@@ -169,4 +269,35 @@ module.exports = {
         .required(),
     }),
   },
+submitAdditionalInformation: {
+  params: Joi.object({
+    claimId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+
+  body: Joi.object({
+    message: Joi.string()
+      .trim()
+      .min(3)
+      .max(3000)
+      .required(),
+
+    documents: Joi.array()
+      .items(
+        Joi.object({
+          fileId: Joi.string()
+            .uuid()
+            .required(),
+
+          documentType: Joi.string()
+            .valid(...documentTypes)
+            .required(),
+        })
+      )
+      .max(10)
+      .default([]),
+  }),
+},
+  
 };

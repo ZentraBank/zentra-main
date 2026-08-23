@@ -46,7 +46,7 @@ export default function GiftReceivedPage() {
             <div className="absolute inset-[10px]  " />
 
             <Image
-              src="/images/gifts-avatar.png"
+              src="/images/gifts-avatar1.png"
               alt="Gift received"
               width={240}
               height={240}

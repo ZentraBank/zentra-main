@@ -39,6 +39,14 @@ type CreatePodClaimInput = {
     documentType: PodDocumentType;
   }>;
 };
+type SubmitAdditionalInformationInput = {
+  message: string;
+
+  documents?: Array<{
+    fileId: string;
+    documentType: PodDocumentType;
+  }>;
+};
 
 export const nextOfKinService = {
   uploadDocument(
@@ -64,7 +72,23 @@ export const nextOfKinService = {
         body: formData,
       },
     );
+    
   },
+
+  submitAdditionalInformation(
+  claimId: string,
+  input: SubmitAdditionalInformationInput,
+) {
+  return apiRequest<PodClaim>(
+    `/next-of-kin/claims/me/${encodeURIComponent(
+      claimId,
+    )}/additional-information`,
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+    },
+  );
+},
 
   createClaim(
     input: CreatePodClaimInput,

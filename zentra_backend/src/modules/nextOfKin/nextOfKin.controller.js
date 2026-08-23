@@ -191,6 +191,71 @@ const updateClaimStatus =
     }
   );
 
+  const getClaimFile =
+  asyncHandler(
+    async (req, res) => {
+      const file =
+        await service.getClaimFile({
+          auth:
+            req.auth,
+
+          claimId:
+            req.params.claimId,
+
+          fileId:
+            req.params.fileId,
+        });
+
+      res.setHeader(
+        "Content-Type",
+        file.mimeType,
+      );
+
+      res.setHeader(
+        "Content-Length",
+        file.buffer.length,
+      );
+
+      res.setHeader(
+        "Content-Disposition",
+        `inline; filename="${encodeURIComponent(
+          file.originalName,
+        )}"`,
+      );
+
+      return res.send(
+        file.buffer,
+      );
+    }
+  );
+
+  const submitAdditionalInformation =
+  asyncHandler(
+    async (req, res) => {
+      const data =
+        await service.submitAdditionalInformation({
+          auth:
+            req.auth,
+
+          claimId:
+            req.params.claimId,
+
+          body:
+            req.body,
+        });
+
+      return sendSuccess(
+        res,
+        {
+          message:
+            "Additional POD information submitted successfully",
+
+          data,
+        }
+      );
+    }
+  );
+
 module.exports = {
   uploadFile,
   createClaim,
@@ -199,4 +264,6 @@ module.exports = {
   listClaims,
   getClaim,
   updateClaimStatus,
+  getClaimFile,
+  submitAdditionalInformation,
 };

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowDownLeft, ArrowLeft } from "lucide-react";
+import { ArrowDownLeft, ArrowLeft,Gift } from "lucide-react";
 
 const giftedFund = {
   amount: "$100,000",
@@ -44,15 +44,19 @@ export default function GiftedFundsPage() {
         </header>
 
         <div className="relative mt-5 flex flex-col items-center">
-          <div className="flex h-[168px] w-[168px] items-center justify-center rounded-full bg-[#ffe041] shadow-[0_7px_14px_rgba(0,0,0,0.16)]">
+          {/* <div className="flex h-[168px] w-[168px] items-center justify-center rounded-full bg-[#ffe041] shadow-[0_7px_14px_rgba(0,0,0,0.16)]">
             <Image
-              src="/images/gifts.png"
+              src="/images/gifts-avatar1.png"
               alt="Gift"
-              width={58}
-              height={58}
+              width={240}
+              height={240}
               priority
               className="object-contain"
             />
+          </div> */}
+
+           <div className="flex h-[180px] w-[180px] items-center justify-center rounded-full bg-[#FFE041] shadow-[0_8px_18px_rgba(0,0,0,0.2)] lg:h-[240px] lg:w-[240px]">
+            <Gift size={58} className="text-blue-700 lg:h-20 lg:w-20" />
           </div>
 
           <Image

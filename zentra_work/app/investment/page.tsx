@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LogIn } from "lucide-react";
+import { LogIn, ArrowLeft} from "lucide-react";
 
 export default function InvestmentIntroPage() {
   return (
@@ -19,6 +19,13 @@ export default function InvestmentIntroPage() {
         <h1 className="max-w-[340px] font-heading text-[28px] font-black leading-[31px] tracking-[-0.02em] text-[#25312d]">
           Turn Your Money Into Meaning.
         </h1>
+        <Link
+            href="/dashboard"
+            aria-label="Go back"
+            className="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/10"
+          >
+            <ArrowLeft size={20} />
+          </Link>
 
         <div className="relative mt-[70px] h-[234px] w-[314px]">
           <Image

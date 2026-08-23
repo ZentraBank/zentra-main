@@ -77,6 +77,17 @@ export type PodClaim = {
 
   created_at: string;
   updated_at: string;
+  more_information_request:
+  string | null;
+
+more_information_requested_at:
+  string | null;
+
+  additional_information_response:
+  string | null;
+
+additional_information_responded_at:
+  string | null;
 
   documents?: PodClaimDocument[];
 };

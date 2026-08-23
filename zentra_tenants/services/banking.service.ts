@@ -1,5 +1,10 @@
 import { api } from "@/lib/api";
-import type { ApiEnvelope, BankAccount, Transfer } from "@/types/banking.types";
+import type {
+  ApiEnvelope,
+  BankAccount,
+  Beneficiary,
+  Transfer,
+} from "@/types/banking.types";
 
 export async function getMyAccounts(): Promise<BankAccount[]> {
   const response = await api.get<ApiEnvelope<BankAccount[]>>("/accounts/me");
@@ -106,3 +111,76 @@ export async function adjustTenantAccountBalance(
 
   return response.data.data;
 }
+
+export async function listBeneficiaries(): Promise<
+  Beneficiary[]
+> {
+  const response =
+    await api.get<
+      ApiEnvelope<
+        | Beneficiary[]
+        | {
+            beneficiaries: Beneficiary[];
+          }
+      >
+    >("/beneficiaries");
+
+  const data =
+    response.data.data;
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  return data.beneficiaries ?? [];
+}
+
+export async function createInternalBeneficiary(
+  input: {
+    accountNumber: string;
+    displayName?: string;
+  },
+): Promise<Beneficiary> {
+  const response =
+    await api.post<
+      ApiEnvelope<Beneficiary>
+    >(
+      "/beneficiaries",
+      {
+        accountNumber:
+          input.accountNumber,
+
+        displayName:
+          input.displayName?.trim() ||
+          undefined,
+      },
+    );
+
+  return response.data.data;
+}
+
+export async function deleteBeneficiary(
+  beneficiaryId: string,
+): Promise<void> {
+  await api.delete(
+    `/beneficiaries/${encodeURIComponent(
+      beneficiaryId,
+    )}`,
+  );
+}
+
+export const bankingService = {
+  getMyAccounts,
+  getMyAccount,
+  getMyTransfers,
+  getMyTransfer,
+
+  getTenantAccounts,
+  getTenantAccount,
+  getTenantTransfers,
+  adjustTenantAccountBalance,
+
+  listBeneficiaries,
+  createInternalBeneficiary,
+  deleteBeneficiary,
+};
