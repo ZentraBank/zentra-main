@@ -1,31 +1,47 @@
 import { apiRequest } from "@/lib/api-client";
 
-export type Donor = {
+export type ClientDonor = {
   id: string;
-  tenant_id: string;
-  created_by: string;
   full_name: string;
-  email: string | null;
-  phone_number: string | null;
-  profile_image_url: string | null;
-  address: string | null;
-  country: string | null;
-  status: "active" | "inactive" | "blocked";
-  metadata: Record<string, unknown> | null;
+  email?: string | null;
+  phone_number?: string | null;
+  profile_image_url?: string | null;
+  address?: string | null;
+  country?: string | null;
+
+  status:
+    | "active"
+    | "inactive"
+    | "blocked";
+
+  metadata?: {
+    nationality?: string | null;
+    title?: string | null;
+    gender?: string | null;
+    fundingMethods?: string[];
+    transactionDate?: string | null;
+    major?: string | null;
+
+    [key: string]: unknown;
+  } | null;
+
   created_at: string;
-  updated_at: string;
 };
 
-export type DonationRequest = {
+export type ClientDonationRequest = {
   id: string;
   tenant_id: string;
+
   donor_id: string;
   beneficiary_user_id: string;
   account_id: string;
+
   amount: string | number;
   currency: string;
-  purpose: string | null;
-  appreciation: string | null;
+
+  purpose: string;
+  appreciation: string;
+
   status:
     | "pending"
     | "approved"
@@ -33,139 +49,133 @@ export type DonationRequest = {
     | "cancelled"
     | "funded"
     | "redeemed";
-  donor_name?: string;
-  donor_email?: string | null;
-  account_number?: string;
-  account_name?: string;
+
   rejection_reason?: string | null;
+
+  donor_name: string;
+
+  account_number: string;
+  account_name: string;
+
   created_at: string;
-  updated_at: string;
+};
+
+export type CreateDonationRequestInput = {
+  donorId: string;
+  accountId: string;
+
+  amount: number;
+  currency: string;
+
+  purpose: string;
+  appreciation: string;
 };
 
 export const donationService = {
-  listDonors(input?: {
-    page?: number;
-    pageSize?: number;
-    status?: "active" | "inactive" | "blocked";
-    search?: string;
-    excludeDonorId?: string;
-  }) {
-    const params = new URLSearchParams();
+  async listDonors(
+    options?: {
+      search?: string;
+      page?: number;
+      pageSize?: number;
+    },
+  ): Promise<ClientDonor[]> {
+    const params =
+      new URLSearchParams({
+        /*
+         * Client must only request
+         * active donors.
+         */
+        status: "active",
 
-    params.set(
-      "page",
-      String(input?.page ?? 1),
-    );
+        page: String(
+          options?.page ?? 1,
+        ),
 
-    params.set(
-      "pageSize",
-      String(input?.pageSize ?? 20),
-    );
+        pageSize: String(
+          options?.pageSize ?? 50,
+        ),
+      });
 
-    if (input?.status) {
-      params.set("status", input.status);
-    }
-
-    if (input?.search?.trim()) {
+    if (
+      options?.search?.trim()
+    ) {
       params.set(
         "search",
-        input.search.trim(),
+        options.search.trim(),
       );
     }
 
-    if (input?.excludeDonorId) {
-      params.set(
-        "excludeDonorId",
-        input.excludeDonorId,
-      );
-    }
-
-    return apiRequest<Donor[]>(
+    return apiRequest<ClientDonor[]>(
       `/donations/donors?${params.toString()}`,
     );
   },
 
-  getDonor(donorId: string) {
-    return apiRequest<Donor>(
-      `/donations/donors/${encodeURIComponent(donorId)}`,
+  async getDonor(
+    donorId: string,
+  ): Promise<ClientDonor> {
+    return apiRequest<ClientDonor>(
+      `/donations/donors/${encodeURIComponent(
+        donorId,
+      )}`,
     );
   },
 
-  createRequest(input: {
-    donorId: string;
-    accountId: string;
-    amount: number;
-    currency: string;
-    purpose: string;
-    appreciation: string;
-  }) {
-    return apiRequest<DonationRequest>(
+  async createRequest(
+    payload:
+      CreateDonationRequestInput,
+  ): Promise<ClientDonationRequest> {
+    return apiRequest<ClientDonationRequest>(
       "/donations/requests",
       {
         method: "POST",
-        body: JSON.stringify(input),
+        body:
+          JSON.stringify(
+            payload,
+          ),
       },
     );
   },
 
-  listMine(input?: {
-    page?: number;
-    pageSize?: number;
-    status?: DonationRequest["status"];
-  }) {
-    const params = new URLSearchParams();
+  async listMine(
+    options?: {
+      status?:
+        | "pending"
+        | "approved"
+        | "rejected"
+        | "cancelled"
+        | "funded"
+        | "redeemed";
 
-    params.set(
-      "page",
-      String(input?.page ?? 1),
-    );
+      page?: number;
+      pageSize?: number;
+    },
+  ): Promise<
+    ClientDonationRequest[]
+  > {
+    const params =
+      new URLSearchParams({
+        page: String(
+          options?.page ?? 1,
+        ),
 
-    params.set(
-      "pageSize",
-      String(input?.pageSize ?? 20),
-    );
+        pageSize: String(
+          options?.pageSize ?? 50,
+        ),
+      });
 
-    if (input?.status) {
-      params.set("status", input.status);
+    if (
+      options?.status
+    ) {
+      params.set(
+        "status",
+        options.status,
+      );
     }
 
-    return apiRequest<DonationRequest[]>(
+    return apiRequest<
+      ClientDonationRequest[]
+    >(
       `/donations/requests/me?${params.toString()}`,
-    );
-  },
-
-  requestRedemption(requestId: string) {
-    return apiRequest<{
-      redemptionId: string;
-      expiresAt: string;
-      developmentOtp?: string;
-    }>(
-      `/donations/requests/${encodeURIComponent(requestId)}/redemptions`,
-      {
-        method: "POST",
-        body: JSON.stringify({}),
-      },
-    );
-  },
-
-getMine(requestId: string) {
-  return apiRequest<DonationRequest>(
-    `/donations/requests/me/${encodeURIComponent(
-      requestId,
-    )}`,
-  );
-},
-
-  verifyRedemptionOtp(
-    redemptionId: string,
-    otp: string,
-  ) {
-    return apiRequest(
-      `/donations/redemptions/${encodeURIComponent(redemptionId)}/verify-otp`,
-      {
-        method: "POST",
-        body: JSON.stringify({ otp }),
-      },
     );
   },
 };

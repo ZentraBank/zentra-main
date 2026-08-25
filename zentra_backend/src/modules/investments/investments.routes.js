@@ -123,6 +123,35 @@ router.get(
   controller.listWithdrawals
 );
 
+router.get(
+  "/admin/investments",
+
+  validate(
+    schemas.list
+  ),
+
+  requireAllPermissions(
+    "investments.manage"
+  ),
+
+  controller.listAll
+);
+
+router.post(
+  "/admin/client-investments",
+
+  validate(
+    schemas.createClientInvestment
+  ),
+
+  requireAllPermissions(
+    "investments.manage"
+  ),
+
+  controller.createClientInvestment
+);
+
+
 router.patch(
   "/admin/withdrawals/:withdrawalId/review",
   validate(

@@ -1,220 +1,543 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  Clock3,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  TrendingUp,
+  WalletCards,
+} from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-const sections = [
-  {
-    id: "charity-impact",
-    title: "Charity & Impact Investments",
-    items: [
-      {
-        id: "crowdfunded-charity-1",
-        title: "Crowdfunded Charity Proj...",
-        image: "/images/investments.png",
-      },
-      {
-        id: "crowdfunded-charity-2",
-        title: "Crowdfunded Charity Proj...",
-        image: "/images/investments.png",
-      },
-      {
-        id: "nonprofit-investment-pools",
-        title: "Nonprofit Investment Pools",
-        image: "/images/investments.png",
-      },
-      {
-        id: "charity-impact-1",
-        title: "Charity & Impact Investments",
-        image: "/images/investments.png",
-      },
-      {
-        id: "charity-impact-2",
-        title: "Charity & Impact Investments",
-        image: "/images/investments.png",
-      },
-    ],
-  },
-  {
-    id: "will-next-of-kin",
-    title: "Will(Next-of-kin)",
-    items: [
-      {
-        id: "p2p-lending-will",
-        title: "P2P Lending (Microloans)",
-        image: "/images/investments.png",
-      },
-      {
-        id: "p2p-gifting-will",
-        title: "P2P Gifting Circles",
-        image: "/images/investments.png",
-      },
-      {
-        id: "rosca-will",
-        title: "Rotating Savings & Association (ROSCA)",
-        image: "/images/investments.png",
-      },
-    ],
-  },
-  {
-    id: "gift-reward",
-    title: "Gift & Reward-Based Investments",
-    items: [
-      {
-        id: "gift-savings",
-        title: "Gift Savings",
-        image: "/images/investments.png",
-      },
-      {
-        id: "reward-investment",
-        title: "Reward Investment",
-        image: "/images/investments.png",
-      },
-      {
-        id: "digital-gift-pool",
-        title: "Digital Gift Pool",
-        image: "/images/investments.png",
-      },
-    ],
-  },
-  {
-    id: "other-investments-1",
-    title: "Other Investments",
-    items: [
-      {
-        id: "p2p-lending-other-1",
-        title: "P2P Lending (Microloans)",
-        image: "/images/investments.png",
-      },
-      {
-        id: "p2p-gifting-other-1",
-        title: "P2P Gifting Circles",
-        image: "/images/investments.png",
-      },
-      {
-        id: "rosca-other-1",
-        title: "Rotating Savings & Association (ROSCA)",
-        image: "/images/investments.png",
-      },
-    ],
-  },
-  {
-    id: "other-investments-2",
-    title: "Other Investments",
-    items: [
-      {
-        id: "p2p-lending-other-2",
-        title: "P2P Lending (Microloans)",
-        image: "/images/investments.png",
-      },
-      {
-        id: "p2p-gifting-other-2",
-        title: "P2P Gifting Circles",
-        image: "/images/investments.png",
-      },
-      {
-        id: "rosca-other-2",
-        title: "Rotating Savings & Association (ROSCA)",
-        image: "/images/investments.png",
-      },
-    ],
-  },
-];
+import {
+  investmentService,
+} from "@/services/investment.service";
+
+import type {
+  InvestmentProduct,
+} from "@/types/investment.types";
+
+type RiskFilter =
+  | "all"
+  | "low"
+  | "medium"
+  | "high";
 
 export default function InvestmentsPage() {
+  const [
+    products,
+    setProducts,
+  ] = useState<
+    InvestmentProduct[]
+  >([]);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  const [
+    riskFilter,
+    setRiskFilter,
+  ] =
+    useState<RiskFilter>(
+      "all",
+    );
+
+  const load =
+    useCallback(
+      async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+          const result =
+            await investmentService.listProducts({
+              page: 1,
+              pageSize: 100,
+            });
+
+          setProducts(
+            result,
+          );
+        } catch (err) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load investments.",
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      [],
+    );
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filteredProducts =
+    useMemo(() => {
+      if (
+        riskFilter ===
+        "all"
+      ) {
+        return products;
+      }
+
+      return products.filter(
+        (product) =>
+          product.risk_level
+            ?.toLowerCase() ===
+          riskFilter,
+      );
+    }, [
+      products,
+      riskFilter,
+    ]);
+
   return (
     <main className="min-h-screen overflow-hidden bg-[#13813d]">
       <section className="mx-auto min-h-screen w-full max-w-[430px] px-6 pb-10 pt-14">
         <header className="relative flex items-center justify-center">
-          <Link href="/investment" className="absolute left-0 text-[#1F1F1F]">
-            <ArrowLeft size={20} />
+          <Link
+            href="/investment"
+            className="absolute left-0 text-[#1F1F1F]"
+          >
+            <ArrowLeft
+              size={20}
+            />
           </Link>
 
           <p className="font-heading text-[13px] font-bold tracking-[0.15em] text-[#1F1F1F]">
             Investments
           </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              void load()
+            }
+            disabled={loading}
+            className="absolute right-0 grid h-8 w-8 place-items-center rounded-full bg-white/20 text-white disabled:opacity-50"
+          >
+            <RefreshCw
+              size={14}
+              className={
+                loading
+                  ? "animate-spin"
+                  : ""
+              }
+            />
+          </button>
         </header>
 
         <h1 className="mt-6 text-center font-heading text-[31px] font-black leading-[34px] text-white">
-          Take Financial Control
+          Take Financial
+          Control
         </h1>
 
-        <p className="mx-auto mt-4 max-w-[340px] text-center text-[13px] font-medium leading-[18px] text-white">
-          Dorem ipsum dolor sit amet, consectetur adipiscing elit.
+        <p className="mx-auto mt-4 max-w-[340px] text-center text-[13px] font-medium leading-[18px] text-white/80">
+          Explore investment
+          opportunities designed
+          around your goals,
+          timeline and risk
+          appetite.
         </p>
 
-        <div className="mt-8 space-y-4">
-          {sections.map((section) => (
-            <InvestmentSection key={section.id} section={section} />
-          ))}
+        <Link
+          href="/investment/my-investments"
+          className="mt-6 flex h-[44px] w-full items-center justify-between rounded-[12px] bg-white/15 px-4 text-white backdrop-blur-sm"
+        >
+          <div className="flex items-center gap-3">
+            <WalletCards
+              size={18}
+            />
+
+            <div>
+              <p className="text-[11px] font-black">
+                My Investments
+              </p>
+
+              <p className="text-[9px] text-white/65">
+                Track your active
+                investments
+              </p>
+            </div>
+          </div>
+
+          <ChevronRight
+            size={17}
+          />
+        </Link>
+
+        <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <RiskButton
+            label="All"
+            active={
+              riskFilter ===
+              "all"
+            }
+            onClick={() =>
+              setRiskFilter(
+                "all",
+              )
+            }
+          />
+
+          <RiskButton
+            label="Low Risk"
+            active={
+              riskFilter ===
+              "low"
+            }
+            onClick={() =>
+              setRiskFilter(
+                "low",
+              )
+            }
+          />
+
+          <RiskButton
+            label="Medium"
+            active={
+              riskFilter ===
+              "medium"
+            }
+            onClick={() =>
+              setRiskFilter(
+                "medium",
+              )
+            }
+          />
+
+          <RiskButton
+            label="High Risk"
+            active={
+              riskFilter ===
+              "high"
+            }
+            onClick={() =>
+              setRiskFilter(
+                "high",
+              )
+            }
+          />
         </div>
+
+        {error && (
+          <div className="mt-5 rounded-[12px] bg-red-50 px-4 py-3 text-[11px] font-semibold text-red-700">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="mt-8 grid min-h-[320px] place-items-center rounded-[18px] bg-white/10">
+            <div className="text-center text-white">
+              <Loader2
+                size={30}
+                className="mx-auto animate-spin"
+              />
+
+              <p className="mt-3 text-[11px] text-white/65">
+                Loading investment
+                opportunities...
+              </p>
+            </div>
+          </div>
+        ) : filteredProducts.length ===
+          0 ? (
+          <div className="mt-8 grid min-h-[300px] place-items-center rounded-[18px] border border-dashed border-white/30 bg-white/10 px-5">
+            <div className="text-center text-white">
+              <TrendingUp
+                size={36}
+                className="mx-auto"
+              />
+
+              <p className="mt-4 text-[14px] font-black">
+                No investments
+                available
+              </p>
+
+              <p className="mt-2 text-[10px] leading-4 text-white/60">
+                There are currently
+                no active investment
+                products matching
+                this filter.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-7 space-y-4">
+            {filteredProducts.map(
+              (product) => (
+                <InvestmentCard
+                  key={
+                    product.id
+                  }
+                  product={
+                    product
+                  }
+                />
+              ),
+            )}
+          </div>
+        )}
       </section>
     </main>
   );
 }
 
-function InvestmentSection({
-  section,
-}: {
-  section: {
-    id: string;
-    title: string;
-    items: {
-      id: string;
-      title: string;
-      image: string;
-    }[];
-  };
-}) {
-  return (
-    <section className="rounded-[8px] border border-white bg-[#16884b] p-2 text-white shadow-md">
-      <h2 className="mb-3 font-heading text-[14px] font-black">
-        {section.title}
-      </h2>
-
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {section.items.map((item) => (
-          <InvestmentCard key={item.id} item={item} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function InvestmentCard({
-  item,
+  product,
 }: {
-  item: {
-    id: string;
-    title: string;
-    image: string;
-  };
+  product:
+    InvestmentProduct;
 }) {
   return (
     <Link
-      href="/investment/details"
-      className="min-w-[122px] overflow-hidden rounded-[7px] bg-[#c9f2ee] text-[#263238] shadow-sm"
+      href={`/investment/investment-types/${encodeURIComponent(
+        product.id,
+      )}`}
+      className="block overflow-hidden rounded-[16px] border border-white/30 bg-[#c9f2ee] text-[#263238] shadow-md transition active:scale-[0.99]"
     >
-      <div className="relative mx-auto h-[120px] w-full overflow-hidden rounded-[7px]">
-        <Image
-          src={item.image}
-          alt={item.title}
-          fill
-          className="object-cover"
-        />
+      <div className="bg-gradient-to-br from-[#E9FFF8] to-[#BFECE1] px-5 py-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.08em] text-[#16884b]/60">
+              Investment
+              opportunity
+            </p>
+
+            <h2 className="mt-2 font-heading text-[18px] font-black leading-[21px] text-[#24302b]">
+              {product.name}
+            </h2>
+          </div>
+
+          <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] bg-[#16884b] text-white shadow-sm">
+            <TrendingUp
+              size={21}
+            />
+          </div>
+        </div>
+
+        {product.description && (
+          <p className="mt-3 line-clamp-2 text-[10px] leading-4 text-[#33443d]/65">
+            {
+              product.description
+            }
+          </p>
+        )}
+
+        <div className="mt-5 grid grid-cols-3 gap-2">
+          <ProductStat
+            icon={
+              <TrendingUp
+                size={13}
+              />
+            }
+            label="Annual rate"
+            value={`${formatNumber(
+              product.annual_rate,
+            )}%`}
+          />
+
+          <ProductStat
+            icon={
+              <Clock3
+                size={13}
+              />
+            }
+            label="Duration"
+            value={formatDuration(
+              product.duration_days,
+            )}
+          />
+
+          <ProductStat
+            icon={
+              <ShieldCheck
+                size={13}
+              />
+            }
+            label="Risk"
+            value={
+              product.risk_level ||
+              "—"
+            }
+          />
+        </div>
       </div>
 
-      <div className="px-2 pb-3 pt-2">
-        <h3 className="font-sf-condensed text-[13px] font-bold leading-[14px]">
-          {item.title}
-        </h3>
+      <div className="flex items-center justify-between bg-white/65 px-5 py-4">
+        <div>
+          <p className="text-[8px] font-semibold uppercase tracking-[0.06em] text-black/35">
+            Minimum investment
+          </p>
 
-        <p className="mt-2 text-[7px] font-medium leading-[9px] text-[#333]">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc vulputate
-          libero et velit interdum, ac aliquet odio mattis.
-        </p>
+          <p className="mt-1 text-[14px] font-black text-[#16884b]">
+            {formatMoney(
+              product.minimum_amount,
+              product.currency,
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1 text-[10px] font-black text-[#1D4ED8]">
+          View details
+
+          <ChevronRight
+            size={15}
+          />
+        </div>
       </div>
     </Link>
   );
+}
+
+function ProductStat({
+  icon,
+  label,
+  value,
+}: {
+  icon:
+    React.ReactNode;
+
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[10px] bg-white/65 px-2 py-3">
+      <div className="flex items-center gap-1 text-[#16884b]">
+        {icon}
+
+        <p className="text-[7px] font-semibold uppercase">
+          {label}
+        </p>
+      </div>
+
+      <p className="mt-2 truncate text-[10px] font-black capitalize">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function RiskButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={
+        onClick
+      }
+      className={`h-[35px] shrink-0 rounded-full px-4 text-[9px] font-bold transition ${
+        active
+          ? "bg-white text-[#13813d]"
+          : "border border-white/25 bg-white/10 text-white"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function formatMoney(
+  amount:
+    | string
+    | number,
+  currency: string,
+) {
+  const numeric =
+    Number(amount);
+
+  try {
+    return new Intl.NumberFormat(
+      "en",
+      {
+        style:
+          "currency",
+        currency,
+        maximumFractionDigits:
+          2,
+      },
+    ).format(
+      numeric,
+    );
+  } catch {
+    return `${currency} ${numeric.toLocaleString()}`;
+  }
+}
+
+function formatNumber(
+  value:
+    | string
+    | number,
+) {
+  const numeric =
+    Number(value);
+
+  return Number.isInteger(
+    numeric,
+  )
+    ? String(numeric)
+    : numeric.toFixed(2);
+}
+
+function formatDuration(
+  days: number,
+) {
+  if (
+    days % 365 ===
+      0 &&
+    days >= 365
+  ) {
+    const years =
+      days / 365;
+
+    return `${years} ${
+      years === 1
+        ? "year"
+        : "years"
+    }`;
+  }
+
+  if (
+    days % 30 ===
+      0 &&
+    days >= 30
+  ) {
+    const months =
+      days / 30;
+
+    return `${months} ${
+      months === 1
+        ? "month"
+        : "months"
+    }`;
+  }
+
+  return `${days} days`;
 }

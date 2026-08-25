@@ -277,4 +277,25 @@ module.exports = {
             .required(),
       }),
   },
+
+  createClientInvestment: {
+  body: Joi.object({
+    clientUserId: Joi.string()
+      .uuid()
+      .required(),
+
+    productId: Joi.string()
+      .uuid()
+      .required(),
+
+    sourceAccountId: Joi.string()
+      .uuid()
+      .required(),
+
+    amount: Joi.number()
+      .positive()
+      .precision(2)
+      .required(),
+  }),
+},
 };

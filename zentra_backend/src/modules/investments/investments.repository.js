@@ -286,19 +286,47 @@ const listInvestments = async ({
 const markMatured = async ({
   tenantId,
 }) => {
-  const [result] = await db.query(
-    `
-      UPDATE investments
-      SET status = 'matured'
-      WHERE tenant_id = ?
-        AND status = 'active'
-        AND maturity_date <= NOW()
-    `,
-    [tenantId]
-  );
+  const [result] =
+    await db.query(
+      `
+        UPDATE investments
+        SET
+          status = 'matured',
+          matured_at = COALESCE(
+            matured_at,
+            NOW()
+          )
+        WHERE tenant_id = ?
+          AND status = 'active'
+          AND maturity_date <= NOW()
+      `,
+      [
+        tenantId,
+      ]
+    );
 
   return result.affectedRows;
 };
+
+const markAllMatured =
+  async () => {
+    const [result] =
+      await db.query(
+        `
+          UPDATE investments
+          SET
+            status = 'matured',
+            matured_at = COALESCE(
+              matured_at,
+              NOW()
+            )
+          WHERE status = 'active'
+            AND maturity_date <= NOW()
+        `
+      );
+
+    return result.affectedRows;
+  };
 
 const createWithdrawal = async ({
   tenantId,
@@ -515,6 +543,204 @@ const createEvent = async ({
   );
 };
 
+const debitAccount = async ({
+  connection = db,
+  tenantId,
+  accountId,
+  amount,
+}) => {
+  const [result] =
+    await connection.query(
+      `
+        UPDATE accounts
+        SET balance = balance - ?
+        WHERE id = ?
+          AND tenant_id = ?
+          AND status = 'active'
+          AND balance >= ?
+      `,
+      [
+        amount,
+        accountId,
+        tenantId,
+        amount,
+      ]
+    );
+
+  return (
+    result.affectedRows === 1
+  );
+};
+
+const creditAccount = async ({
+  connection = db,
+  tenantId,
+  accountId,
+  amount,
+}) => {
+  const [result] =
+    await connection.query(
+      `
+        UPDATE accounts
+        SET balance = balance + ?
+        WHERE id = ?
+          AND tenant_id = ?
+          AND status = 'active'
+      `,
+      [
+        amount,
+        accountId,
+        tenantId,
+      ]
+    );
+
+  return (
+    result.affectedRows === 1
+  );
+};
+
+const findTenantClientByUserId =
+  async ({
+    tenantId,
+    userId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            u.id,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.email,
+            u.status AS user_status,
+
+            tm.id AS membership_id,
+            tm.status AS membership_status,
+
+            r.id AS role_id,
+            r.name AS role_name,
+            r.code AS role_code
+
+          FROM tenant_memberships tm
+
+          INNER JOIN users u
+            ON u.id = tm.user_id
+
+          INNER JOIN roles r
+            ON r.id = tm.role_id
+
+          WHERE tm.tenant_id = ?
+            AND tm.user_id = ?
+            AND u.deleted_at IS NULL
+
+          LIMIT 1
+        `,
+        [
+          tenantId,
+          userId,
+        ]
+      );
+
+    return rows[0] || null;
+  };
+
+  const findDueInvestments =
+  async () => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            id,
+            tenant_id,
+            user_id,
+            product_id,
+            principal,
+            currency,
+            maturity_amount,
+            maturity_date
+          FROM investments
+          WHERE status = 'active'
+            AND maturity_date <= NOW()
+        `
+      );
+
+    return rows;
+  };
+
+  const findTenantInvestmentManagers =
+  async ({
+    tenantId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT DISTINCT
+            tm.user_id
+
+          FROM tenant_memberships tm
+
+          INNER JOIN roles r
+            ON r.id =
+              tm.role_id
+
+          INNER JOIN role_permissions rp
+            ON rp.role_id =
+              r.id
+
+          INNER JOIN permissions p
+            ON p.id =
+              rp.permission_id
+
+          WHERE
+            tm.tenant_id = ?
+            AND tm.status = 'active'
+            AND r.is_active = 1
+            AND p.code IN (
+              'investments.manage',
+              'investments.withdrawals.review'
+            )
+        `,
+        [
+          tenantId,
+        ]
+      );
+
+    return rows;
+  };
+
+  const markInvestmentMatured =
+  async ({
+    connection = db,
+    tenantId,
+    investmentId,
+  }) => {
+    const [result] =
+      await connection.query(
+        `
+          UPDATE investments
+          SET
+            status = 'matured',
+            matured_at = COALESCE(
+              matured_at,
+              NOW()
+            )
+          WHERE id = ?
+            AND tenant_id = ?
+            AND status = 'active'
+            AND maturity_date <= NOW()
+        `,
+        [
+          investmentId,
+          tenantId,
+        ]
+      );
+
+    return (
+      result.affectedRows === 1
+    );
+  };
+
 module.exports = {
   db,
   createProduct,
@@ -526,10 +752,18 @@ module.exports = {
   findInvestmentById,
   listInvestments,
   markMatured,
+  markAllMatured,
   createWithdrawal,
   findWithdrawalById,
   listWithdrawals,
   reviewWithdrawal,
   completeWithdrawal,
   createEvent,
+  debitAccount,
+  creditAccount,
+  findTenantClientByUserId,
+  findDueInvestments,
+markInvestmentMatured,
+  findTenantInvestmentManagers,
+
 };

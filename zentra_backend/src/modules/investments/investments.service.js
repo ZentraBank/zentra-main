@@ -1,18 +1,186 @@
 const repo =
-  require("./investments.repository");
+  require(
+    "./investments.repository"
+  );
+
+const notificationService =
+  require(
+    "../notifications/notifications.service"
+  );
 
 const httpError = (
   statusCode,
   message
 ) => {
   const error =
-    new Error(message);
+    new Error(
+      message
+    );
 
   error.statusCode =
     statusCode;
 
   return error;
 };
+
+/*
+|--------------------------------------------------------------------------
+| Investment growth
+|--------------------------------------------------------------------------
+*/
+
+const sendInvestmentNotification =
+  async ({
+    tenantId,
+    userId,
+    notificationType,
+    title,
+    message,
+    actionUrl,
+    metadata = null,
+    priority = "normal",
+  }) => {
+    try {
+      await notificationService.notifyUser({
+        tenantId,
+        userId,
+        notificationType,
+        title,
+        message,
+        priority,
+        actionUrl,
+        metadata,
+      });
+    } catch (error) {
+      console.error(
+        `[Investments] Failed to send ${notificationType} notification:`,
+        error.message
+      );
+    }
+  };
+
+const enrichInvestment =
+  (investment) => {
+    if (!investment) {
+      return investment;
+    }
+
+    const principal =
+      Number(
+        investment.principal
+      );
+
+    const expectedReturn =
+      Number(
+        investment.expected_return
+      );
+
+    const maturityAmount =
+      Number(
+        investment.maturity_amount
+      );
+
+    const startedAt =
+      new Date(
+        investment.started_at
+      ).getTime();
+
+    const maturityDate =
+      new Date(
+        investment.maturity_date
+      ).getTime();
+
+    const now =
+      Date.now();
+
+    const totalDuration =
+      Math.max(
+        maturityDate -
+          startedAt,
+        1
+      );
+
+    const elapsed =
+      Math.max(
+        0,
+        Math.min(
+          now -
+            startedAt,
+          totalDuration
+        )
+      );
+
+    const progress =
+      elapsed /
+      totalDuration;
+
+    const accruedReturn =
+      expectedReturn *
+      progress;
+
+    const currentValue =
+      Math.min(
+        principal +
+          accruedReturn,
+        maturityAmount
+      );
+
+    const daysRemaining =
+      Math.max(
+        0,
+        Math.ceil(
+          (
+            maturityDate -
+            now
+          ) /
+            86400000
+        )
+      );
+
+    return {
+      ...investment,
+
+      accrued_return:
+        accruedReturn.toFixed(
+          2
+        ),
+
+      current_value:
+        currentValue.toFixed(
+          2
+        ),
+
+      growth_progress:
+        Number(
+          (
+            progress *
+            100
+          ).toFixed(
+            4
+          )
+        ),
+
+      days_remaining:
+        daysRemaining,
+
+      growth: {
+        startedAt:
+          investment.started_at,
+
+        maturityDate:
+          investment.maturity_date,
+
+        calculationType:
+          "simple_interest",
+      },
+    };
+  };
+
+/*
+|--------------------------------------------------------------------------
+| Investment products
+|--------------------------------------------------------------------------
+*/
 
 const createProduct = ({
   auth,
@@ -33,25 +201,39 @@ const listProducts = ({
   query,
 }) => {
   const page =
-    Number(query.page);
+    Number(
+      query.page
+    ) > 0
+      ? Number(
+          query.page
+        )
+      : 1;
 
   const limit =
-    Math.min(
-      Number(query.pageSize),
-      100
-    );
+    Number(
+      query.pageSize
+    ) > 0
+      ? Math.min(
+          Number(
+            query.pageSize
+          ),
+          100
+        )
+      : 20;
 
   return repo.listProducts({
     tenantId:
       auth.tenantId,
 
     status:
-      query.status || "active",
+      query.status ||
+      "active",
 
     limit,
 
     offset:
-      (page - 1) * limit,
+      (page - 1) *
+      limit,
   });
 };
 
@@ -86,23 +268,34 @@ const updateProduct =
     });
   };
 
-const subscribe =
+/*
+|--------------------------------------------------------------------------
+| Shared investment creation
+|--------------------------------------------------------------------------
+*/
+
+const createInvestmentForUser =
   async ({
-    auth,
-    body,
+    tenantId,
+    userId,
+    actorUserId,
+
+    productId,
+    sourceAccountId,
+    amount,
+
+    createdByTenant = false,
   }) => {
     const product =
       await repo.findProductById({
-        tenantId:
-          auth.tenantId,
-
-        productId:
-          body.productId,
+        tenantId,
+        productId,
       });
 
     if (
       !product ||
-      product.status !== "active"
+      product.status !==
+        "active"
     ) {
       throw httpError(
         404,
@@ -112,26 +305,26 @@ const subscribe =
 
     const account =
       await repo.findAccountById({
-        tenantId:
-          auth.tenantId,
+        tenantId,
 
         accountId:
-          body.sourceAccountId,
+          sourceAccountId,
       });
 
     if (
       !account ||
       account.user_id !==
-        auth.userId
+        userId
     ) {
       throw httpError(
         404,
-        "Source account not found"
+        "Source account not found for this client"
       );
     }
 
     if (
-      account.status !== "active"
+      account.status !==
+      "active"
     ) {
       throw httpError(
         403,
@@ -141,7 +334,7 @@ const subscribe =
 
     if (
       account.currency !==
-        product.currency
+      product.currency
     ) {
       throw httpError(
         422,
@@ -149,9 +342,29 @@ const subscribe =
       );
     }
 
+    const principal =
+      Number(amount);
+
     if (
-      Number(body.amount) <
-      Number(product.minimum_amount)
+      !Number.isFinite(
+        principal
+      ) ||
+      principal <= 0
+    ) {
+      throw httpError(
+        422,
+        "Investment amount must be greater than zero"
+      );
+    }
+
+    const minimum =
+      Number(
+        product.minimum_amount
+      );
+
+    if (
+      principal <
+      minimum
     ) {
       throw httpError(
         422,
@@ -160,9 +373,16 @@ const subscribe =
     }
 
     if (
-      product.maximum_amount &&
-      Number(body.amount) >
-      Number(product.maximum_amount)
+      product.maximum_amount !==
+        null &&
+      product.maximum_amount !==
+        undefined &&
+      product.maximum_amount !==
+        "" &&
+      principal >
+        Number(
+          product.maximum_amount
+        )
     ) {
       throw httpError(
         422,
@@ -170,16 +390,56 @@ const subscribe =
       );
     }
 
-    const principal =
-      Number(body.amount);
-
     const annualRate =
-      Number(product.annual_rate);
+      Number(
+        product.annual_rate
+      );
 
+    const durationDays =
+      Number(
+        product.duration_days
+      );
+
+    if (
+      !Number.isFinite(
+        annualRate
+      ) ||
+      annualRate < 0
+    ) {
+      throw httpError(
+        422,
+        "Investment product annual rate is invalid"
+      );
+    }
+
+    if (
+      !Number.isFinite(
+        durationDays
+      ) ||
+      durationDays <= 0
+    ) {
+      throw httpError(
+        422,
+        "Investment product duration is invalid"
+      );
+    }
+
+    /*
+     * Simple interest:
+     *
+     * expected return =
+     * principal × annual rate × duration
+     */
     const expectedReturn =
       principal *
-      (annualRate / 100) *
-      (Number(product.duration_days) / 365);
+      (
+        annualRate /
+        100
+      ) *
+      (
+        durationDays /
+        365
+      );
 
     const maturityAmount =
       principal +
@@ -191,15 +451,42 @@ const subscribe =
     try {
       await connection.beginTransaction();
 
+      /*
+       * Debit the client's account.
+       *
+       * debitAccount should be atomic
+       * and should only succeed when
+       * sufficient funds are available.
+       */
+      const debited =
+        await repo.debitAccount({
+          connection,
+
+          tenantId,
+
+          accountId:
+            account.id,
+
+          amount:
+            principal.toFixed(
+              2
+            ),
+        });
+
+      if (!debited) {
+        throw httpError(
+          422,
+          "Insufficient funds or source account is unavailable"
+        );
+      }
+
       const investmentId =
         await repo.createInvestment({
           connection,
 
-          tenantId:
-            auth.tenantId,
+          tenantId,
 
-          userId:
-            auth.userId,
+          userId,
 
           productId:
             product.id,
@@ -208,7 +495,9 @@ const subscribe =
             account.id,
 
           principal:
-            principal.toFixed(2),
+            principal.toFixed(
+              2
+            ),
 
           currency:
             product.currency,
@@ -220,86 +509,454 @@ const subscribe =
             product.duration_days,
 
           expectedReturn:
-            expectedReturn.toFixed(2),
+            expectedReturn.toFixed(
+              2
+            ),
 
           maturityAmount:
-            maturityAmount.toFixed(2),
+            maturityAmount.toFixed(
+              2
+            ),
         });
 
       await repo.createEvent({
         connection,
 
-        tenantId:
-          auth.tenantId,
+        tenantId,
 
         investmentId,
 
-        actorUserId:
-          auth.userId,
+        actorUserId,
 
         eventType:
-          "investment_started",
+          createdByTenant
+            ? "investment_created_by_tenant"
+            : "investment_started",
 
         metadata: {
+          clientUserId:
+            userId,
+
+          sourceAccountId:
+            account.id,
+
           principal:
-            principal.toFixed(2),
+            principal.toFixed(
+              2
+            ),
+
+          annualRate,
+
+          durationDays,
 
           expectedReturn:
-            expectedReturn.toFixed(2),
+            expectedReturn.toFixed(
+              2
+            ),
 
           maturityAmount:
-            maturityAmount.toFixed(2),
+            maturityAmount.toFixed(
+              2
+            ),
+
+          createdByTenant,
         },
       });
 
+      
       await connection.commit();
 
-      return repo.findInvestmentById({
-        tenantId:
-          auth.tenantId,
+const investment =
+  await repo.findInvestmentById({
+    tenantId,
+    investmentId,
+  });
 
-        investmentId,
-      });
+const enriched =
+  enrichInvestment(
+    investment
+  );
+
+if (createdByTenant) {
+  await sendInvestmentNotification({
+    tenantId,
+
+    userId,
+
+    notificationType:
+      "investment_created",
+
+    title:
+      "New Investment Created",
+
+    message:
+      `${product.name} has been created for you with an initial investment of ${formatNotificationMoney(
+        principal,
+        product.currency
+      )}.`,
+
+    priority:
+      "normal",
+
+    actionUrl:
+      `/investment/my-investments/${investmentId}`,
+
+    metadata: {
+      investmentId,
+
+      productId:
+        product.id,
+
+      productName:
+        product.name,
+
+      principal:
+        principal.toFixed(2),
+
+      currency:
+        product.currency,
+
+      annualRate,
+
+      durationDays,
+
+      maturityAmount:
+        maturityAmount.toFixed(2),
+
+      createdByTenant:
+        true,
+    },
+  });
+}
+
+return enriched;
+
+  
     } catch (error) {
       await connection.rollback();
+
       throw error;
     } finally {
       connection.release();
     }
   };
 
-const listMine = ({
-  auth,
-  query,
-}) => {
-  const page =
-    Number(query.page);
+const formatNotificationMoney =
+  (
+    amount,
+    currency
+  ) => {
+    const numeric =
+      Number(amount);
 
-  const limit =
-    Math.min(
-      Number(query.pageSize),
-      100
+    try {
+      return new Intl.NumberFormat(
+        "en",
+        {
+          style:
+            "currency",
+
+          currency,
+
+          minimumFractionDigits:
+            2,
+
+          maximumFractionDigits:
+            2,
+        }
+      ).format(
+        numeric
+      );
+    } catch {
+      return `${currency} ${numeric.toFixed(
+        2
+      )}`;
+    }
+  };
+
+/*
+|--------------------------------------------------------------------------
+| Client subscribes
+|--------------------------------------------------------------------------
+*/
+
+const subscribe =
+  async ({
+    auth,
+    body,
+  }) =>
+    createInvestmentForUser({
+      tenantId:
+        auth.tenantId,
+
+      userId:
+        auth.userId,
+
+      actorUserId:
+        auth.userId,
+
+      productId:
+        body.productId,
+
+      sourceAccountId:
+        body.sourceAccountId,
+
+      amount:
+        body.amount,
+
+      createdByTenant:
+        false,
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Tenant creates investment for client
+|--------------------------------------------------------------------------
+*/
+
+const createClientInvestment =
+  async ({
+    auth,
+    body,
+  }) => {
+    const client =
+      await repo.findTenantClientByUserId({
+        tenantId:
+          auth.tenantId,
+
+        userId:
+          body.clientUserId,
+      });
+
+    if (!client) {
+      throw httpError(
+        404,
+        "Client not found in this tenant"
+      );
+    }
+
+    if (
+      client.user_status !==
+      "active"
+    ) {
+      throw httpError(
+        409,
+        "Client user account is not active"
+      );
+    }
+
+    if (
+      client.membership_status !==
+      "active"
+    ) {
+      throw httpError(
+        409,
+        "Client tenant membership is not active"
+      );
+
+      
+    }
+
+    return createInvestmentForUser({
+      tenantId:
+        auth.tenantId,
+
+      userId:
+        client.id,
+
+      actorUserId:
+        auth.userId,
+
+      productId:
+        body.productId,
+
+      sourceAccountId:
+        body.sourceAccountId,
+
+      amount:
+        body.amount,
+
+      createdByTenant:
+        true,
+    });
+
+    
+  };
+
+/*
+|--------------------------------------------------------------------------
+| Client investments
+|--------------------------------------------------------------------------
+*/
+
+const listMine =
+  async ({
+    auth,
+    query,
+  }) => {
+    const page =
+      Number(
+        query.page
+      ) > 0
+        ? Number(
+            query.page
+          )
+        : 1;
+
+    const limit =
+      Number(
+        query.pageSize
+      ) > 0
+        ? Math.min(
+            Number(
+              query.pageSize
+            ),
+            100
+          )
+        : 20;
+
+    const investments =
+      await repo.listInvestments({
+        tenantId:
+          auth.tenantId,
+
+        userId:
+          auth.userId,
+
+        status:
+          query.status ||
+          null,
+
+        adminView:
+          false,
+
+        limit,
+
+        offset:
+          (page - 1) *
+          limit,
+      });
+
+    return investments.map(
+      enrichInvestment
     );
+  };
 
-  return repo.listInvestments({
-    tenantId:
-      auth.tenantId,
+/*
+|--------------------------------------------------------------------------
+| Tenant investment list
+|--------------------------------------------------------------------------
+*/
 
-    userId:
-      auth.userId,
+const listAll =
+  async ({
+    auth,
+    query,
+  }) => {
+    const page =
+      Number(
+        query.page
+      ) > 0
+        ? Number(
+            query.page
+          )
+        : 1;
 
-    status:
-      query.status || null,
+    const limit =
+      Number(
+        query.pageSize
+      ) > 0
+        ? Math.min(
+            Number(
+              query.pageSize
+            ),
+            100
+          )
+        : 20;
 
-    adminView:
-      false,
+    const investments =
+      await repo.listInvestments({
+        tenantId:
+          auth.tenantId,
 
-    limit,
+        userId:
+          null,
 
-    offset:
-      (page - 1) * limit,
-  });
-};
+        status:
+          query.status ||
+          null,
+
+        adminView:
+          true,
+
+        limit,
+
+        offset:
+          (page - 1) *
+          limit,
+      });
+
+    return investments.map(
+      enrichInvestment
+    );
+  };
+
+  const notifyTenantInvestmentManagers =
+  async ({
+    tenantId,
+    notificationType,
+    title,
+    message,
+    actionUrl,
+    metadata = null,
+    priority = "normal",
+    excludeUserId = null,
+  }) => {
+    try {
+      const managers =
+        await repo.findTenantInvestmentManagers({
+          tenantId,
+        });
+
+      for (
+        const manager
+        of managers
+      ) {
+        if (
+          excludeUserId &&
+          manager.user_id ===
+            excludeUserId
+        ) {
+          continue;
+        }
+
+        await sendInvestmentNotification({
+          tenantId,
+
+          userId:
+            manager.user_id,
+
+          notificationType,
+
+          title,
+          message,
+          priority,
+          actionUrl,
+          metadata,
+        });
+      }
+    } catch (error) {
+      console.error(
+        "[Investments] Failed to notify tenant managers:",
+        error.message
+      );
+    }
+  };
+/*
+|--------------------------------------------------------------------------
+| Request investment withdrawal
+|--------------------------------------------------------------------------
+*/
 
 const requestWithdrawal =
   async ({
@@ -328,7 +985,7 @@ const requestWithdrawal =
 
     if (
       investment.status !==
-        "matured"
+      "matured"
     ) {
       throw httpError(
         409,
@@ -357,8 +1014,18 @@ const requestWithdrawal =
     }
 
     if (
+      destination.status !==
+      "active"
+    ) {
+      throw httpError(
+        403,
+        "Destination account is not active"
+      );
+    }
+
+    if (
       destination.currency !==
-        investment.currency
+      investment.currency
     ) {
       throw httpError(
         422,
@@ -400,37 +1067,71 @@ const requestWithdrawal =
 
       eventType:
         "investment_withdrawal_requested",
+
+      metadata: {
+        destinationAccountId:
+          destination.id,
+
+        amount:
+          investment.maturity_amount,
+      },
     });
 
     return withdrawal;
   };
+
+/*
+|--------------------------------------------------------------------------
+| Tenant withdrawal list
+|--------------------------------------------------------------------------
+*/
 
 const listWithdrawals = ({
   auth,
   query,
 }) => {
   const page =
-    Number(query.page);
+    Number(
+      query.page
+    ) > 0
+      ? Number(
+          query.page
+        )
+      : 1;
 
   const limit =
-    Math.min(
-      Number(query.pageSize),
-      100
-    );
+    Number(
+      query.pageSize
+    ) > 0
+      ? Math.min(
+          Number(
+            query.pageSize
+          ),
+          100
+        )
+      : 20;
 
   return repo.listWithdrawals({
     tenantId:
       auth.tenantId,
 
     status:
-      query.status,
+      query.status ||
+      "pending",
 
     limit,
 
     offset:
-      (page - 1) * limit,
+      (page - 1) *
+      limit,
   });
 };
+
+/*
+|--------------------------------------------------------------------------
+| Review withdrawal
+|--------------------------------------------------------------------------
+*/
 
 const reviewWithdrawal =
   async ({
@@ -455,7 +1156,7 @@ const reviewWithdrawal =
 
     if (
       withdrawal.status !==
-        "pending"
+      "pending"
     ) {
       throw httpError(
         409,
@@ -464,8 +1165,10 @@ const reviewWithdrawal =
     }
 
     if (
-      body.status === "rejected" &&
+      body.status ===
+        "rejected" &&
       !body.rejectionReason
+        ?.trim()
     ) {
       throw httpError(
         422,
@@ -487,7 +1190,10 @@ const reviewWithdrawal =
           body.status,
 
         rejectionReason:
-          body.rejectionReason,
+          body.status ===
+          "rejected"
+            ? body.rejectionReason.trim()
+            : null,
       });
 
     await repo.createEvent({
@@ -507,12 +1213,21 @@ const reviewWithdrawal =
 
       metadata: {
         rejectionReason:
-          body.rejectionReason || null,
+          body.status ===
+          "rejected"
+            ? body.rejectionReason.trim()
+            : null,
       },
     });
 
     return updated;
   };
+
+/*
+|--------------------------------------------------------------------------
+| Complete withdrawal
+|--------------------------------------------------------------------------
+*/
 
 const completeWithdrawal =
   async ({
@@ -542,11 +1257,84 @@ const completeWithdrawal =
 
       if (
         withdrawal.status !==
-          "approved"
+        "approved"
       ) {
         throw httpError(
           409,
           "Withdrawal must be approved before completion"
+        );
+      }
+
+      const investment =
+        await repo.findInvestmentById({
+          tenantId:
+            auth.tenantId,
+
+          investmentId:
+            withdrawal.investment_id,
+        });
+
+      if (!investment) {
+        throw httpError(
+          404,
+          "Investment not found"
+        );
+      }
+
+      const destination =
+        await repo.findAccountById({
+          tenantId:
+            auth.tenantId,
+
+          accountId:
+            withdrawal.destination_account_id,
+        });
+
+      if (!destination) {
+        throw httpError(
+          404,
+          "Withdrawal destination account not found"
+        );
+      }
+
+      if (
+        destination.status !==
+        "active"
+      ) {
+        throw httpError(
+          409,
+          "Withdrawal destination account is not active"
+        );
+      }
+
+      if (
+        destination.currency !==
+        withdrawal.currency
+      ) {
+        throw httpError(
+          422,
+          "Withdrawal destination account currency does not match"
+        );
+      }
+
+      const credited =
+        await repo.creditAccount({
+          connection,
+
+          tenantId:
+            auth.tenantId,
+
+          accountId:
+            withdrawal.destination_account_id,
+
+          amount:
+            withdrawal.amount,
+        });
+
+      if (!credited) {
+        throw httpError(
+          409,
+          "Unable to credit the withdrawal destination account"
         );
       }
 
@@ -578,40 +1366,272 @@ const completeWithdrawal =
 
         eventType:
           "investment_withdrawal_completed",
+
+        metadata: {
+          amount:
+            withdrawal.amount,
+
+          destinationAccountId:
+            withdrawal.destination_account_id,
+        },
       });
 
       await connection.commit();
 
       return {
         withdrawalId,
+
+        investmentId:
+          withdrawal.investment_id,
+
+        amount:
+          withdrawal.amount,
+
+        currency:
+          withdrawal.currency,
+
+        destinationAccountId:
+          withdrawal.destination_account_id,
+
         status:
           "completed",
       };
     } catch (error) {
       await connection.rollback();
+
       throw error;
     } finally {
       connection.release();
     }
   };
 
-const markMatured = ({
-  auth,
-}) =>
-  repo.markMatured({
-    tenantId:
-      auth.tenantId,
-  });
+/*
+|--------------------------------------------------------------------------
+| Mark investments matured
+|--------------------------------------------------------------------------
+*/
 
+const markMatured =
+  async ({
+    auth,
+  }) => {
+    const due =
+      await repo.findDueInvestmentsByTenant({
+        tenantId:
+          auth.tenantId,
+      });
+
+    let updatedCount =
+      0;
+
+    for (
+      const investment
+      of due
+    ) {
+      const connection =
+        await repo.db.getConnection();
+
+      try {
+        await connection.beginTransaction();
+
+        const updated =
+          await repo.markInvestmentMatured({
+            connection,
+
+            tenantId:
+              auth.tenantId,
+
+            investmentId:
+              investment.id,
+          });
+
+        if (!updated) {
+          await connection.rollback();
+          continue;
+        }
+
+        await repo.createEvent({
+          connection,
+
+          tenantId:
+            auth.tenantId,
+
+          investmentId:
+            investment.id,
+
+          actorUserId:
+            auth.userId,
+
+          eventType:
+            "investment_matured",
+
+          metadata: {
+            maturedAutomatically:
+              false,
+
+            maturityDate:
+              investment.maturity_date,
+
+            principal:
+              investment.principal,
+
+            maturityAmount:
+              investment.maturity_amount,
+
+            currency:
+              investment.currency,
+          },
+        });
+
+        await connection.commit();
+
+        updatedCount += 1;
+      } catch (error) {
+        await connection.rollback();
+        throw error;
+      } finally {
+        connection.release();
+      }
+    }
+
+    return updatedCount;
+  };
+
+const markAllMatured =
+  async () => {
+    const investments =
+      await repo.findDueInvestments();
+
+    let updatedCount = 0;
+
+    for (
+      const investment
+      of investments
+    ) {
+      const connection =
+        await repo.db.getConnection();
+
+      try {
+        await connection.beginTransaction();
+
+        const updated =
+          await repo.markInvestmentMatured({
+            connection,
+
+            tenantId:
+              investment.tenant_id,
+
+            investmentId:
+              investment.id,
+          });
+
+        if (!updated) {
+          await connection.rollback();
+          continue;
+        }
+
+        await repo.createEvent({
+          connection,
+
+          tenantId:
+            investment.tenant_id,
+
+          investmentId:
+            investment.id,
+
+          actorUserId:
+            null,
+
+          eventType:
+            "investment_matured",
+
+          metadata: {
+            maturedAutomatically:
+              true,
+
+            maturityDate:
+              investment.maturity_date,
+
+            principal:
+              investment.principal,
+
+            maturityAmount:
+              investment.maturity_amount,
+
+            currency:
+              investment.currency,
+          },
+        });
+
+        await connection.commit();
+
+        updatedCount += 1;
+      } catch (error) {
+        await connection.rollback();
+
+        console.error(
+          `[Investments] Failed to mature investment ${investment.id}:`,
+          error
+        );
+      } finally {
+        connection.release();
+      }
+    }
+
+    return updatedCount;
+  };
+
+const findDueInvestmentsByTenant =
+  async ({
+    tenantId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            id,
+            tenant_id,
+            user_id,
+            product_id,
+            principal,
+            currency,
+            maturity_amount,
+            maturity_date
+          FROM investments
+          WHERE tenant_id = ?
+            AND status = 'active'
+            AND maturity_date <= NOW()
+        `,
+        [
+          tenantId,
+        ]
+      );
+
+    return rows;
+  };
+  
+  
 module.exports = {
   createProduct,
   listProducts,
   updateProduct,
+
   subscribe,
+  createClientInvestment,
+
   listMine,
+  listAll,
+
   requestWithdrawal,
+
   listWithdrawals,
   reviewWithdrawal,
   completeWithdrawal,
+
   markMatured,
+  markAllMatured,
+
+  enrichInvestment,
+
+  findDueInvestmentsByTenant,
 };

@@ -122,7 +122,7 @@ export default function PodClaimsPage() {
             </p>
 
             <Link
-              href="/nok/pod-upload"
+              href="/nok"
               className="mt-5 inline-flex h-10 items-center justify-center rounded-[10px] bg-[#2458E8] px-5 text-[12px] font-bold text-white"
             >
               Start a claim

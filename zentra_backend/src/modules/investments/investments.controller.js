@@ -178,6 +178,52 @@ const markMatured =
     });
   });
 
+  const listAll =
+  asyncHandler(
+    async (
+      req,
+      res
+    ) => {
+      const data =
+        await service.listAll({
+          auth:
+            req.auth,
+
+          query:
+            req.query,
+        });
+
+      return sendSuccess(
+        res,
+        {
+          message:
+            "Investments retrieved successfully",
+
+          data,
+        }
+      );
+    }
+  );
+
+const createClientInvestment =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.createClientInvestment({
+        auth: req.auth,
+        body: req.body,
+      });
+
+    return sendSuccess(
+      res,
+      {
+        message:
+          "Client investment created successfully",
+        data,
+      },
+      201
+    );
+  });
+
 module.exports = {
   createProduct,
   listProducts,
@@ -189,4 +235,8 @@ module.exports = {
   reviewWithdrawal,
   completeWithdrawal,
   markMatured,
+
+  listAll,
+
+  createClientInvestment,
 };

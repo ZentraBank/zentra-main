@@ -186,14 +186,25 @@ const platformSettingsRoutes = require(
   "./modules/platform-settings/platform-settings.routes"
 );
 
+
+
 const nextOfKinRoutes =
   require(
     "./modules/nextOfKin/nextOfKin.routes"
   );
 
+const giftsRoutes =
+  require(
+    "./modules/gifts/gifts.routes"
+  );
+
 const clientsRoutes = require(
   "./modules/clients/clients.routes"
 );
+const investmentRoutes =
+  require(
+    "./modules/investments/investments.routes"
+  );
 
 const path =
   require("path");
@@ -463,6 +474,12 @@ app.use(
 );
 
 app.use(
+  "/api/v1/investments",
+  investmentRoutes
+);
+
+
+app.use(
   `${env.apiPrefix}/webhooks`,
   webhooksRoutes
 );
@@ -556,6 +573,11 @@ app.use(
 app.use(
   `${env.apiPrefix}/next-of-kin`,
   nextOfKinRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/gifts`,
+  giftsRoutes
 );
 
 app.use(
