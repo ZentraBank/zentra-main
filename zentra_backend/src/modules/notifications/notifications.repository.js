@@ -176,7 +176,297 @@ const audienceUsers = async ({ tenantId,audienceType,audienceValue }) => {
   return rows;
 };
 
+
+const createTemplate =
+  async ({
+    tenantId,
+    createdBy,
+    body,
+  }) => {
+    const id =
+      randomUUID();
+
+    await db.query(
+      `
+        INSERT INTO notification_templates (
+          id,
+          tenant_id,
+          name,
+          category,
+          title,
+          message,
+          priority,
+          action_url,
+          status,
+          created_by
+        )
+        VALUES (
+          ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+        )
+      `,
+      [
+        id,
+        tenantId,
+        body.name,
+        body.category || null,
+        body.title,
+        body.message,
+        body.priority || "normal",
+        body.actionUrl || null,
+        body.status || "active",
+        createdBy,
+      ]
+    );
+
+    return findTemplateById({
+      tenantId,
+      templateId: id,
+    });
+  };
+
+const findTemplateById =
+  async ({
+    tenantId,
+    templateId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT *
+          FROM notification_templates
+          WHERE id = ?
+            AND tenant_id = ?
+          LIMIT 1
+        `,
+        [
+          templateId,
+          tenantId,
+        ]
+      );
+
+    return rows[0] || null;
+  };
+
+const listTemplates =
+  async ({
+    tenantId,
+    status,
+  }) => {
+    const conditions = [
+      "tenant_id = ?",
+    ];
+
+    const values = [
+      tenantId,
+    ];
+
+    if (
+      status &&
+      status !== "all"
+    ) {
+      conditions.push(
+        "status = ?"
+      );
+
+      values.push(
+        status
+      );
+    }
+
+    const [rows] =
+      await db.query(
+        `
+          SELECT *
+          FROM notification_templates
+          WHERE ${conditions.join(" AND ")}
+          ORDER BY created_at DESC
+        `,
+        values
+      );
+
+    return rows;
+  };
+
+const updateTemplate =
+  async ({
+    tenantId,
+    templateId,
+    body,
+  }) => {
+    await db.query(
+      `
+        UPDATE notification_templates
+        SET
+          name = COALESCE(?, name),
+          category = COALESCE(?, category),
+          title = COALESCE(?, title),
+          message = COALESCE(?, message),
+          priority = COALESCE(?, priority),
+          action_url = COALESCE(?, action_url),
+          status = COALESCE(?, status)
+        WHERE id = ?
+          AND tenant_id = ?
+      `,
+      [
+        body.name,
+        body.category,
+        body.title,
+        body.message,
+        body.priority,
+        body.actionUrl,
+        body.status,
+        templateId,
+        tenantId,
+      ]
+    );
+
+    return findTemplateById({
+      tenantId,
+      templateId,
+    });
+  };
+
+const deleteTemplate =
+  async ({
+    tenantId,
+    templateId,
+  }) => {
+    const [result] =
+      await db.query(
+        `
+          DELETE FROM notification_templates
+          WHERE id = ?
+            AND tenant_id = ?
+        `,
+        [
+          templateId,
+          tenantId,
+        ]
+      );
+
+    return (
+      result.affectedRows === 1
+    );
+  };
+  const findTenantClientById =
+  async ({
+    tenantId,
+    userId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            u.id AS user_id,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.email
+
+          FROM tenant_memberships tm
+
+          INNER JOIN users u
+            ON u.id = tm.user_id
+
+          INNER JOIN roles r
+            ON r.id = tm.role_id
+
+          WHERE tm.tenant_id = ?
+            AND tm.user_id = ?
+            AND tm.status = 'active'
+            AND u.status = 'active'
+
+          LIMIT 1
+        `,
+        [
+          tenantId,
+          userId,
+        ]
+      );
+
+    return rows[0] || null;
+  };
+  const findTenantClientsByIds =
+  async ({
+    tenantId,
+    userIds,
+  }) => {
+    if (
+      !Array.isArray(userIds) ||
+      userIds.length === 0
+    ) {
+      return [];
+    }
+
+    const placeholders =
+      userIds
+        .map(() => "?")
+        .join(", ");
+
+    const [rows] =
+      await db.query(
+        `
+          SELECT DISTINCT
+            u.id AS user_id,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.email
+
+          FROM tenant_memberships tm
+
+          INNER JOIN users u
+            ON u.id = tm.user_id
+
+          WHERE tm.tenant_id = ?
+            AND tm.user_id IN (
+              ${placeholders}
+            )
+            AND tm.status = 'active'
+            AND u.status = 'active'
+        `,
+        [
+          tenantId,
+          ...userIds,
+        ]
+      );
+
+    return rows;
+  };
+  const findAllTenantClients =
+  async ({
+    tenantId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT DISTINCT
+            u.id AS user_id,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.email
+
+          FROM tenant_memberships tm
+
+          INNER JOIN users u
+            ON u.id = tm.user_id
+
+          WHERE tm.tenant_id = ?
+            AND tm.status = 'active'
+            AND u.status = 'active'
+        `,
+        [
+          tenantId,
+        ]
+      );
+
+    return rows;
+  };
+
+
 module.exports = {
   db,create,listByUser,findById,countUnread,markRead,
-  markAllRead,archive,audienceUsers
+  markAllRead,archive,audienceUsers,
+  createTemplate,findTemplateById,listTemplates,updateTemplate,deleteTemplate,findTenantClientById,findTenantClientsByIds,findAllTenantClients
 };

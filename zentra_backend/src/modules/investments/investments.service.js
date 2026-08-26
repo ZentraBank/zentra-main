@@ -8,14 +8,18 @@ const notificationService =
     "../notifications/notifications.service"
   );
 
+/*
+|--------------------------------------------------------------------------
+| Errors
+|--------------------------------------------------------------------------
+*/
+
 const httpError = (
   statusCode,
   message
 ) => {
   const error =
-    new Error(
-      message
-    );
+    new Error(message);
 
   error.statusCode =
     statusCode;
@@ -25,9 +29,40 @@ const httpError = (
 
 /*
 |--------------------------------------------------------------------------
-| Investment growth
+| Notification helpers
 |--------------------------------------------------------------------------
 */
+
+const formatNotificationMoney =
+  (
+    amount,
+    currency
+  ) => {
+    const numeric =
+      Number(amount);
+
+    try {
+      return new Intl.NumberFormat(
+        "en",
+        {
+          style: "currency",
+          currency,
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }
+      ).format(
+        Number.isFinite(numeric)
+          ? numeric
+          : 0
+      );
+    } catch {
+      return `${currency} ${
+        Number.isFinite(numeric)
+          ? numeric.toFixed(2)
+          : "0.00"
+      }`;
+    }
+  };
 
 const sendInvestmentNotification =
   async ({
@@ -40,6 +75,13 @@ const sendInvestmentNotification =
     metadata = null,
     priority = "normal",
   }) => {
+    if (
+      !tenantId ||
+      !userId
+    ) {
+      return;
+    }
+
     try {
       await notificationService.notifyUser({
         tenantId,
@@ -52,12 +94,74 @@ const sendInvestmentNotification =
         metadata,
       });
     } catch (error) {
+      /*
+       * Notifications must never
+       * invalidate a completed
+       * financial transaction.
+       */
       console.error(
         `[Investments] Failed to send ${notificationType} notification:`,
         error.message
       );
     }
   };
+
+const notifyTenantInvestmentManagers =
+  async ({
+    tenantId,
+    notificationType,
+    title,
+    message,
+    actionUrl,
+    metadata = null,
+    priority = "normal",
+    excludeUserId = null,
+  }) => {
+    try {
+      const managers =
+        await repo.findTenantInvestmentManagers({
+          tenantId,
+        });
+
+      for (
+        const manager
+        of managers
+      ) {
+        if (
+          excludeUserId &&
+          manager.user_id ===
+            excludeUserId
+        ) {
+          continue;
+        }
+
+        await sendInvestmentNotification({
+          tenantId,
+
+          userId:
+            manager.user_id,
+
+          notificationType,
+          title,
+          message,
+          actionUrl,
+          metadata,
+          priority,
+        });
+      }
+    } catch (error) {
+      console.error(
+        "[Investments] Failed to notify tenant investment managers:",
+        error.message
+      );
+    }
+  };
+
+/*
+|--------------------------------------------------------------------------
+| Live investment growth
+|--------------------------------------------------------------------------
+*/
 
 const enrichInvestment =
   (investment) => {
@@ -92,6 +196,41 @@ const enrichInvestment =
 
     const now =
       Date.now();
+
+    if (
+      !Number.isFinite(principal) ||
+      !Number.isFinite(expectedReturn) ||
+      !Number.isFinite(maturityAmount) ||
+      !Number.isFinite(startedAt) ||
+      !Number.isFinite(maturityDate)
+    ) {
+      return {
+        ...investment,
+
+        accrued_return:
+          "0.00",
+
+        current_value:
+          investment.principal,
+
+        growth_progress:
+          0,
+
+        days_remaining:
+          0,
+
+        growth: {
+          startedAt:
+            investment.started_at,
+
+          maturityDate:
+            investment.maturity_date,
+
+          calculationType:
+            "simple_interest",
+        },
+      };
+    }
 
     const totalDuration =
       Math.max(
@@ -198,7 +337,7 @@ const createProduct = ({
 
 const listProducts = ({
   auth,
-  query,
+  query = {},
 }) => {
   const page =
     Number(
@@ -232,7 +371,10 @@ const listProducts = ({
     limit,
 
     offset:
-      (page - 1) *
+      (
+        page -
+        1
+      ) *
       limit,
   });
 };
@@ -427,8 +569,9 @@ const createInvestmentForUser =
     /*
      * Simple interest:
      *
-     * expected return =
-     * principal × annual rate × duration
+     * return =
+     * principal × annual rate ×
+     * duration / 365
      */
     const expectedReturn =
       principal *
@@ -446,18 +589,13 @@ const createInvestmentForUser =
       expectedReturn;
 
     const connection =
-      await repo.db.getConnection();
+      await repo.db.pool.getConnection();
+
+    let investmentId;
 
     try {
       await connection.beginTransaction();
 
-      /*
-       * Debit the client's account.
-       *
-       * debitAccount should be atomic
-       * and should only succeed when
-       * sufficient funds are available.
-       */
       const debited =
         await repo.debitAccount({
           connection,
@@ -480,12 +618,11 @@ const createInvestmentForUser =
         );
       }
 
-      const investmentId =
+      investmentId =
         await repo.createInvestment({
           connection,
 
           tenantId,
-
           userId,
 
           productId:
@@ -523,7 +660,6 @@ const createInvestmentForUser =
         connection,
 
         tenantId,
-
         investmentId,
 
         actorUserId,
@@ -563,75 +699,7 @@ const createInvestmentForUser =
         },
       });
 
-      
       await connection.commit();
-
-const investment =
-  await repo.findInvestmentById({
-    tenantId,
-    investmentId,
-  });
-
-const enriched =
-  enrichInvestment(
-    investment
-  );
-
-if (createdByTenant) {
-  await sendInvestmentNotification({
-    tenantId,
-
-    userId,
-
-    notificationType:
-      "investment_created",
-
-    title:
-      "New Investment Created",
-
-    message:
-      `${product.name} has been created for you with an initial investment of ${formatNotificationMoney(
-        principal,
-        product.currency
-      )}.`,
-
-    priority:
-      "normal",
-
-    actionUrl:
-      `/investment/my-investments/${investmentId}`,
-
-    metadata: {
-      investmentId,
-
-      productId:
-        product.id,
-
-      productName:
-        product.name,
-
-      principal:
-        principal.toFixed(2),
-
-      currency:
-        product.currency,
-
-      annualRate,
-
-      durationDays,
-
-      maturityAmount:
-        maturityAmount.toFixed(2),
-
-      createdByTenant:
-        true,
-    },
-  });
-}
-
-return enriched;
-
-  
     } catch (error) {
       await connection.rollback();
 
@@ -639,39 +707,160 @@ return enriched;
     } finally {
       connection.release();
     }
-  };
 
-const formatNotificationMoney =
-  (
-    amount,
-    currency
-  ) => {
-    const numeric =
-      Number(amount);
+    /*
+     * Financial transaction has
+     * committed. Notifications
+     * happen afterwards.
+     */
 
-    try {
-      return new Intl.NumberFormat(
-        "en",
-        {
-          style:
-            "currency",
+    const investment =
+      await repo.findInvestmentById({
+        tenantId,
+        investmentId,
+      });
 
-          currency,
-
-          minimumFractionDigits:
-            2,
-
-          maximumFractionDigits:
-            2,
-        }
-      ).format(
-        numeric
+    const enriched =
+      enrichInvestment(
+        investment
       );
-    } catch {
-      return `${currency} ${numeric.toFixed(
-        2
-      )}`;
-    }
+
+    /*
+     * Client confirmation.
+     */
+    await sendInvestmentNotification({
+      tenantId,
+
+      userId,
+
+      notificationType:
+        "investment_created",
+
+      title:
+        createdByTenant
+          ? "New Investment Created"
+          : "Investment Started",
+
+      message:
+        createdByTenant
+          ? `${product.name} has been created for you with an initial investment of ${formatNotificationMoney(
+              principal,
+              product.currency
+            )}.`
+          : `Your ${product.name} investment of ${formatNotificationMoney(
+              principal,
+              product.currency
+            )} has started successfully.`,
+
+      priority:
+        "normal",
+
+      actionUrl:
+        `/investment/my-investments/${investmentId}`,
+
+      metadata: {
+        investmentId,
+
+        productId:
+          product.id,
+
+        productName:
+          product.name,
+
+        principal:
+          principal.toFixed(
+            2
+          ),
+
+        currency:
+          product.currency,
+
+        annualRate,
+
+        durationDays,
+
+        expectedReturn:
+          expectedReturn.toFixed(
+            2
+          ),
+
+        maturityAmount:
+          maturityAmount.toFixed(
+            2
+          ),
+
+        createdByTenant,
+      },
+    });
+
+    /*
+     * Tenant investment managers
+     * are notified as well.
+     *
+     * When the tenant created it,
+     * exclude the person who just
+     * performed the action.
+     */
+    await notifyTenantInvestmentManagers({
+      tenantId,
+
+      notificationType:
+        createdByTenant
+          ? "client_investment_created"
+          : "client_investment_started",
+
+      title:
+        createdByTenant
+          ? "Client Investment Created"
+          : "Client Investment Started",
+
+      message:
+        createdByTenant
+          ? `${product.name} was created for a client with ${formatNotificationMoney(
+              principal,
+              product.currency
+            )}.`
+          : `A client subscribed to ${product.name} with ${formatNotificationMoney(
+              principal,
+              product.currency
+            )}.`,
+
+      priority:
+        "normal",
+
+      actionUrl:
+        `/dashboard/investments/client-investments/${investmentId}`,
+
+      metadata: {
+        investmentId,
+
+        clientUserId:
+          userId,
+
+        productId:
+          product.id,
+
+        productName:
+          product.name,
+
+        principal:
+          principal.toFixed(
+            2
+          ),
+
+        currency:
+          product.currency,
+
+        createdByTenant,
+      },
+
+      excludeUserId:
+        createdByTenant
+          ? actorUserId
+          : null,
+    });
+
+    return enriched;
   };
 
 /*
@@ -753,8 +942,6 @@ const createClientInvestment =
         409,
         "Client tenant membership is not active"
       );
-
-      
     }
 
     return createInvestmentForUser({
@@ -779,8 +966,6 @@ const createClientInvestment =
       createdByTenant:
         true,
     });
-
-    
   };
 
 /*
@@ -792,7 +977,7 @@ const createClientInvestment =
 const listMine =
   async ({
     auth,
-    query,
+    query = {},
   }) => {
     const page =
       Number(
@@ -833,7 +1018,10 @@ const listMine =
         limit,
 
         offset:
-          (page - 1) *
+          (
+            page -
+            1
+          ) *
           limit,
       });
 
@@ -851,7 +1039,7 @@ const listMine =
 const listAll =
   async ({
     auth,
-    query,
+    query = {},
   }) => {
     const page =
       Number(
@@ -892,7 +1080,10 @@ const listAll =
         limit,
 
         offset:
-          (page - 1) *
+          (
+            page -
+            1
+          ) *
           limit,
       });
 
@@ -901,60 +1092,9 @@ const listAll =
     );
   };
 
-  const notifyTenantInvestmentManagers =
-  async ({
-    tenantId,
-    notificationType,
-    title,
-    message,
-    actionUrl,
-    metadata = null,
-    priority = "normal",
-    excludeUserId = null,
-  }) => {
-    try {
-      const managers =
-        await repo.findTenantInvestmentManagers({
-          tenantId,
-        });
-
-      for (
-        const manager
-        of managers
-      ) {
-        if (
-          excludeUserId &&
-          manager.user_id ===
-            excludeUserId
-        ) {
-          continue;
-        }
-
-        await sendInvestmentNotification({
-          tenantId,
-
-          userId:
-            manager.user_id,
-
-          notificationType,
-
-          title,
-          message,
-          priority,
-          actionUrl,
-          metadata,
-        });
-      }
-    } catch (error) {
-      console.error(
-        "[Investments] Failed to notify tenant managers:",
-        error.message
-      );
-    }
-  };
 /*
 |--------------------------------------------------------------------------
-| Request investment withdrawal
+| Client requests withdrawal
 |--------------------------------------------------------------------------
 */
 
@@ -1077,6 +1217,96 @@ const requestWithdrawal =
       },
     });
 
+    /*
+     * Client confirmation.
+     */
+    await sendInvestmentNotification({
+      tenantId:
+        auth.tenantId,
+
+      userId:
+        auth.userId,
+
+      notificationType:
+        "investment_withdrawal_requested",
+
+      title:
+        "Withdrawal Request Submitted",
+
+      message:
+        `Your withdrawal request for ${formatNotificationMoney(
+          investment.maturity_amount,
+          investment.currency
+        )} has been submitted for review.`,
+
+      priority:
+        "normal",
+
+      actionUrl:
+        `/investment/my-investments/${investment.id}`,
+
+      metadata: {
+        investmentId,
+
+        withdrawalId:
+          withdrawal.id,
+
+        destinationAccountId:
+          destination.id,
+
+        amount:
+          investment.maturity_amount,
+
+        currency:
+          investment.currency,
+      },
+    });
+
+    /*
+     * Tenant reviewers.
+     */
+    await notifyTenantInvestmentManagers({
+      tenantId:
+        auth.tenantId,
+
+      notificationType:
+        "investment_withdrawal_requested",
+
+      title:
+        "Investment Withdrawal Requested",
+
+      message:
+        `A client has requested withdrawal of ${formatNotificationMoney(
+          investment.maturity_amount,
+          investment.currency
+        )}.`,
+
+      priority:
+        "high",
+
+      actionUrl:
+        "/dashboard/investments/withdrawals",
+
+      metadata: {
+        investmentId,
+
+        withdrawalId:
+          withdrawal.id,
+
+        clientUserId:
+          auth.userId,
+
+        destinationAccountId:
+          destination.id,
+
+        amount:
+          investment.maturity_amount,
+
+        currency:
+          investment.currency,
+      },
+    });
+
     return withdrawal;
   };
 
@@ -1088,7 +1318,7 @@ const requestWithdrawal =
 
 const listWithdrawals = ({
   auth,
-  query,
+  query = {},
 }) => {
   const page =
     Number(
@@ -1122,14 +1352,17 @@ const listWithdrawals = ({
     limit,
 
     offset:
-      (page - 1) *
+      (
+        page -
+        1
+      ) *
       limit,
   });
 };
 
 /*
 |--------------------------------------------------------------------------
-| Review withdrawal
+| Tenant reviews withdrawal
 |--------------------------------------------------------------------------
 */
 
@@ -1220,6 +1453,185 @@ const reviewWithdrawal =
       },
     });
 
+    if (
+      body.status ===
+      "approved"
+    ) {
+      await sendInvestmentNotification({
+        tenantId:
+          auth.tenantId,
+
+        userId:
+          withdrawal.user_id,
+
+        notificationType:
+          "investment_withdrawal_approved",
+
+        title:
+          "Withdrawal Approved",
+
+        message:
+          `Your investment withdrawal of ${formatNotificationMoney(
+            withdrawal.amount,
+            withdrawal.currency
+          )} has been approved and is awaiting completion.`,
+
+        priority:
+          "high",
+
+        actionUrl:
+          `/investment/my-investments/${withdrawal.investment_id}`,
+
+        metadata: {
+          investmentId:
+            withdrawal.investment_id,
+
+          withdrawalId,
+
+          amount:
+            withdrawal.amount,
+
+          currency:
+            withdrawal.currency,
+        },
+      });
+
+      await notifyTenantInvestmentManagers({
+        tenantId:
+          auth.tenantId,
+
+        notificationType:
+          "investment_withdrawal_approved",
+
+        title:
+          "Investment Withdrawal Approved",
+
+        message:
+          `A withdrawal of ${formatNotificationMoney(
+            withdrawal.amount,
+            withdrawal.currency
+          )} has been approved and is awaiting completion.`,
+
+        priority:
+          "normal",
+
+        actionUrl:
+          "/dashboard/investments/withdrawals",
+
+        metadata: {
+          investmentId:
+            withdrawal.investment_id,
+
+          withdrawalId,
+
+          clientUserId:
+            withdrawal.user_id,
+
+          amount:
+            withdrawal.amount,
+
+          currency:
+            withdrawal.currency,
+        },
+
+        excludeUserId:
+          auth.userId,
+      });
+    }
+
+    if (
+      body.status ===
+      "rejected"
+    ) {
+      const reason =
+        body.rejectionReason
+          .trim();
+
+      await sendInvestmentNotification({
+        tenantId:
+          auth.tenantId,
+
+        userId:
+          withdrawal.user_id,
+
+        notificationType:
+          "investment_withdrawal_rejected",
+
+        title:
+          "Withdrawal Rejected",
+
+        message:
+          `Your investment withdrawal was rejected. Reason: ${reason}`,
+
+        priority:
+          "high",
+
+        actionUrl:
+          `/investment/my-investments/${withdrawal.investment_id}`,
+
+        metadata: {
+          investmentId:
+            withdrawal.investment_id,
+
+          withdrawalId,
+
+          rejectionReason:
+            reason,
+
+          amount:
+            withdrawal.amount,
+
+          currency:
+            withdrawal.currency,
+        },
+      });
+
+      await notifyTenantInvestmentManagers({
+        tenantId:
+          auth.tenantId,
+
+        notificationType:
+          "investment_withdrawal_rejected",
+
+        title:
+          "Investment Withdrawal Rejected",
+
+        message:
+          `A withdrawal of ${formatNotificationMoney(
+            withdrawal.amount,
+            withdrawal.currency
+          )} has been rejected.`,
+
+        priority:
+          "normal",
+
+        actionUrl:
+          "/dashboard/investments/withdrawals",
+
+        metadata: {
+          investmentId:
+            withdrawal.investment_id,
+
+          withdrawalId,
+
+          clientUserId:
+            withdrawal.user_id,
+
+          rejectionReason:
+            reason,
+
+          amount:
+            withdrawal.amount,
+
+          currency:
+            withdrawal.currency,
+        },
+
+        excludeUserId:
+          auth.userId,
+      });
+    }
+
     return updated;
   };
 
@@ -1235,12 +1647,14 @@ const completeWithdrawal =
     withdrawalId,
   }) => {
     const connection =
-      await repo.db.getConnection();
+      await repo.db.pool.getConnection();
+
+    let withdrawal;
 
     try {
       await connection.beginTransaction();
 
-      const withdrawal =
+      withdrawal =
         await repo.findWithdrawalById({
           tenantId:
             auth.tenantId,
@@ -1294,6 +1708,16 @@ const completeWithdrawal =
         throw httpError(
           404,
           "Withdrawal destination account not found"
+        );
+      }
+
+      if (
+        destination.user_id !==
+        withdrawal.user_id
+      ) {
+        throw httpError(
+          409,
+          "Withdrawal destination account does not belong to the client"
         );
       }
 
@@ -1377,25 +1801,6 @@ const completeWithdrawal =
       });
 
       await connection.commit();
-
-      return {
-        withdrawalId,
-
-        investmentId:
-          withdrawal.investment_id,
-
-        amount:
-          withdrawal.amount,
-
-        currency:
-          withdrawal.currency,
-
-        destinationAccountId:
-          withdrawal.destination_account_id,
-
-        status:
-          "completed",
-      };
     } catch (error) {
       await connection.rollback();
 
@@ -1403,11 +1808,126 @@ const completeWithdrawal =
     } finally {
       connection.release();
     }
+
+    /*
+     * Client notification.
+     */
+    await sendInvestmentNotification({
+      tenantId:
+        auth.tenantId,
+
+      userId:
+        withdrawal.user_id,
+
+      notificationType:
+        "investment_withdrawal_completed",
+
+      title:
+        "Investment Funds Credited",
+
+      message:
+        `${formatNotificationMoney(
+          withdrawal.amount,
+          withdrawal.currency
+        )} from your matured investment has been credited to your selected account.`,
+
+      priority:
+        "high",
+
+      actionUrl:
+        `/investment/my-investments/${withdrawal.investment_id}`,
+
+      metadata: {
+        investmentId:
+          withdrawal.investment_id,
+
+        withdrawalId,
+
+        destinationAccountId:
+          withdrawal.destination_account_id,
+
+        amount:
+          withdrawal.amount,
+
+        currency:
+          withdrawal.currency,
+
+        completed:
+          true,
+      },
+    });
+
+    /*
+     * Other tenant managers.
+     */
+    await notifyTenantInvestmentManagers({
+      tenantId:
+        auth.tenantId,
+
+      notificationType:
+        "investment_withdrawal_completed",
+
+      title:
+        "Investment Withdrawal Completed",
+
+      message:
+        `${formatNotificationMoney(
+          withdrawal.amount,
+          withdrawal.currency
+        )} has been credited to a client's destination account.`,
+
+      priority:
+        "normal",
+
+      actionUrl:
+        `/dashboard/investments/client-investments/${withdrawal.investment_id}`,
+
+      metadata: {
+        investmentId:
+          withdrawal.investment_id,
+
+        withdrawalId,
+
+        clientUserId:
+          withdrawal.user_id,
+
+        destinationAccountId:
+          withdrawal.destination_account_id,
+
+        amount:
+          withdrawal.amount,
+
+        currency:
+          withdrawal.currency,
+      },
+
+      excludeUserId:
+        auth.userId,
+    });
+
+    return {
+      withdrawalId,
+
+      investmentId:
+        withdrawal.investment_id,
+
+      amount:
+        withdrawal.amount,
+
+      currency:
+        withdrawal.currency,
+
+      destinationAccountId:
+        withdrawal.destination_account_id,
+
+      status:
+        "completed",
+    };
   };
 
 /*
 |--------------------------------------------------------------------------
-| Mark investments matured
+| Manual maturity check
 |--------------------------------------------------------------------------
 */
 
@@ -1429,7 +1949,10 @@ const markMatured =
       of due
     ) {
       const connection =
-        await repo.db.getConnection();
+        await repo.db.pool.getConnection();
+
+      let committed =
+        false;
 
       try {
         await connection.beginTransaction();
@@ -1447,6 +1970,7 @@ const markMatured =
 
         if (!updated) {
           await connection.rollback();
+
           continue;
         }
 
@@ -1485,31 +2009,147 @@ const markMatured =
 
         await connection.commit();
 
-        updatedCount += 1;
+        committed =
+          true;
+
+        updatedCount +=
+          1;
       } catch (error) {
-        await connection.rollback();
+        if (!committed) {
+          await connection.rollback();
+        }
+
         throw error;
       } finally {
         connection.release();
       }
+
+      /*
+       * Notify after commit.
+       */
+
+      await sendInvestmentNotification({
+        tenantId:
+          investment.tenant_id,
+
+        userId:
+          investment.user_id,
+
+        notificationType:
+          "investment_matured",
+
+        title:
+          "Investment Matured",
+
+        message:
+          `Your investment has matured at ${formatNotificationMoney(
+            investment.maturity_amount,
+            investment.currency
+          )}. You can now request a withdrawal.`,
+
+        priority:
+          "high",
+
+        actionUrl:
+          `/investment/my-investments/${investment.id}`,
+
+        metadata: {
+          investmentId:
+            investment.id,
+
+          productId:
+            investment.product_id,
+
+          principal:
+            investment.principal,
+
+          maturityAmount:
+            investment.maturity_amount,
+
+          currency:
+            investment.currency,
+
+          maturityDate:
+            investment.maturity_date,
+
+          maturedAutomatically:
+            false,
+        },
+      });
+
+      await notifyTenantInvestmentManagers({
+        tenantId:
+          investment.tenant_id,
+
+        notificationType:
+          "client_investment_matured",
+
+        title:
+          "Client Investment Matured",
+
+        message:
+          `A client investment has matured at ${formatNotificationMoney(
+            investment.maturity_amount,
+            investment.currency
+          )}.`,
+
+        priority:
+          "normal",
+
+        actionUrl:
+          `/dashboard/investments/client-investments/${investment.id}`,
+
+        metadata: {
+          investmentId:
+            investment.id,
+
+          clientUserId:
+            investment.user_id,
+
+          productId:
+            investment.product_id,
+
+          maturityAmount:
+            investment.maturity_amount,
+
+          currency:
+            investment.currency,
+
+          maturedAutomatically:
+            false,
+        },
+
+        excludeUserId:
+          auth.userId,
+      });
     }
 
     return updatedCount;
   };
+
+/*
+|--------------------------------------------------------------------------
+| Automatic maturity check
+|--------------------------------------------------------------------------
+*/
 
 const markAllMatured =
   async () => {
     const investments =
       await repo.findDueInvestments();
 
-    let updatedCount = 0;
+    let updatedCount =
+      0;
 
     for (
       const investment
       of investments
     ) {
       const connection =
-        await repo.db.getConnection();
+        await repo.db.pool.getConnection();
+
+      let committed =
+        false;
 
       try {
         await connection.beginTransaction();
@@ -1527,6 +2167,7 @@ const markAllMatured =
 
         if (!updated) {
           await connection.rollback();
+
           continue;
         }
 
@@ -1565,52 +2206,136 @@ const markAllMatured =
 
         await connection.commit();
 
-        updatedCount += 1;
+        committed =
+          true;
+
+        updatedCount +=
+          1;
       } catch (error) {
-        await connection.rollback();
+        if (!committed) {
+          await connection.rollback();
+        }
 
         console.error(
           `[Investments] Failed to mature investment ${investment.id}:`,
           error
         );
+
+        continue;
       } finally {
         connection.release();
       }
+
+      /*
+       * Client notification.
+       */
+
+      await sendInvestmentNotification({
+        tenantId:
+          investment.tenant_id,
+
+        userId:
+          investment.user_id,
+
+        notificationType:
+          "investment_matured",
+
+        title:
+          "Investment Matured",
+
+        message:
+          `Your investment has matured at ${formatNotificationMoney(
+            investment.maturity_amount,
+            investment.currency
+          )}. You can now request a withdrawal.`,
+
+        priority:
+          "high",
+
+        actionUrl:
+          `/investment/my-investments/${investment.id}`,
+
+        metadata: {
+          investmentId:
+            investment.id,
+
+          productId:
+            investment.product_id,
+
+          principal:
+            investment.principal,
+
+          maturityAmount:
+            investment.maturity_amount,
+
+          currency:
+            investment.currency,
+
+          maturityDate:
+            investment.maturity_date,
+
+          maturedAutomatically:
+            true,
+        },
+      });
+
+      /*
+       * Tenant notification.
+       */
+
+      await notifyTenantInvestmentManagers({
+        tenantId:
+          investment.tenant_id,
+
+        notificationType:
+          "client_investment_matured",
+
+        title:
+          "Client Investment Matured",
+
+        message:
+          `A client investment has automatically matured at ${formatNotificationMoney(
+            investment.maturity_amount,
+            investment.currency
+          )}.`,
+
+        priority:
+          "normal",
+
+        actionUrl:
+          `/dashboard/investments/client-investments/${investment.id}`,
+
+        metadata: {
+          investmentId:
+            investment.id,
+
+          clientUserId:
+            investment.user_id,
+
+          productId:
+            investment.product_id,
+
+          maturityAmount:
+            investment.maturity_amount,
+
+          currency:
+            investment.currency,
+
+          maturedAutomatically:
+            true,
+        },
+      });
     }
 
     return updatedCount;
   };
 
-const findDueInvestmentsByTenant =
-  async ({
-    tenantId,
-  }) => {
-    const [rows] =
-      await db.query(
-        `
-          SELECT
-            id,
-            tenant_id,
-            user_id,
-            product_id,
-            principal,
-            currency,
-            maturity_amount,
-            maturity_date
-          FROM investments
-          WHERE tenant_id = ?
-            AND status = 'active'
-            AND maturity_date <= NOW()
-        `,
-        [
-          tenantId,
-        ]
-      );
+/*
+|--------------------------------------------------------------------------
+| Exports
+|--------------------------------------------------------------------------
+*/
 
-    return rows;
-  };
-  
-  
 module.exports = {
   createProduct,
   listProducts,
@@ -1632,6 +2357,4 @@ module.exports = {
   markAllMatured,
 
   enrichInvestment,
-
-  findDueInvestmentsByTenant,
 };

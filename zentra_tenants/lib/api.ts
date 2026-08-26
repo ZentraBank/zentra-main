@@ -37,6 +37,10 @@ export const setAccessToken = (
   accessToken = token;
 };
 
+export const getAccessToken = () => {
+  return accessToken;
+};
+
 export const setSessionListener = (
   listener: (
     session:

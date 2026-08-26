@@ -308,7 +308,7 @@ export default function ClientInvestmentsPage() {
         <header className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <Link
-              href="/dashboard/investments"
+              href="/investments"
               className="grid h-9 w-9 place-items-center rounded-full bg-white text-black/55 shadow-sm"
             >
               <ArrowLeft
@@ -345,7 +345,7 @@ export default function ClientInvestmentsPage() {
             </button>
 
             <Link
-              href="/dashboard/investments/create"
+              href="/investments/create"
               className="flex h-[42px] items-center gap-2 rounded-[10px] bg-[#2458E8] px-4 text-[11px] font-bold text-white"
             >
               <Plus size={15} />
@@ -1043,7 +1043,7 @@ function InvestmentDetailsPanel({
       </div>
 
       <Link
-        href={`/dashboard/investments/client-investments/${encodeURIComponent(
+        href={`/investments/client-investments/${encodeURIComponent(
           investment.id,
         )}`}
         className="mt-7 flex h-[44px] items-center justify-center gap-2 rounded-[11px] bg-[#2458E8] text-[11px] font-bold text-white"

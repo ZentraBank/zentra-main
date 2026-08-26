@@ -1,37 +1,118 @@
-const configuredTenant =
-  process.env.NEXT_PUBLIC_TENANT_SLUG ??
-  process.env.NEXT_PUBLIC_TENANT_CODE;
+import {
+  io,
+  type Socket,
+} from "socket.io-client";
 
-function isIpAddress(hostname: string): boolean {
-  const ipv4Pattern =
-    /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/;
+import {
+  authToken,
+} from "@/lib/auth-token";
 
-  return ipv4Pattern.test(hostname);
+const SOCKET_URL = (
+  process.env.NEXT_PUBLIC_SOCKET_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "http://localhost:5000"
+)
+  .replace(
+    /\/api\/v1\/?$/,
+    "",
+  )
+  .replace(
+    /\/$/,
+    "",
+  );
+
+let socket:
+  | Socket
+  | null = null;
+
+export function getSocket() {
+  const token =
+    authToken.get();
+
+  if (!token) {
+    throw new Error(
+      "Authentication token is unavailable.",
+    );
+  }
+
+  if (!socket) {
+    socket = io(
+      SOCKET_URL,
+      {
+        autoConnect:
+          false,
+
+        withCredentials:
+          true,
+
+        transports: [
+          "websocket",
+          "polling",
+        ],
+
+        auth: {
+          accessToken:
+            token,
+        },
+      },
+    );
+
+    return socket;
+  }
+
+  socket.auth = {
+    accessToken:
+      token,
+  };
+
+  return socket;
 }
 
-export function getTenantSlug(): string {
-  if (configuredTenant?.trim()) {
-    return configuredTenant.trim();
+export function connectSocket() {
+  const activeSocket =
+    getSocket();
+
+  if (
+    !activeSocket.connected
+  ) {
+    activeSocket.connect();
   }
 
-  if (typeof window !== "undefined") {
-    const host = window.location.hostname.toLowerCase();
+  return activeSocket;
+}
 
-    const isLocalHost =
-      host === "localhost" ||
-      host === "127.0.0.1" ||
-      host === "::1";
+export function reconnectSocket() {
+  const activeSocket =
+    getSocket();
 
-    if (!isLocalHost && !isIpAddress(host)) {
-      const parts = host.split(".");
-
-      // Example:
-      // bank-a.zentrabank.com -> bank-a
-      if (parts.length > 2 && parts[0] !== "www") {
-        return parts[0];
-      }
-    }
+  if (
+    activeSocket.connected
+  ) {
+    activeSocket.disconnect();
   }
 
-  return "zentra-bank";
+  activeSocket.auth = {
+    accessToken:
+      authToken.get(),
+  };
+
+  activeSocket.connect();
+
+  return activeSocket;
+}
+
+export function disconnectSocket() {
+  if (!socket) {
+    return;
+  }
+
+  socket.disconnect();
+
+  socket = null;
+}
+
+export function isSocketConnected() {
+  return Boolean(
+    socket?.connected,
+  );
 }

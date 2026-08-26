@@ -613,26 +613,38 @@ const findTenantClientByUserId =
             u.middle_name,
             u.last_name,
             u.email,
-            u.status AS user_status,
 
-            tm.id AS membership_id,
-            tm.status AS membership_status,
+            u.status
+              AS user_status,
 
-            r.id AS role_id,
-            r.name AS role_name,
-            r.code AS role_code
+            tm.id
+              AS membership_id,
+
+            tm.status
+              AS membership_status,
+
+            r.id
+              AS role_id,
+
+            r.name
+              AS role_name,
+
+            r.code
+              AS role_code
 
           FROM tenant_memberships tm
 
           INNER JOIN users u
-            ON u.id = tm.user_id
+            ON u.id =
+              tm.user_id
 
           INNER JOIN roles r
-            ON r.id = tm.role_id
+            ON r.id =
+              tm.role_id
 
           WHERE tm.tenant_id = ?
             AND tm.user_id = ?
-            AND u.deleted_at IS NULL
+            
 
           LIMIT 1
         `,
@@ -668,7 +680,7 @@ const findTenantClientByUserId =
     return rows;
   };
 
-  const findTenantInvestmentManagers =
+ const findTenantInvestmentManagers =
   async ({
     tenantId,
   }) => {
@@ -692,13 +704,12 @@ const findTenantClientByUserId =
             ON p.id =
               rp.permission_id
 
-          WHERE
-            tm.tenant_id = ?
+          WHERE tm.tenant_id = ?
             AND tm.status = 'active'
-            AND r.is_active = 1
             AND p.code IN (
               'investments.manage',
-              'investments.withdrawals.review'
+              'investments.withdrawals.review',
+              'investments.withdrawals.complete'
             )
         `,
         [
@@ -709,7 +720,46 @@ const findTenantClientByUserId =
     return rows;
   };
 
-  const markInvestmentMatured =
+const findDueInvestmentsByTenant =
+  async ({
+    tenantId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            id,
+            tenant_id,
+            user_id,
+            product_id,
+            source_account_id,
+            principal,
+            currency,
+            annual_rate,
+            duration_days,
+            expected_return,
+            maturity_amount,
+            status,
+            started_at,
+            maturity_date
+
+          FROM investments
+
+          WHERE tenant_id = ?
+            AND status = 'active'
+            AND maturity_date <= NOW()
+
+          ORDER BY maturity_date ASC
+        `,
+        [
+          tenantId,
+        ]
+      );
+
+    return rows;
+  };
+
+const markInvestmentMatured =
   async ({
     connection = db,
     tenantId,
@@ -719,12 +769,14 @@ const findTenantClientByUserId =
       await connection.query(
         `
           UPDATE investments
+
           SET
             status = 'matured',
             matured_at = COALESCE(
               matured_at,
               NOW()
             )
+
           WHERE id = ?
             AND tenant_id = ?
             AND status = 'active'
@@ -765,5 +817,6 @@ module.exports = {
   findDueInvestments,
 markInvestmentMatured,
   findTenantInvestmentManagers,
+  findDueInvestmentsByTenant,
 
 };

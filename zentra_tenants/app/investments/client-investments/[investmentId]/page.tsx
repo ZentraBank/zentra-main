@@ -171,7 +171,7 @@ export default function ClientInvestmentDetailsPage() {
           </p>
 
           <Link
-            href="/dashboard/investments/client-investments"
+            href="/investments/client-investments"
             className="mt-5 inline-flex h-[40px] items-center justify-center rounded-[10px] bg-[#2458E8] px-5 text-[11px] font-bold text-white"
           >
             Back to investments
@@ -222,7 +222,7 @@ export default function ClientInvestmentDetailsPage() {
         <header className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div className="flex items-center gap-4">
             <Link
-              href="/dashboard/investments/client-investments"
+              href="/investments/client-investments"
               className="grid h-9 w-9 place-items-center rounded-full bg-white text-black/55 shadow-sm"
             >
               <ArrowLeft

@@ -73,7 +73,7 @@ const donationsRoutes = require(
 );
 
 const chatRoutes = require(
-  "./modules/chats/chat.routes"
+  "./modules/chat/chat.routes"
 );
 
 // const loansRoutes = require(
@@ -404,7 +404,7 @@ app.use(
 );
 
 app.use(
-  `${env.apiPrefix}/chats`,
+  `${env.apiPrefix}/chat`,
   chatRoutes
 );
 

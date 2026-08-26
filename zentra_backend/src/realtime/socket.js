@@ -11,7 +11,94 @@ const authRepository =
     "../modules/auth/auth.repository"
   );
 
+const chatRepository =
+  require(
+    "../modules/chat/chat.repository"
+  );
+
 let io = null;
+
+/*
+|--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+*/
+
+const conversationRoom = (
+  conversationId
+) =>
+  `conversation:${conversationId}`;
+
+const userRoom = (
+  userId
+) =>
+  `user:${userId}`;
+
+const tenantRoom = (
+  tenantId
+) =>
+  `tenant:${tenantId}`;
+
+/*
+|--------------------------------------------------------------------------
+| Verify access to a conversation
+|--------------------------------------------------------------------------
+*/
+
+const canAccessConversation =
+  async ({
+    socket,
+    conversationId,
+  }) => {
+    const {
+      userId,
+      tenantId,
+      roleCode,
+    } =
+      socket.auth;
+
+    const conversation =
+      await chatRepository.findConversationById({
+        tenantId,
+        conversationId,
+      });
+
+    if (!conversation) {
+      return false;
+    }
+
+    /*
+     * A client may only join their
+     * own conversation.
+     */
+    if (
+      roleCode === "client"
+    ) {
+      return (
+        conversation.client_user_id ===
+        userId
+      );
+    }
+
+    /*
+     * Tenant-side authenticated
+     * members can join conversations
+     * belonging to their tenant.
+     *
+     * Route permissions still control
+     * who can read/send via the API.
+     */
+    return (
+      conversation.tenant_id ===
+      tenantId
+    );
+  };
+
+/*
+|--------------------------------------------------------------------------
+| Initialise Socket.IO
+|--------------------------------------------------------------------------
+*/
 
 const initialiseSocket = (
   httpServer,
@@ -120,35 +207,290 @@ const initialiseSocket = (
     }
   );
 
+  /*
+  |--------------------------------------------------------------------------
+  | Connection
+  |--------------------------------------------------------------------------
+  */
+
   io.on(
     "connection",
-    (socket) => {
+    (
+      socket
+    ) => {
       const {
         userId,
         tenantId,
+        roleCode,
       } =
         socket.auth;
 
       /*
-       * Private room for a
-       * particular user.
+       * Private user room.
        */
       socket.join(
-        `user:${userId}`
+        userRoom(
+          userId
+        )
       );
 
       /*
-       * Tenant-level room will be
-       * useful later for tenant-wide
-       * live events.
+       * Tenant-wide room.
        */
       socket.join(
-        `tenant:${tenantId}`
+        tenantRoom(
+          tenantId
+        )
       );
 
       console.log(
-        `Realtime connected: ${userId}`
+        `Realtime connected: ${userId} (${roleCode})`
       );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Join chat conversation
+      |--------------------------------------------------------------------------
+      */
+
+      socket.on(
+        "chat:conversation:join",
+        async (
+          payload = {},
+          callback
+        ) => {
+          try {
+            const conversationId =
+              String(
+                payload.conversationId ||
+                ""
+              ).trim();
+
+            if (
+              !conversationId
+            ) {
+              throw new Error(
+                "Conversation ID is required"
+              );
+            }
+
+            const allowed =
+              await canAccessConversation({
+                socket,
+                conversationId,
+              });
+
+            if (!allowed) {
+              throw new Error(
+                "You do not have access to this conversation"
+              );
+            }
+
+            socket.join(
+              conversationRoom(
+                conversationId
+              )
+            );
+
+            if (
+              typeof callback ===
+              "function"
+            ) {
+              callback({
+                success:
+                  true,
+
+                conversationId,
+              });
+            }
+          } catch (error) {
+            if (
+              typeof callback ===
+              "function"
+            ) {
+              callback({
+                success:
+                  false,
+
+                message:
+                  error?.message ||
+                  "Unable to join conversation",
+              });
+
+              return;
+            }
+
+            socket.emit(
+              "chat:error",
+              {
+                message:
+                  error?.message ||
+                  "Unable to join conversation",
+              }
+            );
+          }
+        }
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Leave chat conversation
+      |--------------------------------------------------------------------------
+      */
+
+      socket.on(
+        "chat:conversation:leave",
+        (
+          payload = {},
+          callback
+        ) => {
+          const conversationId =
+            String(
+              payload.conversationId ||
+              ""
+            ).trim();
+
+          if (
+            conversationId
+          ) {
+            socket.leave(
+              conversationRoom(
+                conversationId
+              )
+            );
+          }
+
+          if (
+            typeof callback ===
+            "function"
+          ) {
+            callback({
+              success:
+                true,
+
+              conversationId,
+            });
+          }
+        }
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Typing
+      |--------------------------------------------------------------------------
+      */
+
+      socket.on(
+        "chat:typing:start",
+        async (
+          payload = {}
+        ) => {
+          try {
+            const conversationId =
+              String(
+                payload.conversationId ||
+                ""
+              ).trim();
+
+            if (
+              !conversationId
+            ) {
+              return;
+            }
+
+            const allowed =
+              await canAccessConversation({
+                socket,
+                conversationId,
+              });
+
+            if (!allowed) {
+              return;
+            }
+
+            socket
+              .to(
+                conversationRoom(
+                  conversationId
+                )
+              )
+              .emit(
+                "chat:typing:start",
+                {
+                  conversationId,
+
+                  userId,
+
+                  roleCode,
+                }
+              );
+          } catch (error) {
+            console.error(
+              "[Chat] Typing start failed:",
+              error.message
+            );
+          }
+        }
+      );
+
+      socket.on(
+        "chat:typing:stop",
+        async (
+          payload = {}
+        ) => {
+          try {
+            const conversationId =
+              String(
+                payload.conversationId ||
+                ""
+              ).trim();
+
+            if (
+              !conversationId
+            ) {
+              return;
+            }
+
+            const allowed =
+              await canAccessConversation({
+                socket,
+                conversationId,
+              });
+
+            if (!allowed) {
+              return;
+            }
+
+            socket
+              .to(
+                conversationRoom(
+                  conversationId
+                )
+              )
+              .emit(
+                "chat:typing:stop",
+                {
+                  conversationId,
+
+                  userId,
+
+                  roleCode,
+                }
+              );
+          } catch (error) {
+            console.error(
+              "[Chat] Typing stop failed:",
+              error.message
+            );
+          }
+        }
+      );
+
+      /*
+      |--------------------------------------------------------------------------
+      | Disconnect
+      |--------------------------------------------------------------------------
+      */
 
       socket.on(
         "disconnect",
@@ -164,57 +506,107 @@ const initialiseSocket = (
   return io;
 };
 
-const getIo = () => {
-  if (!io) {
-    throw new Error(
-      "Socket.IO has not been initialised"
-    );
-  }
+/*
+|--------------------------------------------------------------------------
+| Socket access
+|--------------------------------------------------------------------------
+*/
 
-  return io;
-};
+const getIo =
+  () => {
+    if (!io) {
+      throw new Error(
+        "Socket.IO has not been initialised"
+      );
+    }
 
-const emitToUser = (
-  userId,
-  event,
-  payload
-) => {
-  if (!io) {
-    return;
-  }
+    return io;
+  };
 
-  io
-    .to(
-      `user:${userId}`
-    )
-    .emit(
-      event,
-      payload
-    );
-};
+/*
+|--------------------------------------------------------------------------
+| Emitters
+|--------------------------------------------------------------------------
+*/
 
-const emitToTenant = (
-  tenantId,
-  event,
-  payload
-) => {
-  if (!io) {
-    return;
-  }
+const emitToUser =
+  (
+    userId,
+    event,
+    payload
+  ) => {
+    if (!io) {
+      return;
+    }
 
-  io
-    .to(
-      `tenant:${tenantId}`
-    )
-    .emit(
-      event,
-      payload
-    );
-};
+    io
+      .to(
+        userRoom(
+          userId
+        )
+      )
+      .emit(
+        event,
+        payload
+      );
+  };
+
+const emitToTenant =
+  (
+    tenantId,
+    event,
+    payload
+  ) => {
+    if (!io) {
+      return;
+    }
+
+    io
+      .to(
+        tenantRoom(
+          tenantId
+        )
+      )
+      .emit(
+        event,
+        payload
+      );
+  };
+
+const emitToConversation =
+  (
+    conversationId,
+    event,
+    payload
+  ) => {
+    if (!io) {
+      return;
+    }
+
+    io
+      .to(
+        conversationRoom(
+          conversationId
+        )
+      )
+      .emit(
+        event,
+        payload
+      );
+  };
+
+/*
+|--------------------------------------------------------------------------
+| Exports
+|--------------------------------------------------------------------------
+*/
 
 module.exports = {
   initialiseSocket,
+
   getIo,
+
   emitToUser,
   emitToTenant,
+  emitToConversation,
 };

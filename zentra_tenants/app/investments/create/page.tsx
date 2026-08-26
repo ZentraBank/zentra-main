@@ -596,7 +596,7 @@ export default function CreateClientInvestmentPage() {
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
-              href="/dashboard/investments"
+              href="/investments"
               className="grid h-9 w-9 place-items-center rounded-full bg-white text-black/55 shadow-sm"
             >
               <ArrowLeft
@@ -1159,7 +1159,7 @@ export default function CreateClientInvestmentPage() {
                 </div>
 
                 <Link
-                  href="/dashboard/investments/client-investments"
+                  href="/investments/client-investments"
                   className="mt-4 flex h-[38px] items-center justify-center rounded-[9px] bg-white/10 text-[10px] font-bold text-white"
                 >
                   View Client

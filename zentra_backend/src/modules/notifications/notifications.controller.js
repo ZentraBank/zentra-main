@@ -94,6 +94,92 @@ const broadcast = asyncHandler(async (req, res) => {
   });
 });
 
+const createTemplate =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.createTemplate({
+        auth: req.auth,
+        body: req.body,
+      });
+
+    return sendSuccess(
+      res,
+      {
+        message:
+          "Notification template created successfully",
+        data,
+      },
+      201
+    );
+  });
+
+const listTemplates =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.listTemplates({
+        auth: req.auth,
+        query: req.query,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Notification templates retrieved successfully",
+      data,
+    });
+  });
+
+const updateTemplate =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.updateTemplate({
+        auth: req.auth,
+        templateId:
+          req.params.templateId,
+        body: req.body,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Notification template updated successfully",
+      data,
+    });
+  });
+
+const deleteTemplate =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.deleteTemplate({
+        auth: req.auth,
+        templateId:
+          req.params.templateId,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Notification template deleted successfully",
+      data,
+    });
+  });
+
+const sendToClients =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.sendToClients({
+        auth: req.auth,
+        body: req.body,
+      });
+
+    return sendSuccess(
+      res,
+      {
+        message:
+          "Notification sent successfully",
+        data,
+      },
+      201
+    );
+  });
+
 module.exports = {
   listMine,
   unreadCount,
@@ -101,4 +187,9 @@ module.exports = {
   markRead,
   archive,
   broadcast,
+  createTemplate,
+  listTemplates,
+  updateTemplate,
+  deleteTemplate,
+  sendToClients
 };

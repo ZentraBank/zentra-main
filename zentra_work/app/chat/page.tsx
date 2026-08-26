@@ -1,160 +1,1048 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, LoaderCircle, MessageCircle, Plus, RefreshCw } from "lucide-react";
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import { chatService } from "@/services/chat.service";
-import { useAuthStore } from "@/store/auth.store";
-import type { ChatConversation, ChatMessage } from "@/types/chat";
 
-export default function CustomerCareChatPage() {
-  const user = useAuthStore((state) => state.user);
-  const [conversation, setConversation] = useState<ChatConversation | null>(null);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [message, setMessage] = useState("");
-  const [subject, setSubject] = useState("Account support");
-  const [firstMessage, setFirstMessage] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [error, setError] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+import {
+  ArrowLeft,
+  CheckCheck,
+  Circle,
+  Loader2,
+  Send,
+  X,
+} from "lucide-react";
 
-  const loadMessages = useCallback(async (conversationId: string, quiet = false) => {
-    try {
-      if (!quiet) setError("");
-      const result = await chatService.messages(conversationId);
-      setMessages(result);
-    } catch (err) {
-      if (!quiet) setError(err instanceof Error ? err.message : "Unable to load messages");
-    }
-  }, []);
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-  const loadConversation = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
-      const conversations = await chatService.conversations("open");
-      const active = conversations[0] ?? null;
-      setConversation(active);
-      if (active) await loadMessages(active.id);
-      else setMessages([]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load customer care chat");
-    } finally {
-      setLoading(false);
-    }
-  }, [loadMessages]);
+import {
+  chatService,
+} from "@/services/chat.service";
 
-  useEffect(() => { void loadConversation(); }, [loadConversation]);
+import {
+  connectSocket,
+} from "@/lib/socket";
+
+import type {
+  ClientChatConversation,
+  ClientChatMessage,
+} from "@/services/chat.service";
+
+export default function ClientChatPage() {
+  const [
+    conversation,
+    setConversation,
+  ] =
+    useState<
+      ClientChatConversation | null
+    >(null);
+
+  const [
+    messages,
+    setMessages,
+  ] =
+    useState<
+      ClientChatMessage[]
+    >([]);
+
+  const [
+    message,
+    setMessage,
+  ] =
+    useState("");
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(true);
+
+  const [
+    sending,
+    setSending,
+  ] =
+    useState(false);
+
+  const [
+    connected,
+    setConnected,
+  ] =
+    useState(false);
+
+  const [
+    tenantTyping,
+    setTenantTyping,
+  ] =
+    useState(false);
+
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
+
+  const bottomRef =
+    useRef<HTMLDivElement | null>(
+      null,
+    );
+
+  const typingTimer =
+    useRef<
+      ReturnType<
+        typeof setTimeout
+      > | null
+    >(null);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Add unique message
+  |--------------------------------------------------------------------------
+  */
+
+  const addMessage =
+    useCallback(
+      (
+        incoming:
+          ClientChatMessage,
+      ) => {
+        setMessages(
+          (current) => {
+            if (
+              current.some(
+                (item) =>
+                  item.id ===
+                  incoming.id,
+              )
+            ) {
+              return current;
+            }
+
+            return [
+              ...current,
+              incoming,
+            ];
+          },
+        );
+      },
+      [],
+    );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Load
+  |--------------------------------------------------------------------------
+  */
+
+  const load =
+    useCallback(
+      async () => {
+        setLoading(true);
+        setError("");
+
+        try {
+          const result =
+            await chatService.listMyMessages({
+              page: 1,
+              pageSize: 100,
+            });
+
+          setConversation(
+            result.conversation,
+          );
+
+          setMessages(
+            result.messages,
+          );
+
+          const last =
+            result.messages[
+              result.messages.length -
+                1
+            ];
+
+          if (last) {
+            await chatService.markRead(
+              last.id,
+            );
+          }
+        } catch (err) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load chat.",
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      [],
+    );
 
   useEffect(() => {
-    if (!conversation) return;
-    const timer = window.setInterval(() => void loadMessages(conversation.id, true), 5000);
-    return () => window.clearInterval(timer);
-  }, [conversation, loadMessages]);
+    void load();
+  }, [load]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  /*
+  |--------------------------------------------------------------------------
+  | Scroll
+  |--------------------------------------------------------------------------
+  */
 
-  async function startConversation(event: FormEvent) {
-    event.preventDefault();
-    if (!firstMessage.trim()) return;
+  useEffect(() => {
+    bottomRef.current
+      ?.scrollIntoView({
+        behavior:
+          loading
+            ? "auto"
+            : "smooth",
+      });
+  }, [
+    messages,
+    tenantTyping,
+    loading,
+  ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Realtime
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    if (
+      !conversation?.id
+    ) {
+      return;
+    }
+
+    let socket;
+
     try {
-      setSending(true);
-      setError("");
-      const result = await chatService.start(subject.trim() || "Account support", firstMessage.trim());
-      const active: ChatConversation = {
-        id: result.conversation_id,
-        user_id: String(user?.id ?? ""),
-        subject: subject.trim() || "Account support",
-        status: "open",
-        created_at: new Date().toISOString(),
+      socket =
+        connectSocket();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to connect to realtime chat.",
+      );
+
+      return;
+    }
+
+    const conversationId =
+      conversation.id;
+
+    const handleConnect =
+      () => {
+        setConnected(
+          true,
+        );
+
+        socket.emit(
+          "chat:conversation:join",
+          {
+            conversationId,
+          },
+          (
+            result: {
+              success:
+                boolean;
+
+              message?:
+                string;
+            },
+          ) => {
+            if (
+              !result?.success
+            ) {
+              setError(
+                result?.message ||
+                  "Unable to join chat.",
+              );
+            }
+          },
+        );
       };
-      setConversation(active);
-      setFirstMessage("");
-      await loadMessages(active.id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to start conversation");
-    } finally {
-      setSending(false);
-    }
-  }
 
-  async function sendMessage(event: FormEvent) {
-    event.preventDefault();
-    if (!conversation || !message.trim() || conversation.status === "closed") return;
-    const text = message.trim();
-    setMessage("");
-    try {
-      setSending(true);
-      setError("");
-      await chatService.send(conversation.id, text);
-      await loadMessages(conversation.id);
-    } catch (err) {
-      setMessage(text);
-      setError(err instanceof Error ? err.message : "Unable to send message");
-    } finally {
-      setSending(false);
+    const handleDisconnect =
+      () => {
+        setConnected(
+          false,
+        );
+      };
+
+    const handleNewMessage =
+      async (
+        payload: {
+          conversationId:
+            string;
+
+          message:
+            ClientChatMessage;
+        },
+      ) => {
+        if (
+          payload
+            .conversationId !==
+          conversationId
+        ) {
+          return;
+        }
+
+        addMessage(
+          payload.message,
+        );
+
+        if (
+          payload.message
+            .sender_type ===
+          "tenant"
+        ) {
+          try {
+            await chatService.markRead(
+              payload.message.id,
+            );
+          } catch {
+            // Don't break chat because
+            // a read receipt failed.
+          }
+        }
+      };
+
+    const handleTypingStart =
+      (
+        payload: {
+          conversationId:
+            string;
+
+          roleCode?:
+            string;
+        },
+      ) => {
+        if (
+          payload
+            .conversationId ===
+            conversationId &&
+          payload.roleCode !==
+            "client"
+        ) {
+          setTenantTyping(
+            true,
+          );
+        }
+      };
+
+    const handleTypingStop =
+      (
+        payload: {
+          conversationId:
+            string;
+        },
+      ) => {
+        if (
+          payload
+            .conversationId ===
+          conversationId
+        ) {
+          setTenantTyping(
+            false,
+          );
+        }
+      };
+
+    socket.on(
+      "connect",
+      handleConnect,
+    );
+
+    socket.on(
+      "disconnect",
+      handleDisconnect,
+    );
+
+    socket.on(
+      "chat:message:new",
+      handleNewMessage,
+    );
+
+    socket.on(
+      "chat:typing:start",
+      handleTypingStart,
+    );
+
+    socket.on(
+      "chat:typing:stop",
+      handleTypingStop,
+    );
+
+    if (
+      socket.connected
+    ) {
+      handleConnect();
     }
+
+    return () => {
+      socket.emit(
+        "chat:conversation:leave",
+        {
+          conversationId,
+        },
+      );
+
+      socket.off(
+        "connect",
+        handleConnect,
+      );
+
+      socket.off(
+        "disconnect",
+        handleDisconnect,
+      );
+
+      socket.off(
+        "chat:message:new",
+        handleNewMessage,
+      );
+
+      socket.off(
+        "chat:typing:start",
+        handleTypingStart,
+      );
+
+      socket.off(
+        "chat:typing:stop",
+        handleTypingStop,
+      );
+    };
+  }, [
+    conversation?.id,
+    addMessage,
+  ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Typing
+  |--------------------------------------------------------------------------
+  */
+
+  const handleTyping =
+    (
+      value: string,
+    ) => {
+      setMessage(
+        value,
+      );
+
+      if (
+        !conversation?.id
+      ) {
+        return;
+      }
+
+      try {
+        const socket =
+          connectSocket();
+
+        socket.emit(
+          "chat:typing:start",
+          {
+            conversationId:
+              conversation.id,
+          },
+        );
+
+        if (
+          typingTimer.current
+        ) {
+          clearTimeout(
+            typingTimer.current,
+          );
+        }
+
+        typingTimer.current =
+          setTimeout(
+            () => {
+              socket.emit(
+                "chat:typing:stop",
+                {
+                  conversationId:
+                    conversation.id,
+                },
+              );
+            },
+            900,
+          );
+      } catch {
+        // Chat sending via REST
+        // still works.
+      }
+    };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Send
+  |--------------------------------------------------------------------------
+  */
+
+  const handleSubmit =
+    async (
+      event:
+        FormEvent<HTMLFormElement>,
+    ) => {
+      event.preventDefault();
+
+      const trimmed =
+        message.trim();
+
+      if (
+        !trimmed ||
+        sending
+      ) {
+        return;
+      }
+
+      if (
+        conversation?.status ===
+        "archived"
+      ) {
+        setError(
+          "This conversation has been archived.",
+        );
+
+        return;
+      }
+
+      setSending(
+        true,
+      );
+
+      setError("");
+
+      try {
+        const created =
+          await chatService.sendMessage(
+            trimmed,
+          );
+
+        addMessage(
+          created,
+        );
+
+        setMessage(
+          "",
+        );
+
+        if (
+          conversation
+        ) {
+          try {
+            const socket =
+              connectSocket();
+
+            socket.emit(
+              "chat:typing:stop",
+              {
+                conversationId:
+                  conversation.id,
+              },
+            );
+          } catch {
+            // ignored
+          }
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to send message.",
+        );
+      } finally {
+        setSending(
+          false,
+        );
+      }
+    };
+
+  const grouped =
+    useMemo(
+      () =>
+        groupMessagesByDay(
+          messages,
+        ),
+      [messages],
+    );
+
+  if (loading) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#13813d]">
+        <Loader2
+          size={30}
+          className="animate-spin text-white"
+        />
+      </main>
+    );
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f7f7] px-4 pb-4 pt-12 text-[#3f3f3f]" style={{ backgroundImage: "url('/images/chat-bg.png')", backgroundSize: "cover", backgroundPosition: "bottom center", backgroundRepeat: "no-repeat" }}>
-      <section className="mx-auto flex h-[calc(100vh-64px)] w-full max-w-[430px] flex-col">
-        <header className="relative flex items-center justify-center">
-          <Link href="/dashboard" className="absolute left-0 text-[#555]"><ArrowLeft size={20} /></Link>
-          <div className="absolute left-9 h-[21px] w-[21px] overflow-hidden rounded-full"><Image src="/images/chat-icon.png" alt="Customer care" fill className="object-cover" /></div>
-          <h1 className="font-heading text-[13px] font-bold tracking-[0.08em] text-[#555]">Customer Care Chat</h1>
-          <button type="button" title="Refresh chat" onClick={() => void loadConversation()} className="absolute right-0 text-[#555]"><RefreshCw size={18} /></button>
+    <main className="min-h-screen bg-[#13813d] px-4 py-5 text-[#292929]">
+      <section className="mx-auto flex h-[calc(100vh-40px)] w-full max-w-[430px] flex-col overflow-hidden rounded-[22px] bg-white shadow-xl">
+        <header className="flex shrink-0 items-center gap-3 border-b border-black/5 px-4 py-4">
+          <Link
+            href="/dashboard"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[#F4F6F8] text-black/55"
+          >
+            <ArrowLeft
+              size={18}
+            />
+          </Link>
+
+          <div className="grid h-11 w-11 place-items-center rounded-full bg-[#EAF8EF] text-[#16884B]">
+            <span className="text-[13px] font-black">
+              Z
+            </span>
+          </div>
+
+          <div>
+            <p className="text-[13px] font-black">
+              Zentra Support
+            </p>
+
+            <div className="mt-1 flex items-center gap-1.5">
+              <Circle
+                size={7}
+                className={
+                  connected
+                    ? "fill-green-500 text-green-500"
+                    : "fill-gray-300 text-gray-300"
+                }
+              />
+
+              <p className="text-[8px] text-black/35">
+                {tenantTyping
+                  ? "Support is typing..."
+                  : connected
+                    ? "Online"
+                    : "Connecting..."}
+              </p>
+            </div>
+          </div>
         </header>
 
-        {error && <div className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-center text-xs text-red-700">{error}</div>}
-
-        {loading ? (
-          <div className="flex flex-1 items-center justify-center"><LoaderCircle className="animate-spin text-[#2458E8]" /></div>
-        ) : !conversation ? (
-          <form onSubmit={startConversation} className="my-auto rounded-[22px] bg-white/95 p-5 shadow-sm">
-            <div className="mb-4 flex justify-center"><MessageCircle size={34} className="text-[#2458E8]" /></div>
-            <h2 className="text-center text-base font-semibold">Start a support conversation</h2>
-            <p className="mt-1 text-center text-xs text-[#777]">Describe what you need help with. A tenant support officer can reply here.</p>
-            <label className="mt-5 block text-xs font-medium">Subject</label>
-            <input value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={150} className="mt-1 h-11 w-full rounded-xl border border-black/10 px-3 text-sm outline-none focus:border-[#2458E8]" />
-            <label className="mt-4 block text-xs font-medium">Message</label>
-            <textarea value={firstMessage} onChange={(e) => setFirstMessage(e.target.value)} maxLength={2000} rows={5} placeholder="How can we help?" className="mt-1 w-full resize-none rounded-xl border border-black/10 p-3 text-sm outline-none focus:border-[#2458E8]" />
-            <button disabled={sending || !firstMessage.trim()} className="mt-4 flex h-11 w-full items-center justify-center rounded-xl bg-[#2458E8] text-sm font-semibold text-white disabled:opacity-50">
-              {sending ? <LoaderCircle size={18} className="animate-spin" /> : "Start conversation"}
-            </button>
-          </form>
-        ) : (
-          <>
-            <div className="mt-4 rounded-xl bg-white/80 px-3 py-2 text-center text-xs text-[#666]">
-              <strong>{conversation.subject}</strong> · {conversation.status === "open" ? "Open" : "Closed"}
-            </div>
-            <div className="mt-3 flex-1 space-y-4 overflow-y-auto pb-4">
-              {messages.length === 0 ? <p className="pt-8 text-center text-xs text-[#777]">No messages yet.</p> : messages.map((item) => (
-                <ChatBubble key={item.id} isUser={String(item.sender_id) === String(user?.id)} text={item.message} timestamp={item.created_at} />
-              ))}
-              <div ref={bottomRef} />
-            </div>
-            <form onSubmit={sendMessage} className="flex items-center gap-2">
-              <button title="Attachments are not supported yet" type="button" disabled className="flex h-[43px] w-[43px] shrink-0 items-center justify-center rounded-full bg-white opacity-50 shadow-sm"><Plus size={26} className="text-[#2458E8]" /></button>
-              <input value={message} onChange={(e) => setMessage(e.target.value)} disabled={conversation.status === "closed"} maxLength={2000} type="text" placeholder={conversation.status === "closed" ? "This conversation is closed" : "Type your message"} className="h-[41px] flex-1 rounded-full bg-[#f0f0f0] px-4 text-[14px] outline-none shadow-[inset_0_0_4px_rgba(0,0,0,0.15)] placeholder:text-[#aaa] disabled:opacity-60" />
-              <button title="Send message" type="submit" disabled={sending || !message.trim() || conversation.status === "closed"} className="flex h-[43px] w-[43px] shrink-0 items-center justify-center rounded-full bg-[#2458E8] shadow-sm active:scale-95 disabled:opacity-50">
-                {sending ? <LoaderCircle size={19} className="animate-spin text-white" /> : <ArrowRight size={28} className="text-white" />}
-              </button>
-            </form>
-          </>
+        {conversation?.status ===
+          "archived" && (
+          <div className="bg-gray-100 px-4 py-2 text-center text-[9px] font-semibold text-gray-600">
+            This conversation has
+            been archived.
+          </div>
         )}
+
+        {error && (
+          <div className="relative bg-red-50 px-4 py-2.5 pr-10 text-[9px] font-semibold text-red-700">
+            {error}
+
+            <button
+              type="button"
+              onClick={() =>
+                setError("")
+              }
+              className="absolute right-3 top-1/2 -translate-y-1/2"
+            >
+              <X size={13} />
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto bg-[#F7F8FA] px-4 py-5">
+          {messages.length ===
+          0 ? (
+            <div className="grid h-full place-items-center">
+              <div className="max-w-[270px] text-center">
+                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[#EAF8EF] text-[#16884B]">
+                  <span className="text-[18px] font-black">
+                    Z
+                  </span>
+                </div>
+
+                <p className="mt-4 text-[14px] font-black">
+                  How can we help?
+                </p>
+
+                <p className="mt-2 text-[9px] leading-4 text-black/40">
+                  Send us a message
+                  and a member of the
+                  support team can
+                  respond here.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {grouped.map(
+                (
+                  group,
+                ) => (
+                  <div
+                    key={
+                      group.dateKey
+                    }
+                  >
+                    <DateDivider
+                      label={
+                        group.label
+                      }
+                    />
+
+                    {group.messages.map(
+                      (
+                        item,
+                      ) => (
+                        <ClientMessageBubble
+                          key={
+                            item.id
+                          }
+                          message={
+                            item
+                          }
+                        />
+                      ),
+                    )}
+                  </div>
+                ),
+              )}
+
+              {tenantTyping && (
+                <div className="mb-4 flex justify-start">
+                  <div className="rounded-[16px] rounded-bl-[4px] bg-white px-4 py-3 shadow-sm">
+                    <div className="flex gap-1">
+                      <TypingDot />
+                      <TypingDot
+                        delay="150ms"
+                      />
+                      <TypingDot
+                        delay="300ms"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div
+                ref={
+                  bottomRef
+                }
+              />
+            </>
+          )}
+        </div>
+
+        <form
+          onSubmit={
+            handleSubmit
+          }
+          className="shrink-0 border-t border-black/5 bg-white px-4 py-4"
+        >
+          <div className="flex items-end gap-3">
+            <textarea
+              rows={1}
+              value={
+                message
+              }
+              disabled={
+                conversation?.status ===
+                  "archived" ||
+                sending
+              }
+              onChange={(
+                event,
+              ) =>
+                handleTyping(
+                  event.target.value,
+                )
+              }
+              onKeyDown={(
+                event,
+              ) => {
+                if (
+                  event.key ===
+                    "Enter" &&
+                  !event.shiftKey
+                ) {
+                  event.preventDefault();
+
+                  event.currentTarget.form
+                    ?.requestSubmit();
+                }
+              }}
+              placeholder="Type a message..."
+              className="max-h-[120px] min-h-[46px] flex-1 resize-none rounded-[14px] border border-black/10 bg-[#F8F9FA] px-4 py-3 text-[11px] leading-5 outline-none"
+            />
+
+            <button
+              type="submit"
+              disabled={
+                sending ||
+                !message.trim() ||
+                conversation?.status ===
+                  "archived"
+              }
+              className="grid h-[46px] w-[46px] shrink-0 place-items-center rounded-[13px] bg-[#1D4ED8] text-white disabled:opacity-40"
+            >
+              {sending ? (
+                <Loader2
+                  size={17}
+                  className="animate-spin"
+                />
+              ) : (
+                <Send
+                  size={17}
+                />
+              )}
+            </button>
+          </div>
+        </form>
       </section>
     </main>
   );
 }
 
-function ChatBubble({ isUser, text, timestamp }: { isUser: boolean; text: string; timestamp: string }) {
-  return <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
-    <div className={`relative max-w-[83%] rounded-[15px] px-4 py-3 text-[14px] leading-[18px] shadow-sm ${isUser ? "rounded-tr-[6px] bg-[#5EA4FF] text-[#1f1f1f]" : "rounded-tl-[6px] bg-white text-[#4a4a4a]"}`}>
-      <p className="whitespace-pre-line">{text}</p>
-      <p className="mt-1 text-right text-[9px] opacity-60">{new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+function ClientMessageBubble({
+  message,
+}: {
+  message:
+    ClientChatMessage;
+}) {
+  const mine =
+    message.sender_type ===
+    "client";
+
+  return (
+    <div
+      className={`mb-3 flex ${
+        mine
+          ? "justify-end"
+          : "justify-start"
+      }`}
+    >
+      <div className="max-w-[80%]">
+        <div
+          className={`rounded-[17px] px-4 py-3 text-[10px] leading-[17px] shadow-sm ${
+            mine
+              ? "rounded-br-[4px] bg-[#1D4ED8] text-white"
+              : "rounded-bl-[4px] bg-white text-[#333]"
+          }`}
+        >
+          <p className="whitespace-pre-wrap break-words">
+            {message.body}
+          </p>
+        </div>
+
+        <div
+          className={`mt-1 flex items-center gap-1 px-1 text-[7px] text-black/25 ${
+            mine
+              ? "justify-end"
+              : "justify-start"
+          }`}
+        >
+          <span>
+            {formatMessageTime(
+              message.created_at,
+            )}
+          </span>
+
+          {mine && (
+            <CheckCheck
+              size={10}
+            />
+          )}
+        </div>
+      </div>
     </div>
-  </div>;
+  );
+}
+
+function DateDivider({
+  label,
+}: {
+  label: string;
+}) {
+  return (
+    <div className="my-5 flex items-center gap-3">
+      <div className="h-px flex-1 bg-black/5" />
+
+      <span className="rounded-full bg-white px-3 py-1 text-[7px] font-bold text-black/30 shadow-sm">
+        {label}
+      </span>
+
+      <div className="h-px flex-1 bg-black/5" />
+    </div>
+  );
+}
+
+function TypingDot({
+  delay = "0ms",
+}: {
+  delay?: string;
+}) {
+  return (
+    <span
+      className="h-1.5 w-1.5 animate-bounce rounded-full bg-black/30"
+      style={{
+        animationDelay:
+          delay,
+      }}
+    />
+  );
+}
+
+function formatMessageTime(
+  value: string,
+) {
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime(),
+    )
+  ) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      hour:
+        "2-digit",
+
+      minute:
+        "2-digit",
+    },
+  ).format(date);
+}
+
+function groupMessagesByDay(
+  messages:
+    ClientChatMessage[],
+) {
+  const groups =
+    new Map<
+      string,
+      ClientChatMessage[]
+    >();
+
+  for (
+    const message
+    of messages
+  ) {
+    const date =
+      new Date(
+        message.created_at,
+      );
+
+    if (
+      Number.isNaN(
+        date.getTime(),
+      )
+    ) {
+      continue;
+    }
+
+    const key =
+      `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
+    const current =
+      groups.get(
+        key,
+      ) ?? [];
+
+    current.push(
+      message,
+    );
+
+    groups.set(
+      key,
+      current,
+    );
+  }
+
+  return Array.from(
+    groups.entries(),
+  ).map(
+    ([
+      dateKey,
+      items,
+    ]) => ({
+      dateKey,
+
+      label:
+        formatDayLabel(
+          new Date(
+            items[0].created_at,
+          ),
+        ),
+
+      messages:
+        items,
+    }),
+  );
+}
+
+function formatDayLabel(
+  date: Date,
+) {
+  const now =
+    new Date();
+
+  const today =
+    new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+
+  const target =
+    new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+
+  const difference =
+    (
+      today.getTime() -
+      target.getTime()
+    ) /
+    86400000;
+
+  if (
+    difference === 0
+  ) {
+    return "Today";
+  }
+
+  if (
+    difference === 1
+  ) {
+    return "Yesterday";
+  }
+
+  return new Intl.DateTimeFormat(
+    "en-GB",
+    {
+      day:
+        "2-digit",
+
+      month:
+        "short",
+
+      year:
+        "numeric",
+    },
+  ).format(date);
 }
