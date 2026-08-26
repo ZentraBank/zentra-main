@@ -26,10 +26,10 @@ const mainServices = [
   { title: "Subscription", icon: CircleDollarSign, href: "/subscribe" },
   { title: "Investment", icon: Wallet, href: "/investments" },
   { title: "Donations", icon: HeartHandshake, href: "/dashboard/donation" },
-  { title: "Pay Bill", icon: BadgeDollarSign, href: "#" },
+  { title: "chat", icon: BadgeDollarSign, href: "/dashboard/communications/chat" },
   { title: "Gift", icon: Gift, href: "/dashboard/gift" },
   { title: "Card setting", icon: Settings, href: "/dashboard/card-lock" },
-  { title: "Notifications", icon: Bell, href: "/notifications" },
+  { title: "Notifications", icon: Bell, href: "dashboard/communications/notifications" },
 ];
 
 const accountServices = [

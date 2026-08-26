@@ -381,7 +381,20 @@ const deleteTemplate =
     };
   };
 
+  
 module.exports = {
-  listMine,unreadCount,markRead,markAllRead,archive,broadcast,notifyUser,
-  replaceTemplateVariables,listTemplates,updateTemplate,deleteTemplate,sendToClients
+  listMine,
+  unreadCount,
+  markRead,
+  markAllRead,
+  archive,
+  broadcast,
+  notifyUser,
+
+  createTemplate,
+  listTemplates,
+  updateTemplate,
+  deleteTemplate,
+
+  sendToClients,
 };

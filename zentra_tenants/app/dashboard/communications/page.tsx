@@ -1,342 +1,106 @@
+"use client";
+
+import Link from "next/link";
+
 import {
-  api,
-  getApiErrorMessage,
-} from "@/lib/api";
+  Bell,
+  MessageCircle,
+  Send,
+  Users,
+} from "lucide-react";
 
-export type ChatConversation = {
-  id: string;
+export default function CommunicationsPage() {
+  return (
+    <main className="min-h-screen bg-[#F4F6F8] px-5 pb-14 pt-8 text-[#292929]">
+      <section className="mx-auto w-full max-w-[1100px]">
+        <div>
+          <h1 className="text-[26px] font-black tracking-[-0.035em]">
+            Communications
+          </h1>
 
-  tenant_id: string;
+          <p className="mt-1 text-[11px] text-black/40">
+            Chat with clients and send targeted notifications.
+          </p>
+        </div>
 
-  client_user_id: string;
+        <div className="mt-7 grid gap-5 md:grid-cols-2">
+          {/* Chat */}
 
-  status:
-    | "open"
-    | "closed"
-    | "archived";
-
-  last_message_at:
-    | string
-    | null;
-
-  created_at: string;
-
-  updated_at: string;
-
-  client_first_name?:
-    | string
-    | null;
-
-  client_middle_name?:
-    | string
-    | null;
-
-  client_last_name?:
-    | string
-    | null;
-
-  client_email?:
-    | string
-    | null;
-
-  last_message?:
-    | string
-    | null;
-
-  last_message_created_at?:
-    | string
-    | null;
-
-  unread_count?: number;
-};
-
-export type ChatMessage = {
-  id: string;
-
-  tenant_id: string;
-
-  conversation_id: string;
-
-  sender_user_id: string;
-
-  sender_type:
-    | "client"
-    | "tenant";
-
-  message_type:
-    | "text"
-    | "system";
-
-  body: string;
-
-  created_at: string;
-
-  edited_at?:
-    | string
-    | null;
-
-  deleted_at?:
-    | string
-    | null;
-
-  sender_first_name?:
-    | string
-    | null;
-
-  sender_middle_name?:
-    | string
-    | null;
-
-  sender_last_name?:
-    | string
-    | null;
-
-  sender_email?:
-    | string
-    | null;
-};
-
-type ApiEnvelope<T> = {
-  success: boolean;
-  message: string;
-  data: T;
-};
-
-export const chatService = {
-  async listTenantConversations(
-    params?: {
-      page?: number;
-      pageSize?: number;
-    },
-  ) {
-    try {
-      const response =
-        await api.get<
-          ApiEnvelope<{
-            conversations:
-              ChatConversation[];
-
-            pagination: {
-              page: number;
-              pageSize: number;
-            };
-          }>
-        >(
-          "/chat/tenant/conversations",
-          {
-            params: {
-              page:
-                params?.page ??
-                1,
-
-              pageSize:
-                params?.pageSize ??
-                100,
-            },
-          },
-        );
-
-      return response.data.data;
-    } catch (error) {
-      throw new Error(
-        getApiErrorMessage(
-          error,
-        ),
-      );
-    }
-  },
-
-  async createConversation(
-    clientUserId: string,
-  ) {
-    try {
-      const response =
-        await api.post<
-          ApiEnvelope<
-            ChatConversation
+          <Link
+            href="/dashboard/communications/chat"
+            className="group rounded-[22px] bg-[#14251D] p-6 text-white shadow-sm transition hover:-translate-y-0.5"
           >
-        >(
-          `/chat/tenant/conversations/${encodeURIComponent(
-            clientUserId,
-          )}`,
-        );
+            <div className="flex items-start justify-between">
+              <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-[#71D49B]/15 text-[#71D49B]">
+                <MessageCircle
+                  size={22}
+                />
+              </div>
 
-      return response.data.data;
-    } catch (error) {
-      throw new Error(
-        getApiErrorMessage(
-          error,
-        ),
-      );
-    }
-  },
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-white/60">
+                Chat
+              </span>
+            </div>
 
-  async listTenantMessages(
-    conversationId: string,
-    params?: {
-      page?: number;
-      pageSize?: number;
-    },
-  ) {
-    try {
-      const response =
-        await api.get<
-          ApiEnvelope<{
-            messages:
-              ChatMessage[];
+            <h2 className="mt-7 text-[22px] font-black">
+              Client Chat
+            </h2>
 
-            pagination: {
-              page: number;
-              pageSize: number;
-              total: number;
-              totalPages: number;
-            };
-          }>
-        >(
-          `/chat/tenant/conversations/${encodeURIComponent(
-            conversationId,
-          )}/messages`,
-          {
-            params: {
-              page:
-                params?.page ??
-                1,
+            <p className="mt-2 max-w-[360px] text-[11px] leading-5 text-white/50">
+              Start and manage
+              real-time conversations
+              with any client in your
+              tenant.
+            </p>
 
-              pageSize:
-                params?.pageSize ??
-                100,
-            },
-          },
-        );
+            <div className="mt-7 flex items-center gap-2 text-[10px] font-bold text-[#71D49B]">
+              <Users
+                size={14}
+              />
 
-      return response.data.data;
-    } catch (error) {
-      throw new Error(
-        getApiErrorMessage(
-          error,
-        ),
-      );
-    }
-  },
+              Open conversations
+            </div>
+          </Link>
 
-  async sendTenantMessage(
-    conversationId: string,
-    message: string,
-  ) {
-    try {
-      const response =
-        await api.post<
-          ApiEnvelope<
-            ChatMessage
+          {/* Notifications */}
+
+          <Link
+            href="/dashboard/communications/notifications"
+            className="group rounded-[22px] bg-white p-6 shadow-sm transition hover:-translate-y-0.5"
           >
-        >(
-          `/chat/tenant/conversations/${encodeURIComponent(
-            conversationId,
-          )}/messages`,
-          {
-            message,
-          },
-        );
+            <div className="flex items-start justify-between">
+              <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-[#EEF3FF] text-[#2458E8]">
+                <Bell
+                  size={22}
+                />
+              </div>
 
-      return response.data.data;
-    } catch (error) {
-      throw new Error(
-        getApiErrorMessage(
-          error,
-        ),
-      );
-    }
-  },
+              <span className="rounded-full bg-[#EEF3FF] px-3 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-[#2458E8]">
+                Notifications
+              </span>
+            </div>
 
-  async markTenantRead(
-    conversationId: string,
-    lastReadMessageId?:
-      string | null,
-  ) {
-    try {
-      const response =
-        await api.post<
-          ApiEnvelope<{
-            conversation_id: string;
-            user_id: string;
-            last_read_message_id:
-              | string
-              | null;
-            last_read_at:
-              | string
-              | null;
-          }>
-        >(
-          `/chat/tenant/conversations/${encodeURIComponent(
-            conversationId,
-          )}/read`,
-          {
-            lastReadMessageId:
-              lastReadMessageId ??
-              null,
-          },
-        );
+            <h2 className="mt-7 text-[22px] font-black">
+              Push Notifications
+            </h2>
 
-      return response.data.data;
-    } catch (error) {
-      throw new Error(
-        getApiErrorMessage(
-          error,
-        ),
-      );
-    }
-  },
+            <p className="mt-2 max-w-[360px] text-[11px] leading-5 text-black/45">
+              Send targeted messages
+              to one client, selected
+              clients or everyone using
+              reusable templates.
+            </p>
 
-  async tenantUnreadCount() {
-    try {
-      const response =
-        await api.get<
-          ApiEnvelope<{
-            unreadCount: number;
-          }>
-        >(
-          "/chat/tenant/unread-count",
-        );
+            <div className="mt-7 flex items-center gap-2 text-[10px] font-bold text-[#2458E8]">
+              <Send
+                size={14}
+              />
 
-      return response.data.data;
-    } catch (error) {
-      throw new Error(
-        getApiErrorMessage(
-          error,
-        ),
-      );
-    }
-  },
-
-  async updateConversationStatus(
-    conversationId: string,
-    status:
-      | "open"
-      | "closed"
-      | "archived",
-  ) {
-    try {
-      const response =
-        await api.patch<
-          ApiEnvelope<
-            ChatConversation
-          >
-        >(
-          `/chat/tenant/conversations/${encodeURIComponent(
-            conversationId,
-          )}/status`,
-          {
-            status,
-          },
-        );
-
-      return response.data.data;
-    } catch (error) {
-      throw new Error(
-        getApiErrorMessage(
-          error,
-        ),
-      );
-    }
-  },
-};
+              Compose notification
+            </div>
+          </Link>
+        </div>
+      </section>
+    </main>
+  );
+}

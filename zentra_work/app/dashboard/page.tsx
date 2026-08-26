@@ -69,9 +69,9 @@ import type {
 
 const quickActions = [
   {
-    title: "Airtime",
+    title: "chat",
     icon: "/images/airtime-3.png",
-    href: "/airtime",
+    href: "/chat",
   },
   {
     title: "Data",

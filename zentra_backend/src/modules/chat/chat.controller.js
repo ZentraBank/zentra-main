@@ -15,93 +15,12 @@ const service =
   );
 
 const {
-  getIO,
+  emitToUser,
+  emitToTenant,
+  emitToConversation,
 } = require(
   "../../realtime/socket"
 );
-
-/*
-|--------------------------------------------------------------------------
-| Socket helpers
-|--------------------------------------------------------------------------
-*/
-
-const emitToConversation =
-  ({
-    conversationId,
-    event,
-    payload,
-  }) => {
-    try {
-      const io =
-        getIO();
-
-      io.to(
-        `conversation:${conversationId}`
-      ).emit(
-        event,
-        payload
-      );
-    } catch (error) {
-      /*
-       * Realtime failure must not
-       * break an already-completed
-       * API/database operation.
-       */
-      console.error(
-        `[Chat] Failed to emit ${event}:`,
-        error.message
-      );
-    }
-  };
-
-const emitToUser =
-  ({
-    userId,
-    event,
-    payload,
-  }) => {
-    try {
-      const io =
-        getIO();
-
-      io.to(
-        `user:${userId}`
-      ).emit(
-        event,
-        payload
-      );
-    } catch (error) {
-      console.error(
-        `[Chat] Failed to emit ${event}:`,
-        error.message
-      );
-    }
-  };
-
-const emitToTenant =
-  ({
-    tenantId,
-    event,
-    payload,
-  }) => {
-    try {
-      const io =
-        getIO();
-
-      io.to(
-        `tenant:${tenantId}`
-      ).emit(
-        event,
-        payload
-      );
-    } catch (error) {
-      console.error(
-        `[Chat] Failed to emit ${event}:`,
-        error.message
-      );
-    }
-  };
 
 /*
 |--------------------------------------------------------------------------
@@ -156,6 +75,33 @@ const createTenantConversation =
           clientUserId:
             req.params.clientUserId,
         });
+
+      /*
+       * Let tenant-side screens know
+       * that the conversation exists.
+       */
+      emitToTenant(
+        req.auth.tenantId,
+        "chat:conversation:updated",
+        {
+          conversation:
+            data,
+        }
+      );
+
+      /*
+       * Let the client know that
+       * their conversation is now
+       * available as well.
+       */
+      emitToUser(
+        data.client_user_id,
+        "chat:conversation:updated",
+        {
+          conversation:
+            data,
+        }
+      );
 
       return sendSuccess(
         res,
@@ -236,44 +182,54 @@ const sendTenantMessage =
       } = data;
 
       /*
-       * Everyone currently viewing
+       * Everyone actively viewing
        * this conversation receives
-       * the new message.
+       * the message.
        */
-      emitToConversation({
-        conversationId:
-          conversation.id,
-
-        event:
-          "chat:message:new",
-
-        payload: {
+      emitToConversation(
+        conversation.id,
+        "chat:message:new",
+        {
           conversationId:
             conversation.id,
 
           message,
-        },
-      });
+        }
+      );
 
       /*
-       * Client receives it even if
-       * they are not currently in
+       * Client receives a general
+       * conversation update even if
+       * they are not currently inside
        * the conversation room.
        */
-      emitToUser({
-        userId:
-          conversation.client_user_id,
-
-        event:
-          "chat:conversation:updated",
-
-        payload: {
+      emitToUser(
+        conversation.client_user_id,
+        "chat:conversation:updated",
+        {
           conversationId:
             conversation.id,
 
           message,
-        },
-      });
+        }
+      );
+
+      /*
+       * Also refresh tenant inboxes.
+       */
+      emitToTenant(
+        req.auth.tenantId,
+        "chat:conversation:updated",
+        {
+          conversationId:
+            conversation.id,
+
+          clientUserId:
+            conversation.client_user_id,
+
+          message,
+        }
+      );
 
       return sendSuccess(
         res,
@@ -313,14 +269,15 @@ const markTenantRead =
             req.body,
         });
 
-      emitToConversation({
-        conversationId:
-          req.params.conversationId,
-
-        event:
-          "chat:message:read",
-
-        payload: {
+      /*
+       * Let anyone inside the
+       * conversation know the tenant
+       * has read through this message.
+       */
+      emitToConversation(
+        req.params.conversationId,
+        "chat:message:read",
+        {
           conversationId:
             req.params.conversationId,
 
@@ -332,8 +289,29 @@ const markTenantRead =
 
           lastReadAt:
             data.last_read_at,
-        },
-      });
+        }
+      );
+
+      /*
+       * Refresh tenant unread badges.
+       */
+      emitToTenant(
+        req.auth.tenantId,
+        "chat:conversation:updated",
+        {
+          conversationId:
+            req.params.conversationId,
+
+          readByUserId:
+            req.auth.userId,
+
+          lastReadMessageId:
+            data.last_read_message_id,
+
+          lastReadAt:
+            data.last_read_at,
+        }
+      );
 
       return sendSuccess(
         res,
@@ -401,31 +379,32 @@ const updateConversationStatus =
             req.body,
         });
 
-      emitToConversation({
-        conversationId:
-          data.id,
-
-        event:
-          "chat:conversation:updated",
-
-        payload: {
+      emitToConversation(
+        data.id,
+        "chat:conversation:updated",
+        {
           conversation:
             data,
-        },
-      });
+        }
+      );
 
-      emitToUser({
-        userId:
-          data.client_user_id,
-
-        event:
-          "chat:conversation:updated",
-
-        payload: {
+      emitToUser(
+        data.client_user_id,
+        "chat:conversation:updated",
+        {
           conversation:
             data,
-        },
-      });
+        }
+      );
+
+      emitToTenant(
+        req.auth.tenantId,
+        "chat:conversation:updated",
+        {
+          conversation:
+            data,
+        }
+      );
 
       return sendSuccess(
         res,
@@ -532,37 +511,30 @@ const sendMyMessage =
       } = data;
 
       /*
-       * Send to anyone currently
-       * viewing this conversation.
+       * Everyone currently viewing
+       * this conversation gets the
+       * newly persisted message.
        */
-      emitToConversation({
-        conversationId:
-          conversation.id,
-
-        event:
-          "chat:message:new",
-
-        payload: {
+      emitToConversation(
+        conversation.id,
+        "chat:message:new",
+        {
           conversationId:
             conversation.id,
 
           message,
-        },
-      });
+        }
+      );
 
       /*
-       * Notify tenant-side live
-       * communication screens that
-       * a conversation changed.
+       * Tenant inbox/list screens
+       * receive an update even when
+       * nobody has opened the chat.
        */
-      emitToTenant({
-        tenantId:
-          req.auth.tenantId,
-
-        event:
-          "chat:conversation:updated",
-
-        payload: {
+      emitToTenant(
+        req.auth.tenantId,
+        "chat:conversation:updated",
+        {
           conversationId:
             conversation.id,
 
@@ -570,8 +542,25 @@ const sendMyMessage =
             conversation.client_user_id,
 
           message,
-        },
-      });
+        }
+      );
+
+      /*
+       * Also send to the client's
+       * private room. This helps other
+       * tabs/windows owned by the same
+       * client refresh.
+       */
+      emitToUser(
+        req.auth.userId,
+        "chat:conversation:updated",
+        {
+          conversationId:
+            conversation.id,
+
+          message,
+        }
+      );
 
       return sendSuccess(
         res,
@@ -589,7 +578,7 @@ const sendMyMessage =
 
 /*
 |--------------------------------------------------------------------------
-| Client: mark read
+| Client: mark conversation read
 |--------------------------------------------------------------------------
 */
 
@@ -608,14 +597,10 @@ const markMyConversationRead =
             req.body,
         });
 
-      emitToConversation({
-        conversationId:
-          data.conversation_id,
-
-        event:
-          "chat:message:read",
-
-        payload: {
+      emitToConversation(
+        data.conversation_id,
+        "chat:message:read",
+        {
           conversationId:
             data.conversation_id,
 
@@ -627,8 +612,30 @@ const markMyConversationRead =
 
           lastReadAt:
             data.last_read_at,
-        },
-      });
+        }
+      );
+
+      /*
+       * Tenant side may need to
+       * update read indicators.
+       */
+      emitToTenant(
+        req.auth.tenantId,
+        "chat:conversation:updated",
+        {
+          conversationId:
+            data.conversation_id,
+
+          readByUserId:
+            req.auth.userId,
+
+          lastReadMessageId:
+            data.last_read_message_id,
+
+          lastReadAt:
+            data.last_read_at,
+        }
+      );
 
       return sendSuccess(
         res,

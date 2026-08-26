@@ -1,5 +1,10 @@
 const asyncHandler = require("../../utils/asyncHandler");
 const service = require("./notifications.service");
+const {
+  sendSuccess,
+} = require(
+  "../../utils/response"
+);
 
 const listMine = asyncHandler(async (req, res) => {
   const parsedPage = Number.parseInt(req.query.page, 10);

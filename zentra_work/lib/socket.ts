@@ -1,5 +1,3 @@
-"use client";
-
 import {
   io,
   type Socket,
@@ -9,57 +7,94 @@ import {
   authToken,
 } from "@/lib/auth-token";
 
-const SOCKET_URL =
-  (
-    process.env.NEXT_PUBLIC_SOCKET_URL ??
-    "http://localhost:5000"
-  ).replace(/\/$/, "");
+const SOCKET_URL = (
+  process.env.NEXT_PUBLIC_SOCKET_URL ??
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  "http://localhost:5000"
+)
+  .replace(
+    /\/api\/v1\/?$/,
+    "",
+  )
+  .replace(
+    /\/$/,
+    "",
+  );
 
 let socket:
   | Socket
   | null = null;
 
 export function getSocket() {
+  const token =
+    authToken.get();
+
+  if (!token) {
+    throw new Error(
+      "Authentication token is unavailable.",
+    );
+  }
+
   if (!socket) {
     socket = io(
       SOCKET_URL,
       {
         autoConnect: false,
 
-        withCredentials:
-          true,
+        withCredentials: true,
 
         transports: [
           "websocket",
           "polling",
         ],
 
-        auth: (
-          callback,
-        ) => {
-          callback({
-            accessToken:
-              authToken.get(),
-          });
+        auth: {
+          accessToken: token,
         },
       },
     );
+
+    return socket;
   }
+
+  socket.auth = {
+    accessToken: token,
+  };
 
   return socket;
 }
 
 export function connectSocket() {
-  const current =
+  const activeSocket =
     getSocket();
 
   if (
-    !current.connected
+    !activeSocket.connected
   ) {
-    current.connect();
+    activeSocket.connect();
   }
 
-  return current;
+  return activeSocket;
+}
+
+export function reconnectSocket() {
+  const activeSocket =
+    getSocket();
+
+  if (
+    activeSocket.connected
+  ) {
+    activeSocket.disconnect();
+  }
+
+  activeSocket.auth = {
+    accessToken:
+      authToken.get(),
+  };
+
+  activeSocket.connect();
+
+  return activeSocket;
 }
 
 export function disconnectSocket() {
@@ -68,4 +103,11 @@ export function disconnectSocket() {
   }
 
   socket.disconnect();
+  socket = null;
+}
+
+export function isSocketConnected() {
+  return Boolean(
+    socket?.connected,
+  );
 }
