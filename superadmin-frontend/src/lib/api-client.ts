@@ -76,51 +76,62 @@ const sendToLogin = () => {
   authStorage.clear();
 
   if (
-    typeof window !== "undefined" &&
-    !redirectingToLogin
+    typeof window === "undefined" ||
+    redirectingToLogin
   ) {
-    redirectingToLogin = true;
-
-    const returnUrl =
-      window.location.pathname +
-      window.location.search;
-
-    window.location.replace(
-      `/login?returnUrl=${encodeURIComponent(
-        returnUrl
-      )}`
-    );
+    return;
   }
+
+  const pathname =
+    window.location.pathname;
+
+  /*
+   * Never redirect the login page
+   * back to itself.
+   */
+  if (pathname === "/login") {
+    return;
+  }
+
+  redirectingToLogin = true;
+
+  const returnUrl =
+    pathname + window.location.search;
+
+  window.location.replace(
+    `/login?returnUrl=${encodeURIComponent(
+      returnUrl
+    )}`
+  );
 };
 
 const refreshSession =
   async (): Promise<PlatformAuthResponse> => {
-    const refreshToken =
-      authStorage.getRefreshToken();
+    let response: Response;
 
-    if (!refreshToken) {
+    try {
+      response = await fetch(
+        `${API_BASE_URL}/superadmin/auth/refresh`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            deviceName:
+              typeof navigator !== "undefined"
+                ? navigator.userAgent
+                : undefined,
+          }),
+        }
+      );
+    } catch {
       throw new ApiError(
-        "Your session has expired.",
-        401
+        "Unable to connect to the server.",
+        0
       );
     }
-
-    const response = await fetch(
-      `${API_BASE_URL}/superadmin/auth/refresh`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          refreshToken,
-          deviceName:
-            typeof navigator !== "undefined"
-              ? navigator.userAgent
-              : undefined,
-        }),
-      }
-    );
 
     const payload =
       await parseResponse<PlatformAuthResponse>(
@@ -129,8 +140,7 @@ const refreshSession =
 
     if (
       !response.ok ||
-      !payload.data?.accessToken ||
-      !payload.data?.refreshToken
+      !payload.data?.accessToken
     ) {
       authStorage.clear();
 
@@ -142,9 +152,8 @@ const refreshSession =
       );
     }
 
-    authStorage.setTokens(
-      payload.data.accessToken,
-      payload.data.refreshToken
+    authStorage.setAccessToken(
+      payload.data.accessToken
     );
 
     return payload.data;
@@ -152,11 +161,10 @@ const refreshSession =
 
 const getRefreshedSession = () => {
   if (!refreshPromise) {
-    refreshPromise = refreshSession().finally(
-      () => {
+    refreshPromise =
+      refreshSession().finally(() => {
         refreshPromise = null;
-      }
-    );
+      });
   }
 
   return refreshPromise;
@@ -195,6 +203,7 @@ export async function apiRequest<T>(
       `${API_BASE_URL}${path}`,
       {
         ...requestOptions,
+        credentials: "include",
         headers,
       }
     );
@@ -205,6 +214,10 @@ export async function apiRequest<T>(
     );
   }
 
+  /*
+   * Access token expired or missing.
+   * Try the HttpOnly refresh cookie once.
+   */
   if (
     response.status === 401 &&
     auth &&
@@ -218,7 +231,12 @@ export async function apiRequest<T>(
         retryOnUnauthorized: false,
       });
     } catch (error) {
+      /*
+       * Do not create a redirect loop
+       * when the current page is /login.
+       */
       sendToLogin();
+
       throw error;
     }
   }
@@ -227,7 +245,10 @@ export async function apiRequest<T>(
     await parseResponse<T>(response);
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (
+      response.status === 401 &&
+      auth
+    ) {
       sendToLogin();
     }
 

@@ -4,11 +4,14 @@ import {
   FormEvent,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 
 import { ApiError } from "@/src/lib/api-error";
 import { usePlatformAuth } from "@/src/context/platform-auth-context";
 
 export function LoginForm() {
+  const router = useRouter();
+
   const { login } = usePlatformAuth();
 
   const [email, setEmail] = useState("");
@@ -25,19 +28,29 @@ export function LoginForm() {
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+
     setError(null);
     setIsSubmitting(true);
 
     try {
       await login({
-        email,
+        email: email.trim().toLowerCase(),
         password,
+        deviceName:
+          typeof navigator !== "undefined"
+            ? navigator.userAgent
+            : undefined,
       });
+
+      router.replace("/dashboard");
+      router.refresh();
     } catch (caught) {
       setError(
         caught instanceof ApiError
           ? caught.message
-          : "Unable to sign in."
+          : caught instanceof Error
+            ? caught.message
+            : "Unable to sign in."
       );
     } finally {
       setIsSubmitting(false);
@@ -66,7 +79,8 @@ export function LoginForm() {
             setEmail(event.target.value)
           }
           required
-          className="h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 outline-none transition focus:border-white/40"
+          disabled={isSubmitting}
+          className="h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 outline-none transition focus:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 
@@ -87,12 +101,16 @@ export function LoginForm() {
             setPassword(event.target.value)
           }
           required
-          className="h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 outline-none transition focus:border-white/40"
+          disabled={isSubmitting}
+          className="h-12 w-full rounded-xl border border-white/15 bg-white/5 px-4 outline-none transition focus:border-white/40 disabled:cursor-not-allowed disabled:opacity-60"
         />
       </div>
 
       {error && (
-        <p className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <p
+          role="alert"
+          className="rounded-lg bg-red-500/10 px-4 py-3 text-sm text-red-300"
+        >
           {error}
         </p>
       )}

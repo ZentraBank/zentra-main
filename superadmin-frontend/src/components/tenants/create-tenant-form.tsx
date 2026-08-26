@@ -15,10 +15,11 @@ const initialForm = {
   appName: "",
   logoUrl: "",
   primaryColor: "#2447D8",
-  planId: "",
+  planCode: "bronze",
   ownerFirstName: "",
   ownerLastName: "",
   ownerEmail: "",
+  ownerPassword: "",
 };
 
 export function CreateTenantForm() {
@@ -47,18 +48,48 @@ export function CreateTenantForm() {
     event: FormEvent<HTMLFormElement>
   ) => {
     event.preventDefault();
+
     setError(null);
     setIsSubmitting(true);
 
     try {
       const response =
         await platformTenantsService.create({
-          ...form,
           code: form.code
             .trim()
             .toUpperCase(),
+
+          name: form.name.trim(),
+
+          appName:
+            form.appName.trim(),
+
           logoUrl:
-            form.logoUrl.trim() || undefined,
+            form.logoUrl.trim() ||
+            undefined,
+
+          primaryColor:
+            form.primaryColor,
+
+          planCode:
+            form.planCode as
+              | "bronze"
+              | "gold"
+              | "diamond",
+
+          ownerFirstName:
+            form.ownerFirstName.trim(),
+
+          ownerLastName:
+            form.ownerLastName.trim(),
+
+          ownerEmail:
+            form.ownerEmail
+              .trim()
+              .toLowerCase(),
+
+          ownerPassword:
+            form.ownerPassword,
         });
 
       router.push(
@@ -68,60 +99,14 @@ export function CreateTenantForm() {
       setError(
         caught instanceof ApiError
           ? caught.message
-          : "Unable to create tenant."
+          : caught instanceof Error
+            ? caught.message
+            : "Unable to create tenant."
       );
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const fields: Array<{
-    key: keyof typeof form;
-    label: string;
-    type?: string;
-    placeholder?: string;
-  }> = [
-    {
-      key: "code",
-      label: "Tenant code",
-      placeholder: "ZENTRA_UK",
-    },
-    {
-      key: "name",
-      label: "Legal or organisation name",
-      placeholder: "ZentraBank UK Limited",
-    },
-    {
-      key: "appName",
-      label: "Application name",
-      placeholder: "Zentra UK",
-    },
-    {
-      key: "logoUrl",
-      label: "Logo URL",
-      type: "url",
-      placeholder:
-        "https://cdn.example.com/logo.svg",
-    },
-    {
-      key: "planId",
-      label: "Subscription plan ID",
-      placeholder: "Plan UUID",
-    },
-    {
-      key: "ownerFirstName",
-      label: "Owner first name",
-    },
-    {
-      key: "ownerLastName",
-      label: "Owner last name",
-    },
-    {
-      key: "ownerEmail",
-      label: "Owner email",
-      type: "email",
-    },
-  ];
 
   return (
     <form
@@ -129,31 +114,134 @@ export function CreateTenantForm() {
       className="space-y-6"
     >
       <div className="grid gap-5 md:grid-cols-2">
-        {fields.map((field) => (
-          <div key={field.key}>
-            <label
-              htmlFor={field.key}
-              className="mb-2 block text-sm font-medium"
-            >
-              {field.label}
-            </label>
+        <div>
+          <label
+            htmlFor="code"
+            className="mb-2 block text-sm font-medium"
+          >
+            Tenant code
+          </label>
 
-            <input
-              id={field.key}
-              type={field.type || "text"}
-              value={form[field.key]}
-              placeholder={field.placeholder}
-              onChange={(event) =>
-                updateField(
-                  field.key,
-                  event.target.value
-                )
-              }
-              required={field.key !== "logoUrl"}
-              className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
-            />
-          </div>
-        ))}
+          <input
+            id="code"
+            type="text"
+            value={form.code}
+            placeholder="ZENTRA_UK"
+            onChange={(event) =>
+              updateField(
+                "code",
+                event.target.value
+              )
+            }
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="name"
+            className="mb-2 block text-sm font-medium"
+          >
+            Legal or organisation name
+          </label>
+
+          <input
+            id="name"
+            type="text"
+            value={form.name}
+            placeholder="ZentraBank UK Limited"
+            onChange={(event) =>
+              updateField(
+                "name",
+                event.target.value
+              )
+            }
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="appName"
+            className="mb-2 block text-sm font-medium"
+          >
+            Application name
+          </label>
+
+          <input
+            id="appName"
+            type="text"
+            value={form.appName}
+            placeholder="Zentra UK"
+            onChange={(event) =>
+              updateField(
+                "appName",
+                event.target.value
+              )
+            }
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="logoUrl"
+            className="mb-2 block text-sm font-medium"
+          >
+            Logo URL
+          </label>
+
+          <input
+            id="logoUrl"
+            type="url"
+            value={form.logoUrl}
+            placeholder="https://cdn.example.com/logo.svg"
+            onChange={(event) =>
+              updateField(
+                "logoUrl",
+                event.target.value
+              )
+            }
+            className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="planCode"
+            className="mb-2 block text-sm font-medium"
+          >
+            Subscription plan
+          </label>
+
+          <select
+            id="planCode"
+            value={form.planCode}
+            onChange={(event) =>
+              updateField(
+                "planCode",
+                event.target.value
+              )
+            }
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-black px-4 text-sm outline-none focus:border-white/30"
+          >
+            <option value="bronze">
+              Bronze
+            </option>
+
+            <option value="gold">
+              Gold
+            </option>
+
+            <option value="diamond">
+              Diamond
+            </option>
+          </select>
+        </div>
 
         <div>
           <label
@@ -190,6 +278,106 @@ export function CreateTenantForm() {
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
           </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor="ownerFirstName"
+            className="mb-2 block text-sm font-medium"
+          >
+            Owner first name
+          </label>
+
+          <input
+            id="ownerFirstName"
+            type="text"
+            value={form.ownerFirstName}
+            onChange={(event) =>
+              updateField(
+                "ownerFirstName",
+                event.target.value
+              )
+            }
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="ownerLastName"
+            className="mb-2 block text-sm font-medium"
+          >
+            Owner last name
+          </label>
+
+          <input
+            id="ownerLastName"
+            type="text"
+            value={form.ownerLastName}
+            onChange={(event) =>
+              updateField(
+                "ownerLastName",
+                event.target.value
+              )
+            }
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="ownerEmail"
+            className="mb-2 block text-sm font-medium"
+          >
+            Owner email
+          </label>
+
+          <input
+            id="ownerEmail"
+            type="email"
+            autoComplete="email"
+            value={form.ownerEmail}
+            onChange={(event) =>
+              updateField(
+                "ownerEmail",
+                event.target.value
+              )
+            }
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
+          />
+        </div>
+
+        <div>
+          <label
+            htmlFor="ownerPassword"
+            className="mb-2 block text-sm font-medium"
+          >
+            Initial owner password
+          </label>
+
+          <input
+            id="ownerPassword"
+            type="password"
+            autoComplete="new-password"
+            minLength={12}
+            maxLength={128}
+            value={form.ownerPassword}
+            onChange={(event) =>
+              updateField(
+                "ownerPassword",
+                event.target.value
+              )
+            }
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-white/5 px-4 text-sm outline-none focus:border-white/30"
+          />
+
+          <p className="mt-2 text-xs text-neutral-500">
+            Minimum 12 characters.
+          </p>
         </div>
       </div>
 

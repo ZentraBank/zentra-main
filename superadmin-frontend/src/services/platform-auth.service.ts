@@ -1,4 +1,5 @@
 import { apiRequest } from "@/src/lib/api-client";
+
 import type {
   PlatformAuthResponse,
   PlatformLoginPayload,
@@ -12,20 +13,20 @@ export const platformAuthService = {
       {
         method: "POST",
         auth: false,
+        retryOnUnauthorized: false,
         body: JSON.stringify(payload),
       }
     );
   },
 
-  logout(refreshToken: string) {
+  logout() {
     return apiRequest<null>(
       "/superadmin/auth/logout",
       {
         method: "POST",
         auth: false,
-        body: JSON.stringify({
-          refreshToken,
-        }),
+        retryOnUnauthorized: false,
+        body: JSON.stringify({}),
       }
     );
   },

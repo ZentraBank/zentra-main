@@ -28,9 +28,20 @@ export type TenantFeatureOverride = {
   updated_at: string;
 };
 
+export type TenantAdministrator = {
+  id: string;
+  tenant_id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  status: string;
+  created_at: string;
+};
+
 export type TenantDetails = {
   tenant: Tenant;
   featureOverrides: TenantFeatureOverride[];
+  administrators: TenantAdministrator[];
 };
 
 export type CreateTenantPayload = {
@@ -39,18 +50,21 @@ export type CreateTenantPayload = {
   appName: string;
   logoUrl?: string;
   primaryColor: string;
-  planId: string;
+  planCode: "bronze" | "gold" | "diamond";
   ownerFirstName: string;
   ownerLastName: string;
   ownerEmail: string;
+  ownerPassword: string;
 };
 
 export type CreateTenantResponse = {
   tenantId: string;
   ownerUserId: string;
+  membershipId: string;
   subscriptionId: string;
   status: TenantStatus;
 };
+
 
 export type TenantListFilters = {
   page?: number;

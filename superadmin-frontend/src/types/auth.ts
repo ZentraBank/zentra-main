@@ -9,7 +9,11 @@ export type PlatformUser = {
   firstName: string;
   lastName: string;
   role: PlatformRole;
-  status: "pending" | "active" | "suspended" | "disabled";
+  status:
+    | "pending"
+    | "active"
+    | "suspended"
+    | "disabled";
   permissions: string[];
   lastLoginAt: string | null;
 };
@@ -22,7 +26,6 @@ export type PlatformLoginPayload = {
 
 export type PlatformAuthResponse = {
   accessToken: string;
-  refreshToken: string;
-  expiresIn: string;
+  accessTokenExpiresIn: string;
   user: PlatformUser;
 };

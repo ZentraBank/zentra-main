@@ -4,16 +4,21 @@ const allowedOrigins = [
   env.frontendUrl,
   env.tenantAdminFrontendUrl,
   env.superadminFrontendUrl,
+
   "http://localhost:3000",
   "http://127.0.0.1:3000",
+
   "http://localhost:3001",
   "http://127.0.0.1:3001",
+
   "http://localhost:3002",
   "http://127.0.0.1:3002",
 ].filter(Boolean);
 
 const isPrivateDevelopmentOrigin = (origin) => {
-  if (!env.isDevelopment) return false;
+  if (!env.isDevelopment) {
+    return false;
+  }
 
   try {
     const url = new URL(origin);
@@ -33,7 +38,9 @@ const isPrivateDevelopmentOrigin = (origin) => {
     return (
       /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
       /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)
+      /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(
+        host
+      )
     );
   } catch {
     return false;
@@ -42,6 +49,11 @@ const isPrivateDevelopmentOrigin = (origin) => {
 
 const corsOptions = {
   origin(origin, callback) {
+    /*
+     * Allow requests without an Origin header.
+     * This includes server-to-server requests,
+     * Postman and similar API clients.
+     */
     if (!origin) {
       return callback(null, true);
     }
@@ -62,6 +74,10 @@ const corsOptions = {
     return callback(error);
   },
 
+  /*
+   * Required so browsers can send
+   * HttpOnly refresh-token cookies.
+   */
   credentials: true,
 
   methods: [

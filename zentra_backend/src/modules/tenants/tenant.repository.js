@@ -145,6 +145,45 @@ const findTenantFeatures = async (
   return query(sql, [tenantId]);
 };
 
+const updateTenantProfile = async ({
+  tenantId,
+  body,
+}) => {
+  await query(
+    `
+      UPDATE tenants
+      SET
+        name = COALESCE(?, name),
+        app_name = COALESCE(?, app_name),
+        logo_url = COALESCE(?, logo_url),
+        primary_color = COALESCE(?, primary_color),
+        secondary_color = COALESCE(?, secondary_color),
+        contact_email = COALESCE(?, contact_email),
+        contact_phone = COALESCE(?, contact_phone),
+        country_code = COALESCE(?, country_code),
+        default_currency = COALESCE(?, default_currency),
+        timezone = COALESCE(?, timezone)
+      WHERE id = ?
+        AND deleted_at IS NULL
+    `,
+    [
+      body.name ?? null,
+      body.appName ?? null,
+      body.logoUrl ?? null,
+      body.primaryColor ?? null,
+      body.secondaryColor ?? null,
+      body.contactEmail ?? null,
+      body.contactPhone ?? null,
+      body.countryCode ?? null,
+      body.defaultCurrency ?? null,
+      body.timezone ?? null,
+      tenantId,
+    ]
+  );
+
+  return findTenantById(tenantId);
+};
+
 module.exports = {
   findTenantById,
   findTenantBySlug,
@@ -152,4 +191,5 @@ module.exports = {
   findPublicTenantSettings,
   findAllTenantSettings,
   findTenantFeatures,
+  updateTenantProfile,
 };

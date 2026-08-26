@@ -164,16 +164,17 @@ const login = async ({
     ...requestContext,
   });
 
-  return {
-    accessToken,
-    refreshToken,
-    expiresIn:
-      env.jwt.accessExpiresIn,
-    user: buildSafeUser({
-      user,
-      permissions,
-    }),
-  };
+return {
+  accessToken,
+  refreshToken,
+  accessTokenExpiresIn:
+    env.jwt.accessExpiresIn,
+  refreshTokenExpiresAt: expiresAt,
+  user: buildSafeUser({
+    user,
+    permissions,
+  }),
+};
 };
 
 const refresh = async ({
@@ -181,6 +182,13 @@ const refresh = async ({
   deviceName,
   requestContext,
 }) => {
+  if (!refreshToken) {
+    throw httpError(
+      401,
+      "Refresh token is required."
+    );
+  }
+
   const tokenHash = hashToken(refreshToken);
 
   const stored =
@@ -252,15 +260,16 @@ const refresh = async ({
   });
 
   return {
-    accessToken,
-    refreshToken: nextRefreshToken,
-    expiresIn:
-      env.jwt.accessExpiresIn,
-    user: buildSafeUser({
-      user,
-      permissions,
-    }),
-  };
+  accessToken,
+  refreshToken: nextRefreshToken,
+  accessTokenExpiresIn:
+    env.jwt.accessExpiresIn,
+  refreshTokenExpiresAt: expiresAt,
+  user: buildSafeUser({
+    user,
+    permissions,
+  }),
+};
 };
 
 const logout = async ({ refreshToken }) => {

@@ -1,37 +1,50 @@
-const ACCESS_TOKEN_KEY = "zentrabank_platform_access_token";
-const REFRESH_TOKEN_KEY = "zentrabank_platform_refresh_token";
+const ACCESS_TOKEN_KEY =
+  "zentrabank_platform_access_token";
 
-const isBrowser = () => typeof window !== "undefined";
+const isBrowser = () =>
+  typeof window !== "undefined";
 
 export const authStorage = {
   getAccessToken(): string | null {
-    if (!isBrowser()) return null;
-    return window.localStorage.getItem(ACCESS_TOKEN_KEY);
+    if (!isBrowser()) {
+      return null;
+    }
+
+    return window.sessionStorage.getItem(
+      ACCESS_TOKEN_KEY
+    );
   },
 
-  getRefreshToken(): string | null {
-    if (!isBrowser()) return null;
-    return window.localStorage.getItem(REFRESH_TOKEN_KEY);
-  },
+  setAccessToken(accessToken: string) {
+    if (!isBrowser()) {
+      return;
+    }
 
-  setTokens(accessToken: string, refreshToken: string) {
-    if (!isBrowser()) return;
-
-    window.localStorage.setItem(
+    window.sessionStorage.setItem(
       ACCESS_TOKEN_KEY,
       accessToken
-    );
-
-    window.localStorage.setItem(
-      REFRESH_TOKEN_KEY,
-      refreshToken
     );
   },
 
   clear() {
-    if (!isBrowser()) return;
+    if (!isBrowser()) {
+      return;
+    }
 
-    window.localStorage.removeItem(ACCESS_TOKEN_KEY);
-    window.localStorage.removeItem(REFRESH_TOKEN_KEY);
+    window.sessionStorage.removeItem(
+      ACCESS_TOKEN_KEY
+    );
+
+    /*
+     * Clean up tokens left behind by the
+     * previous localStorage-based implementation.
+     */
+    window.localStorage.removeItem(
+      "zentrabank_platform_access_token"
+    );
+
+    window.localStorage.removeItem(
+      "zentrabank_platform_refresh_token"
+    );
   },
 };

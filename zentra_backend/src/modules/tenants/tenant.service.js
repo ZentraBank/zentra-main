@@ -206,6 +206,38 @@
     });
   };
 
+
+  const updateCurrentTenantProfile = async ({
+  tenantId,
+  body,
+}) => {
+  const existingTenant =
+    await tenantRepository.findTenantById(
+      tenantId
+    );
+
+  ensureTenantIsAvailable(existingTenant);
+
+  const updatedTenant =
+    await tenantRepository.updateTenantProfile({
+      tenantId,
+      body,
+    });
+
+  if (!updatedTenant) {
+    throw ApiError.notFound(
+      "Tenant was not found"
+    );
+  }
+
+  return getTenantConfiguration(
+    updatedTenant,
+    {
+      includePrivateSettings: false,
+    }
+  );
+};
+
   module.exports = {
     getTenantById,
     getTenantBySlug,
@@ -213,4 +245,5 @@
     resolveTenant,
     getTenantConfiguration,
     getCurrentTenantConfiguration,
+    updateCurrentTenantProfile,
   };

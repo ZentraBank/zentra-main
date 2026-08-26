@@ -19,6 +19,26 @@ const permissions = [
   ["Users Manage", "users.manage", "users"],
   ["Notifications Read", "notifications.read", "notifications"],
   ["Notifications Manage", "notifications.manage", "notifications"],
+  [
+  "Notification Templates Read",
+  "notifications.templates.read",
+  "notifications",
+],
+[
+  "Notification Templates Manage",
+  "notifications.templates.manage",
+  "notifications",
+],
+[
+  "Notifications Send",
+  "notifications.send",
+  "notifications",
+],
+[
+  "Notifications Broadcast",
+  "notifications.broadcast",
+  "notifications",
+],
   ["Donations Read", "donations.read", "donations"],
   ["Donations Create", "donations.create", "donations"],
   ["Donations Approve", "donations.approve", "donations"],

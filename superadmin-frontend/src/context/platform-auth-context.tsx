@@ -11,9 +11,11 @@ import {
 } from "react";
 
 import { authStorage } from "@/src/lib/auth-storage";
+import { ApiError } from "@/src/lib/api-error";
 import { platformAuthService } from "@/src/services/platform-auth.service";
+
 import type {
-  PlatformLoginCredentials,
+  PlatformLoginPayload,
   PlatformUser,
 } from "@/src/types/auth";
 
@@ -22,7 +24,7 @@ type PlatformAuthContextValue = {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (
-    credentials: PlatformLoginCredentials
+    credentials: PlatformLoginPayload
   ) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -47,34 +49,39 @@ export function PlatformAuthProvider({
   const [isLoading, setIsLoading] =
     useState(true);
 
-  const refreshUser =
-    useCallback(async (): Promise<void> => {
-      const accessToken =
-        authStorage.getAccessToken();
+ const refreshUser =
+  useCallback(async (): Promise<void> => {
+    try {
+      const response =
+        await platformAuthService.me();
 
-      const refreshToken =
-        authStorage.getRefreshToken();
-
-      if (!accessToken && !refreshToken) {
+      setUser(response.data ?? null);
+    } catch (error) {
+      /*
+       * A 401 here simply means there is
+       * no active platform session.
+       *
+       * This is normal when visiting /login
+       * before authentication.
+       */
+      if (
+        error instanceof ApiError &&
+        error.status === 401
+      ) {
+        authStorage.clear();
         setUser(null);
         return;
       }
 
-      try {
-        const response =
-          await platformAuthService.me();
+      console.error(
+        "Unable to restore platform session:",
+        error
+      );
 
-        setUser(response.data ?? null);
-      } catch (error) {
-        console.error(
-          "Unable to restore platform session:",
-          error
-        );
-
-        setUser(null);
-        authStorage.clear();
-      }
-    }, []);
+      authStorage.clear();
+      setUser(null);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -98,8 +105,8 @@ export function PlatformAuthProvider({
 
   const login = useCallback(
     async (
-      credentials: PlatformLoginCredentials
-    ) => {
+      credentials: PlatformLoginPayload
+    ): Promise<void> => {
       setIsLoading(true);
 
       try {
@@ -110,28 +117,25 @@ export function PlatformAuthProvider({
 
         const authData = response.data;
 
-        if (
-          !authData?.accessToken ||
-          !authData?.refreshToken
-        ) {
+        if (!authData?.accessToken) {
           throw new Error(
-            "The login response did not contain authentication tokens."
+            "The login response did not contain an access token."
           );
         }
 
-        authStorage.setTokens(
-          authData.accessToken,
-          authData.refreshToken
+        authStorage.setAccessToken(
+          authData.accessToken
         );
 
         if (authData.user) {
           setUser(authData.user);
-        } else {
-          const meResponse =
-            await platformAuthService.me();
-
-          setUser(meResponse.data ?? null);
+          return;
         }
+
+        const meResponse =
+          await platformAuthService.me();
+
+        setUser(meResponse.data ?? null);
       } finally {
         setIsLoading(false);
       }
@@ -141,15 +145,8 @@ export function PlatformAuthProvider({
 
   const logout =
     useCallback(async (): Promise<void> => {
-      const refreshToken =
-        authStorage.getRefreshToken();
-
       try {
-        if (refreshToken) {
-          await platformAuthService.logout(
-            refreshToken
-          );
-        }
+        await platformAuthService.logout();
       } catch (error) {
         console.error(
           "Platform logout request failed:",
@@ -168,12 +165,10 @@ export function PlatformAuthProvider({
         return false;
       }
 
-      const role =
-        user.roleCode ??
-        user.role_code ??
-        user.role;
-
-      if (role === "platform_superadmin") {
+      if (
+        user.role ===
+        "platform_superadmin"
+      ) {
         return true;
       }
 
@@ -206,7 +201,9 @@ export function PlatformAuthProvider({
   );
 
   return (
-    <PlatformAuthContext.Provider value={value}>
+    <PlatformAuthContext.Provider
+      value={value}
+    >
       {children}
     </PlatformAuthContext.Provider>
   );
