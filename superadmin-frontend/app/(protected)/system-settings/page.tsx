@@ -103,6 +103,21 @@ const sections: SettingsSection[] = [
       allowSuperadminAccess: true,
     },
   },
+  {
+  id: "domains",
+  title: "Domain settings",
+  description:
+    "Configure tenant domain purchasing, support information and custom-domain behaviour.",
+  settingKey: "platform.domains",
+  defaultValue: {
+    purchaseUrl:
+      "https://www.namecheap.com/domains/",
+    purchaseLabel:
+      "Buy a domain",
+    supportEmail:
+      "domains@zentrabank.com",
+  },
+},
 ];
 
 export default function SystemSettingsPage() {

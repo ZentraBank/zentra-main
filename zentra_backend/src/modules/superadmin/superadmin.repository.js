@@ -138,6 +138,62 @@ const createTenant = async ({
   return tenantId;
 };
 
+const createTemporaryTenantDomain = async ({
+  connection,
+  tenantId,
+  slug,
+  rootDomain,
+}) => {
+  const domainId = randomUUID();
+
+  const domain = `${slug}.${rootDomain}`
+    .trim()
+    .toLowerCase();
+
+  await connection.query(
+    `
+      INSERT INTO tenant_domains (
+        id,
+        tenant_id,
+        domain,
+        domain_type,
+        status,
+        is_primary,
+        verification_method,
+        verification_token,
+        target_host,
+        ssl_status,
+        verified_at,
+        activated_at
+      )
+      VALUES (
+        ?,
+        ?,
+        ?,
+        'temporary',
+        'active',
+        TRUE,
+        NULL,
+        NULL,
+        NULL,
+        'active',
+        NOW(),
+        NOW()
+      )
+    `,
+    [
+      domainId,
+      tenantId,
+      domain,
+    ]
+  );
+
+  return {
+    id: domainId,
+    domain,
+  };
+};
+
 const createTenantSystemRoles = async ({
   connection,
   tenantId,
@@ -916,6 +972,8 @@ module.exports = {
   listTenants,
   findTenantById,
   createTenant,
+  createTemporaryTenantDomain,
+
   createTenantOwner,
   createSubscription,
   updateTenantStatus,
@@ -929,4 +987,5 @@ module.exports = {
   createTenantSubscriptionPlans,
   findTenantPlanByCode,
   updateTenantAdministratorsStatus,
+  
 };

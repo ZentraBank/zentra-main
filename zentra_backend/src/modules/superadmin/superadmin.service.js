@@ -1,5 +1,5 @@
 const bcrypt = require("bcryptjs");
-
+const env = require("../../config/env");
 const db = require("../../config/db");
 const repo = require("./superadmin.repository");
 
@@ -46,6 +46,20 @@ const createTenant = async ({
   connection,
   tenantId,
 });
+
+const slug = body.code
+  .trim()
+  .toLowerCase()
+  .replace(/_/g, "-");
+
+const temporaryDomain =
+  await repo.createTemporaryTenantDomain({
+    connection,
+    tenantId,
+    slug,
+    rootDomain:
+      env.tenantTemporaryDomain,
+  });
 
 const selectedPlan =
   await repo.findTenantPlanByCode({
@@ -113,10 +127,22 @@ if (!selectedPlan) {
       newValues: {
   code: body.code,
   name: body.name,
-  ownerUserId: owner.userId,
-  membershipId: owner.membershipId,
-  planCode: selectedPlan.code,
-  planId: selectedPlan.id,
+
+  temporaryDomain:
+    temporaryDomain.domain,
+
+  ownerUserId:
+    owner.userId,
+
+  membershipId:
+    owner.membershipId,
+
+  planCode:
+    selectedPlan.code,
+
+  planId:
+    selectedPlan.id,
+
   subscriptionId,
 },
       requestContext,
@@ -125,19 +151,22 @@ if (!selectedPlan) {
 
     await connection.commit();
 
-    return {
-      tenantId,
+   return {
+  tenantId,
 
-      ownerUserId:
-        owner.userId,
+  temporaryDomain:
+    temporaryDomain.domain,
 
-      membershipId:
-        owner.membershipId,
+  ownerUserId:
+    owner.userId,
 
-      subscriptionId,
+  membershipId:
+    owner.membershipId,
 
-      status: "pending",
-    };
+  subscriptionId,
+
+  status: "pending",
+};
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -448,6 +477,123 @@ const listAuditLogs = ({
         200
       ),
   });
+const listTenantDomains = ({
+  query,
+}) =>
+  repo.listTenantDomains({
+    page:
+      Number(query.page || 1),
+
+    limit:
+      Math.min(
+        Number(query.limit || 20),
+        100
+      ),
+
+    search:
+      query.search,
+
+    status:
+      query.status,
+
+    domainType:
+      query.domainType,
+
+    tenantId:
+      query.tenantId,
+  });
+
+const getTenantDomain =
+  async ({
+    domainId,
+  }) => {
+    const domain =
+      await repo.findTenantDomainById(
+        domainId
+      );
+
+    if (!domain) {
+      throw httpError(
+        404,
+        "Tenant domain not found."
+      );
+    }
+
+    return {
+      id:
+        domain.id,
+
+      tenantId:
+        domain.tenant_id,
+
+      domain:
+        domain.domain,
+
+      type:
+        domain.domain_type,
+
+      status:
+        domain.status,
+
+      isPrimary:
+        Boolean(
+          domain.is_primary
+        ),
+
+      verificationMethod:
+        domain.verification_method,
+
+      targetHost:
+        domain.target_host,
+
+      sslStatus:
+        domain.ssl_status,
+
+      provider:
+        domain.provider,
+
+      providerHostnameId:
+        domain.provider_hostname_id,
+
+      verificationAttempts:
+        Number(
+          domain.verification_attempts ||
+            0
+        ),
+
+      lastVerificationAt:
+        domain.last_verification_at,
+
+      verifiedAt:
+        domain.verified_at,
+
+      activatedAt:
+        domain.activated_at,
+
+      failureReason:
+        domain.failure_reason,
+
+      createdAt:
+        domain.created_at,
+
+      updatedAt:
+        domain.updated_at,
+
+      tenant: {
+        name:
+          domain.tenant_name,
+
+        slug:
+          domain.tenant_slug,
+
+        appName:
+          domain.tenant_app_name,
+
+        status:
+          domain.tenant_status,
+      },
+    };
+  };
 
 module.exports = {
   createTenant,
@@ -460,4 +606,7 @@ module.exports = {
 
   listTenantAdministrators,
   listAuditLogs,
+
+  listTenantDomains,
+  getTenantDomain,
 };

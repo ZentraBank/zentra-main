@@ -41,6 +41,10 @@ const environmentSchema = Joi.object({
     .allow("")
     .optional(),
 
+  TENANT_TEMPORARY_DOMAIN: Joi.string()
+  .hostname()
+  .default("zentrabank.app"),
+
   /*
   |--------------------------------------------------------------------------
   | Database
@@ -172,6 +176,18 @@ const environmentSchema = Joi.object({
     .min(8)
     .required(),
 
+  CLOUDFLARE_API_TOKEN: Joi.string()
+  .allow("")
+  .optional(),
+
+CLOUDFLARE_ZONE_ID: Joi.string()
+  .allow("")
+  .optional(),
+
+CLOUDFLARE_FALLBACK_ORIGIN: Joi.string()
+  .hostname()
+  .allow("")
+  .optional(),
   /*
   |--------------------------------------------------------------------------
   | Tenant administrator seed

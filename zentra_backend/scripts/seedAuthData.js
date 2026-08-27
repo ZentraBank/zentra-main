@@ -25,6 +25,36 @@ const permissions = [
   "notifications",
 ],
 [
+  "Tenant Settings Read",
+  "tenant.settings.read",
+  "tenant",
+],
+[
+  "Tenant Settings Manage",
+  "tenant.settings.manage",
+  "tenant",
+],
+[
+  "Tenant Domains Read",
+  "tenant.domains.read",
+  "tenant",
+],
+[
+  "Tenant Domains Manage",
+  "tenant.domains.manage",
+  "tenant",
+],
+[
+  "Platform Domains Read",
+  "platform.domains.read",
+  "platform",
+],
+[
+  "Platform Domains Manage",
+  "platform.domains.manage",
+  "platform",
+],
+[
   "Notification Templates Manage",
   "notifications.templates.manage",
   "notifications",
@@ -46,6 +76,7 @@ const permissions = [
   ["Investments Create", "investments.create", "investments"],
   ["Investments Approve", "investments.approve", "investments"],
   ["Audit Logs Read", "audit_logs.read", "audit"],
+
 ];
 
 const roles = [

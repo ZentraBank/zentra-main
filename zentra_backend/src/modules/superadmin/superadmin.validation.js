@@ -145,4 +145,55 @@ module.exports = {
         .optional(),
     }),
   },
+
+listTenantDomains: {
+  query: Joi.object({
+    page: Joi.number()
+      .integer()
+      .min(1)
+      .default(1),
+
+    limit: Joi.number()
+      .integer()
+      .min(1)
+      .max(100)
+      .default(20),
+
+    search: Joi.string()
+      .trim()
+      .max(255)
+      .optional(),
+
+    status: Joi.string()
+      .valid(
+        "pending",
+        "verification_pending",
+        "verified",
+        "provisioning",
+        "active",
+        "failed",
+        "disconnected"
+      )
+      .optional(),
+
+    domainType: Joi.string()
+      .valid(
+        "temporary",
+        "custom"
+      )
+      .optional(),
+
+    tenantId: Joi.string()
+      .uuid()
+      .optional(),
+  }),
+},
+
+tenantDomainId: {
+  params: Joi.object({
+    domainId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+},
 };

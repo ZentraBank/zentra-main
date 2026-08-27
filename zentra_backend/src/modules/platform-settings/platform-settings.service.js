@@ -1,5 +1,15 @@
 const repo = require("./platform-settings.repository");
 
+
+const TENANT_FACING_SETTING_KEYS =
+  new Set([
+    "platform.domains",
+  ]);
+
+
+
+
+
 const httpError = (statusCode, message) => {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -17,14 +27,84 @@ const maskSecret = (setting) => {
   };
 };
 
+
+
+const parseSettingValue = (
+  value
+) => {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return null;
+  }
+
+  if (
+    typeof value !==
+    "string"
+  ) {
+    return value;
+  }
+
+  try {
+    return JSON.parse(
+      value
+    );
+  } catch {
+    return value;
+  }
+};
+
+const listTenantFacingSettings =
+  async () => {
+    const settings =
+      await repo.listSettings();
+
+    return settings
+      .filter(
+        (setting) =>
+          !Boolean(
+            setting.is_secret
+          ) &&
+          TENANT_FACING_SETTING_KEYS.has(
+            setting.setting_key
+          )
+      )
+      .reduce(
+        (
+          result,
+          setting
+        ) => {
+          result[
+            setting.setting_key
+          ] =
+            parseSettingValue(
+              setting.setting_value
+            );
+
+          return result;
+        },
+        {}
+      );
+  };
+  
 module.exports = {
   listSettings: async () => {
-    const settings = await repo.listSettings();
-    return settings.map(maskSecret);
+    const settings =
+      await repo.listSettings();
+
+    return settings.map(
+      maskSecret
+    );
   },
 
-  getSetting: async (settingKey) => {
-    const setting = await repo.findByKey(settingKey);
+  getSetting: async (
+    settingKey
+  ) => {
+    const setting =
+      await repo.findByKey(
+        settingKey
+      );
 
     if (!setting) {
       throw httpError(
@@ -33,7 +113,9 @@ module.exports = {
       );
     }
 
-    return maskSecret(setting);
+    return maskSecret(
+      setting
+    );
   },
 
   upsertSetting: async ({
@@ -42,34 +124,60 @@ module.exports = {
     body,
   }) => {
     const previous =
-      await repo.findByKey(settingKey);
+      await repo.findByKey(
+        settingKey
+      );
 
-    const updated = await repo.upsert({
-      settingKey,
-      settingValue: body.value,
-      isSecret: body.isSecret,
-      description: body.description,
-      updatedBy: auth.userId,
-    });
+    const updated =
+      await repo.upsert({
+        settingKey,
+        settingValue:
+          body.value,
+        isSecret:
+          body.isSecret,
+        description:
+          body.description,
+        updatedBy:
+          auth.userId,
+      });
 
     await repo.createHistory({
       settingKey,
+
       previousValue:
-        previous?.setting_value || null,
-      newValue: body.value,
-      changedBy: auth.userId,
-      reason: body.reason,
+        previous?.setting_value ||
+        null,
+
+      newValue:
+        body.value,
+
+      changedBy:
+        auth.userId,
+
+      reason:
+        body.reason,
     });
 
-    return maskSecret(updated);
+    return maskSecret(
+      updated
+    );
   },
 
-  listHistory: ({ settingKey, query }) =>
+  listHistory: ({
+    settingKey,
+    query,
+  }) =>
     repo.listHistory({
       settingKey,
-      limit: Math.min(
-        Number(query.limit || 50),
-        200
-      ),
+
+      limit:
+        Math.min(
+          Number(
+            query.limit || 50
+          ),
+          200
+        ),
     }),
+
+  listTenantFacingSettings,
 };

@@ -68,4 +68,31 @@ router.get(
   controller.listAuditLogs
 );
 
+router.get(
+  "/domains",
+
+  validate(
+    schemas.listTenantDomains
+  ),
+
+  requireAllPermissions(
+    "platform.domains.read"
+  ),
+
+  controller.listTenantDomains
+);
+
+router.get(
+  "/domains/:domainId",
+
+  validate(
+    schemas.tenantDomainId
+  ),
+
+  requireAllPermissions(
+    "platform.domains.read"
+  ),
+
+  controller.getTenantDomain
+);
 module.exports = router;
