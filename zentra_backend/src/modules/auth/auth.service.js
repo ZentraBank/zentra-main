@@ -148,13 +148,31 @@ const login = async ({
     throw createHttpError(400, "Tenant, email, and password are required");
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const user = await authRepo.findUserByEmailAndTenant(
+ const normalizedEmail =
+  email.trim().toLowerCase();
+
+console.log("[TENANT LOGIN DEBUG]", {
+  tenantId,
+  normalizedEmail,
+});
+
+const user =
+  await authRepo.findUserByEmailAndTenant(
     normalizedEmail,
     tenantId
   );
 
-  validateAccountState(user);
+console.log("[TENANT LOGIN USER]", {
+  found: Boolean(user),
+  userId: user?.id,
+  tenantId: user?.tenant_id,
+  membershipStatus:
+    user?.membership_status,
+  userStatus:
+    user?.user_status,
+});
+
+validateAccountState(user);
 
   const passwordIsValid = await bcrypt.compare(
     password,

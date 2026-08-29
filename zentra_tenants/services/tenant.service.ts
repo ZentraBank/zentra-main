@@ -169,12 +169,14 @@ const mapTenant = (
   data: TenantApiResponse
 ): Tenant => {
   return {
-    id: data.id,
+  id: data.id,
 
-    app_name:
-      data.branding.appName ||
-      data.name,
+  name: data.name,
 
+  app_name:
+    data.branding.appName ||
+    data.name,
+    
     slug:
       data.slug,
 

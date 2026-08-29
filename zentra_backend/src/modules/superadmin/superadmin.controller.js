@@ -43,6 +43,63 @@ const getTenantDomain = asyncHandler(
   }
 );
 
+const refreshTenantDomain =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.refreshTenantDomain({
+        domainId:
+          req.params.domainId,
+
+        actor: context(req),
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Tenant domain provider status refreshed successfully.",
+      data,
+    });
+  });
+
+const retryTenantDomainProvisioning =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.retryTenantDomainProvisioning(
+        {
+          domainId:
+            req.params.domainId,
+
+          actor:
+            context(req),
+        }
+      );
+
+    return sendSuccess(res, {
+      message:
+        "Tenant domain provisioning retry started successfully.",
+      data,
+    });
+  });
+
+const disconnectTenantDomain =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.disconnectTenantDomain(
+        {
+          domainId:
+            req.params.domainId,
+
+          actor:
+            context(req),
+        }
+      );
+
+    return sendSuccess(res, {
+      message:
+        "Tenant domain disconnected successfully.",
+      data,
+    });
+  });
+
 module.exports = {
   getDashboard: asyncHandler(async (req, res) =>
     sendSuccess(res, {
@@ -167,6 +224,7 @@ module.exports = {
       })
   ),
 
+
   /*
   |--------------------------------------------------------------------------
   | Domain oversight
@@ -176,4 +234,8 @@ module.exports = {
   listTenantDomains,
 
   getTenantDomain,
+
+  refreshTenantDomain,
+  retryTenantDomainProvisioning,
+  disconnectTenantDomain,
 };

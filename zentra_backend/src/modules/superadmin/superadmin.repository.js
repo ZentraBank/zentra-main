@@ -947,6 +947,36 @@ const findTenantPlanByCode = async ({
   return rows[0] || null;
 };
 
+const findTenantDomainById =
+  async (domainId) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            td.*,
+            t.name AS tenant_name,
+            t.slug AS tenant_slug,
+            t.app_name AS tenant_app_name,
+            t.status AS tenant_status
+
+          FROM tenant_domains td
+
+          INNER JOIN tenants t
+            ON t.id = td.tenant_id
+
+          WHERE
+            td.id = ?
+            AND td.deleted_at IS NULL
+            AND t.deleted_at IS NULL
+
+          LIMIT 1
+        `,
+        [domainId]
+      );
+
+    return rows[0] || null;
+  };
+
 const updateTenantAdministratorsStatus = async ({
   tenantId,
   status,
@@ -967,6 +997,418 @@ const updateTenantAdministratorsStatus = async ({
   );
 };
 
+const updateTenantDomainStatus = async ({
+  domainId,
+  status,
+  failureReason = null,
+}) => {
+  await db.query(
+    `
+      UPDATE tenant_domains
+      SET
+        status = ?,
+        failure_reason = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE
+        id = ?
+        AND deleted_at IS NULL
+    `,
+    [
+      status,
+      failureReason,
+      domainId,
+    ]
+  );
+
+  return findTenantDomainById(
+    domainId
+  );
+};
+
+const updateTenantDomainProviderDetails =
+  async ({
+    domainId,
+    provider,
+    providerHostnameId,
+    sslStatus,
+    targetHost,
+  }) => {
+    const fields = [];
+    const values = [];
+
+    if (
+      provider !== undefined
+    ) {
+      fields.push(
+        "provider = ?"
+      );
+      values.push(provider);
+    }
+
+    if (
+      providerHostnameId !==
+      undefined
+    ) {
+      fields.push(
+        "provider_hostname_id = ?"
+      );
+      values.push(
+        providerHostnameId
+      );
+    }
+
+    if (
+      sslStatus !== undefined
+    ) {
+      fields.push(
+        "ssl_status = ?"
+      );
+      values.push(sslStatus);
+    }
+
+    if (
+      targetHost !== undefined
+    ) {
+      fields.push(
+        "target_host = ?"
+      );
+      values.push(targetHost);
+    }
+
+    if (!fields.length) {
+      return findTenantDomainById(
+        domainId
+      );
+    }
+
+    fields.push(
+      "updated_at = CURRENT_TIMESTAMP"
+    );
+
+    values.push(domainId);
+
+    await db.query(
+      `
+        UPDATE tenant_domains
+        SET ${fields.join(", ")}
+        WHERE
+          id = ?
+          AND deleted_at IS NULL
+      `,
+      values
+    );
+
+    return findTenantDomainById(
+      domainId
+    );
+  };
+
+const markTenantDomainActive =
+  async ({
+    domainId,
+    sslStatus = "active",
+  }) => {
+    await db.query(
+      `
+        UPDATE tenant_domains
+        SET
+          status = 'active',
+          ssl_status = ?,
+          failure_reason = NULL,
+          activated_at =
+            COALESCE(
+              activated_at,
+              CURRENT_TIMESTAMP
+            ),
+          updated_at =
+            CURRENT_TIMESTAMP
+        WHERE
+          id = ?
+          AND deleted_at IS NULL
+      `,
+      [
+        sslStatus,
+        domainId,
+      ]
+    );
+
+    return findTenantDomainById(
+      domainId
+    );
+  };
+
+const markTenantDomainProvisioning =
+  async (domainId) => {
+    await db.query(
+      `
+        UPDATE tenant_domains
+        SET
+          status = 'provisioning',
+          failure_reason = NULL,
+          updated_at =
+            CURRENT_TIMESTAMP
+        WHERE
+          id = ?
+          AND deleted_at IS NULL
+      `,
+      [domainId]
+    );
+
+    return findTenantDomainById(
+      domainId
+    );
+  };
+
+const markTenantDomainFailed =
+  async ({
+    domainId,
+    failureReason,
+  }) => {
+    await db.query(
+      `
+        UPDATE tenant_domains
+        SET
+          status = 'failed',
+          failure_reason = ?,
+          updated_at =
+            CURRENT_TIMESTAMP
+        WHERE
+          id = ?
+          AND deleted_at IS NULL
+      `,
+      [
+        failureReason,
+        domainId,
+      ]
+    );
+
+    return findTenantDomainById(
+      domainId
+    );
+  };
+
+const disconnectTenantDomain =
+  async (domainId) => {
+    await db.query(
+      `
+        UPDATE tenant_domains
+        SET
+          status = 'disconnected',
+          is_primary = 0,
+          ssl_status = NULL,
+          provider_hostname_id = NULL,
+          failure_reason = NULL,
+          updated_at =
+            CURRENT_TIMESTAMP
+        WHERE
+          id = ?
+          AND deleted_at IS NULL
+      `,
+      [domainId]
+    );
+
+    return findTenantDomainById(
+      domainId
+    );
+  };
+
+  const makeTemporaryDomainPrimary =
+  async (tenantId) => {
+    await db.query(
+      `
+        UPDATE tenant_domains
+        SET
+          is_primary = 0,
+          updated_at =
+            CURRENT_TIMESTAMP
+        WHERE
+          tenant_id = ?
+          AND deleted_at IS NULL
+      `,
+      [tenantId]
+    );
+
+    await db.query(
+      `
+        UPDATE tenant_domains
+        SET
+          is_primary = 1,
+          status = 'active',
+          updated_at =
+            CURRENT_TIMESTAMP
+        WHERE
+          tenant_id = ?
+          AND domain_type = 'temporary'
+          AND deleted_at IS NULL
+        ORDER BY created_at ASC
+        LIMIT 1
+      `,
+      [tenantId]
+    );
+  };
+
+  const listTenantDomains = async ({
+  page = 1,
+  limit = 20,
+  search,
+  status,
+  domainType,
+  tenantId,
+}) => {
+  const offset =
+    (page - 1) * limit;
+
+  const where = [
+    "td.deleted_at IS NULL",
+    "t.deleted_at IS NULL",
+  ];
+
+  const values = [];
+
+  if (search) {
+    where.push(`
+      (
+        td.domain LIKE ?
+        OR t.name LIKE ?
+        OR t.slug LIKE ?
+        OR t.app_name LIKE ?
+      )
+    `);
+
+    const searchValue =
+      `%${search}%`;
+
+    values.push(
+      searchValue,
+      searchValue,
+      searchValue,
+      searchValue
+    );
+  }
+
+  if (status) {
+    where.push(
+      "td.status = ?"
+    );
+
+    values.push(status);
+  }
+
+  if (domainType) {
+    where.push(
+      "td.domain_type = ?"
+    );
+
+    values.push(domainType);
+  }
+
+  if (tenantId) {
+    where.push(
+      "td.tenant_id = ?"
+    );
+
+    values.push(tenantId);
+  }
+
+  const whereClause =
+    `WHERE ${where.join(
+      " AND "
+    )}`;
+
+  const [rows] =
+  await db.query(
+    `
+      SELECT
+        td.id,
+        td.tenant_id,
+        td.domain,
+        td.domain_type,
+        td.status,
+        td.is_primary,
+        td.verification_method,
+        td.target_host,
+        td.ssl_status,
+        td.provider,
+        td.provider_hostname_id,
+        td.verification_attempts,
+        td.last_verification_at,
+        td.verified_at,
+        td.activated_at,
+        td.failure_reason,
+        td.created_at,
+        td.updated_at,
+
+        t.name AS tenant_name,
+        t.slug AS tenant_slug,
+        t.app_name AS tenant_app_name,
+        t.status AS tenant_status
+
+      FROM tenant_domains td
+
+      INNER JOIN tenants t
+        ON t.id = td.tenant_id
+
+      ${whereClause}
+
+      ORDER BY
+        CASE
+          WHEN td.status = 'failed'
+            THEN 0
+          WHEN td.status = 'verification_pending'
+            THEN 1
+          WHEN td.status = 'provisioning'
+            THEN 2
+          ELSE 3
+        END,
+        td.updated_at DESC
+
+      LIMIT ?
+      OFFSET ?
+    `,
+    [
+      ...values,
+      Number(limit),
+      Number(offset),
+    ]
+  );
+
+  const [countRows] =
+  await db.query(
+    `
+      SELECT
+        COUNT(*) AS total
+
+      FROM tenant_domains td
+
+      INNER JOIN tenants t
+        ON t.id = td.tenant_id
+
+      ${whereClause}
+    `,
+    values
+  );
+
+  const total =
+  Number(
+    countRows[0]?.total || 0
+  );
+
+return {
+  rows,
+
+  meta: {
+    page: Number(page),
+    limit: Number(limit),
+    total,
+    totalPages: Math.max(
+      1,
+      Math.ceil(
+        total / Number(limit)
+      )
+    ),
+  },
+};
+};
 
 module.exports = {
   listTenants,
@@ -987,5 +1429,19 @@ module.exports = {
   createTenantSubscriptionPlans,
   findTenantPlanByCode,
   updateTenantAdministratorsStatus,
+  updateTenantDomainStatus,
+  updateTenantDomainProviderDetails,
+
+  markTenantDomainActive,
+  markTenantDomainProvisioning,
+  markTenantDomainFailed,
+
+  disconnectTenantDomain,
+  makeTemporaryDomainPrimary,
+
+  listTenantDomains,
+  findTenantDomainById,
+
+  
   
 };

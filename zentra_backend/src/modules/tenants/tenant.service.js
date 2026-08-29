@@ -367,7 +367,7 @@ const listCurrentTenantDomains =
     );
   };
 
-  const createCustomDomainRequest =
+const createCustomDomainRequest =
   async ({
     tenantId,
     domain,
@@ -433,16 +433,16 @@ const listCurrentTenantDomains =
     const verificationToken =
       generateDomainVerificationToken();
 
-   const connectionInstructions =
-  domainProvisioning
-    .getConnectionInstructions({
-      domain:
-        normalisedDomain,
-    });
+    const connectionInstructions =
+      domainProvisioning
+        .getConnectionInstructions({
+          domain:
+            normalisedDomain,
+        });
 
-const targetHost =
-  connectionInstructions
-    .targetHost;
+    const targetHost =
+      connectionInstructions
+        .targetHost;
 
     const createdDomain =
       await tenantRepository.createTenantDomain(
@@ -489,30 +489,23 @@ const targetHost =
         recordType:
           "TXT",
 
-        /*
-         * Tenant adds:
-         *
-         * _zentrabank.acme.com
-         *
-         * rather than modifying the
-         * root DNS record itself.
-         */
         host:
-          `_zentrabank.${normalisedDomain}`,
+          buildDnsVerificationHost(
+            normalisedDomain
+          ),
 
         value:
           verificationToken,
       },
 
       connection: {
-  record:
-    connectionInstructions.record,
+        record:
+          connectionInstructions.record,
 
-  targetHost:
-    connectionInstructions
-      .targetHost,
-},
-      
+        targetHost:
+          connectionInstructions
+            .targetHost,
+      },
     };
   };
 
@@ -580,9 +573,26 @@ const targetHost =
         tenantId,
         domainId,
       });
+    
+      const buildVerificationHost = (domain) => {
+  const parts = domain
+    .trim()
+    .toLowerCase()
+    .split(".")
+    .filter(Boolean);
 
+  if (parts.length <= 2) {
+    return "_zentrabank";
+  }
+
+  const subdomain = parts
+    .slice(0, -2)
+    .join(".");
+
+  return `_zentrabank.${subdomain}`;
+};
     const verificationHost =
-      `_zentrabank.${domain.domain}`;
+  buildVerificationHost(domain);
 
     let records;
 
@@ -1027,6 +1037,8 @@ const targetHost =
           : null,
     };
   };
+
+  
 
   module.exports = {
   getTenantById,

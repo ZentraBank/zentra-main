@@ -5,7 +5,7 @@ export type TenantFeature = {
 };
 
 export type ClientTenant = {
-  id: number;
+  id: string;
   app_name: string;
   slug: string;
   domain: string;

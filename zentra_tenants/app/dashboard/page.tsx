@@ -28,7 +28,7 @@ const mainServices = [
   { title: "Donations", icon: HeartHandshake, href: "/dashboard/donation" },
   { title: "chat", icon: BadgeDollarSign, href: "/dashboard/communications/chat" },
   { title: "Gift", icon: Gift, href: "/dashboard/gift" },
-  { title: "Card setting", icon: Settings, href: "/dashboard/card-lock" },
+  { title: "Setting", icon: Settings, href: "/dashboard/settings" },
   { title: "Notifications", icon: Bell, href: "dashboard/communications/notifications" },
 ];
 

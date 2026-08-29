@@ -1,5 +1,6 @@
 const { randomUUID } = require("crypto");
 const { query } = require("../../utils/query");
+const { create } = require("domain");
 
 const findTenantById = async (tenantId) => {
   const rows = await query(
@@ -646,6 +647,8 @@ const restoreTemporaryDomainAsPrimary =
     });
   };
 
+
+
 module.exports = {
   findTenantById,
   findTenantBySlug,
@@ -664,6 +667,8 @@ module.exports = {
   disconnectTenantDomain,
   setTenantDomainProvider,
   findTemporaryTenantDomain,
+  createTenantDomain,
   restoreTemporaryDomainAsPrimary,
+  findTenantDomainByName,
 
 };

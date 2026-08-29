@@ -275,6 +275,9 @@ const env = Object.freeze({
   superadminFrontendUrl:
     value.SUPERADMIN_FRONTEND_URL || null,
 
+  tenantTemporaryDomain:
+  value.TENANT_TEMPORARY_DOMAIN,
+
   /*
   |--------------------------------------------------------------------------
   | Database

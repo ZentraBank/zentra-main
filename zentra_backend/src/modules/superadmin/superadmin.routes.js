@@ -95,4 +95,69 @@ router.get(
 
   controller.getTenantDomain
 );
+
+router.get(
+  "/domains",
+  validate(
+    schemas.listTenantDomains
+  ),
+  requireAllPermissions(
+    "platform.domains.read"
+  ),
+  controller.listTenantDomains
+);
+
+router.get(
+  "/domains/:domainId",
+  validate(
+    schemas.tenantDomainId
+  ),
+  requireAllPermissions(
+    "platform.domains.read"
+  ),
+  controller.getTenantDomain
+);
+
+router.post(
+  "/domains/:domainId/refresh",
+
+  validate(
+    schemas.tenantDomainId
+  ),
+
+  requireAllPermissions(
+    "platform.domains.manage"
+  ),
+
+  controller.refreshTenantDomain
+);
+
+router.post(
+  "/domains/:domainId/retry",
+
+  validate(
+    schemas.tenantDomainId
+  ),
+
+  requireAllPermissions(
+    "platform.domains.manage"
+  ),
+
+  controller.retryTenantDomainProvisioning
+);
+
+router.delete(
+  "/domains/:domainId",
+
+  validate(
+    schemas.tenantDomainId
+  ),
+
+  requireAllPermissions(
+    "platform.domains.manage"
+  ),
+
+  controller.disconnectTenantDomain
+);
+
 module.exports = router;

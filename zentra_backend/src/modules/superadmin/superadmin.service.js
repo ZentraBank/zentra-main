@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const env = require("../../config/env");
 const db = require("../../config/db");
 const repo = require("./superadmin.repository");
+const domainProvisioningService =
+  require("../tenants/domain-provisioning.service");
 
 const httpError = (
   statusCode,
@@ -18,7 +20,7 @@ const createTenant = async ({
   requestContext,
 }) => {
   const connection =
-    await db.getConnection();
+    await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -182,7 +184,7 @@ const updateTenantStatus = async ({
   requestContext,
 }) => {
   const connection =
-    await db.getConnection();
+    await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -595,6 +597,360 @@ const getTenantDomain =
     };
   };
 
+  const refreshTenantDomain =
+  async ({
+    domainId,
+    actor,
+  }) => {
+    const domain =
+      await repo.findTenantDomainById(
+        domainId
+      );
+
+    if (!domain) {
+      throw httpError(
+        404,
+        "Tenant domain not found."
+      );
+    }
+
+    if (
+      !domain.provider_hostname_id
+    ) {
+      throw httpError(
+        400,
+        "This domain has not been provisioned with a provider yet."
+      );
+    }
+
+    try {
+      const providerStatus =
+        await domainProvisioningService.getDomainStatus(
+          {
+            domain:
+              domain.domain,
+
+            provider:
+              domain.provider,
+
+            providerHostnameId:
+              domain.provider_hostname_id,
+          }
+        );
+
+      await repo.updateTenantDomainProviderDetails(
+        {
+          domainId,
+
+          provider:
+            providerStatus.provider ??
+            domain.provider,
+
+          providerHostnameId:
+            providerStatus.providerHostnameId ??
+            domain.provider_hostname_id,
+
+          sslStatus:
+            providerStatus.sslStatus,
+
+          targetHost:
+            providerStatus.targetHost ??
+            domain.target_host,
+        }
+      );
+
+      if (
+        providerStatus.status ===
+          "active" &&
+        providerStatus.sslStatus ===
+          "active"
+      ) {
+        await repo.markTenantDomainActive(
+          {
+            domainId,
+            sslStatus:
+              providerStatus.sslStatus,
+          }
+        );
+      } else if (
+        providerStatus.status ===
+        "failed"
+      ) {
+        await repo.markTenantDomainFailed(
+          {
+            domainId,
+
+            failureReason:
+              providerStatus.failureReason ||
+              "Domain provider reported a provisioning failure.",
+          }
+        );
+      } else {
+        await repo.updateTenantDomainStatus(
+          {
+            domainId,
+
+            status:
+              providerStatus.status ||
+              "provisioning",
+
+            failureReason:
+              null,
+          }
+        );
+      }
+
+      const refreshed =
+        await repo.findTenantDomainById(
+          domainId
+        );
+
+      return {
+        domain: refreshed,
+
+        providerStatus,
+      };
+    } catch (error) {
+      await repo.markTenantDomainFailed(
+        {
+          domainId,
+
+          failureReason:
+            error.message ||
+            "Unable to refresh domain provider status.",
+        }
+      );
+
+      throw error;
+    }
+  };
+
+  const retryTenantDomainProvisioning =
+  async ({
+    domainId,
+    actor,
+  }) => {
+    const domain =
+      await repo.findTenantDomainById(
+        domainId
+      );
+
+    if (!domain) {
+      throw httpError(
+        404,
+        "Tenant domain not found."
+      );
+    }
+
+    if (
+      domain.domain_type !==
+      "custom"
+    ) {
+      throw httpError(
+        400,
+        "Only custom domains can be reprovisioned."
+      );
+    }
+
+    if (
+      ![
+        "verified",
+        "provisioning",
+        "failed",
+      ].includes(
+        domain.status
+      )
+    ) {
+      throw httpError(
+        400,
+        `Domain cannot be provisioned while its status is ${domain.status}.`
+      );
+    }
+
+    await repo.markTenantDomainProvisioning(
+      domainId
+    );
+
+    try {
+      /*
+       * If an old provider hostname still exists,
+       * clean it up first.
+       */
+      if (
+        domain.provider_hostname_id
+      ) {
+        try {
+          await domainProvisioningService.deleteDomain(
+            {
+              domain:
+                domain.domain,
+
+              provider:
+                domain.provider,
+
+              providerHostnameId:
+                domain.provider_hostname_id,
+            }
+          );
+        } catch (cleanupError) {
+          /*
+           * Do not block retry just because
+           * cleanup failed. The provider may
+           * already have deleted the hostname.
+           */
+          console.warn(
+            "Unable to clean previous domain provider record:",
+            cleanupError.message
+          );
+        }
+      }
+
+      const result =
+        await domainProvisioningService.provisionDomain(
+          {
+            domain:
+              domain.domain,
+
+            tenantId:
+              domain.tenant_id,
+
+            targetHost:
+              domain.target_host,
+          }
+        );
+
+      await repo.updateTenantDomainProviderDetails(
+        {
+          domainId,
+
+          provider:
+            result.provider,
+
+          providerHostnameId:
+            result.providerHostnameId,
+
+          sslStatus:
+            result.sslStatus,
+
+          targetHost:
+            result.targetHost ??
+            domain.target_host,
+        }
+      );
+
+      if (
+        result.status ===
+          "active" &&
+        result.sslStatus ===
+          "active"
+      ) {
+        await repo.markTenantDomainActive(
+          {
+            domainId,
+
+            sslStatus:
+              result.sslStatus,
+          }
+        );
+      } else {
+        await repo.updateTenantDomainStatus(
+          {
+            domainId,
+
+            status:
+              result.status ||
+              "provisioning",
+
+            failureReason:
+              null,
+          }
+        );
+      }
+
+      return repo.findTenantDomainById(
+        domainId
+      );
+    } catch (error) {
+      await repo.markTenantDomainFailed(
+        {
+          domainId,
+
+          failureReason:
+            error.message ||
+            "Domain provisioning failed.",
+        }
+      );
+
+      throw error;
+    }
+  };
+
+
+  const disconnectTenantDomain =
+  async ({
+    domainId,
+    actor,
+  }) => {
+    const domain =
+      await repo.findTenantDomainById(
+        domainId
+      );
+
+    if (!domain) {
+      throw httpError(
+        404,
+        "Tenant domain not found."
+      );
+    }
+
+    if (
+      domain.domain_type ===
+      "temporary"
+    ) {
+      throw httpError(
+        400,
+        "The tenant temporary domain cannot be disconnected."
+      );
+    }
+
+    if (
+      domain.status ===
+      "disconnected"
+    ) {
+      return domain;
+    }
+
+    if (
+      domain.provider_hostname_id
+    ) {
+      await domainProvisioningService.deleteDomain(
+        {
+          domain:
+            domain.domain,
+
+          provider:
+            domain.provider,
+
+          providerHostnameId:
+            domain.provider_hostname_id,
+        }
+      );
+    }
+
+    await repo.disconnectTenantDomain(
+      domainId
+    );
+
+    await repo.makeTemporaryDomainPrimary(
+      domain.tenant_id
+    );
+
+    return repo.findTenantDomainById(
+      domainId
+    );
+  };
+
+
 module.exports = {
   createTenant,
   updateTenantStatus,
@@ -609,4 +965,11 @@ module.exports = {
 
   listTenantDomains,
   getTenantDomain,
+  listTenantDomains,
+  getTenantDomain,
+
+  refreshTenantDomain,
+  retryTenantDomainProvisioning,
+  disconnectTenantDomain,
+  
 };
