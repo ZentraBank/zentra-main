@@ -42,8 +42,8 @@ const environmentSchema = Joi.object({
     .optional(),
 
   TENANT_TEMPORARY_DOMAIN: Joi.string()
-  .hostname()
-  .default("zentrabank.app"),
+    .hostname()
+    .default("zentrabank.app"),
 
   /*
   |--------------------------------------------------------------------------
@@ -111,6 +111,40 @@ const environmentSchema = Joi.object({
 
   /*
   |--------------------------------------------------------------------------
+  | Email / SMTP
+  |--------------------------------------------------------------------------
+  */
+
+  SMTP_HOST: Joi.string()
+    .hostname()
+    .required(),
+
+  SMTP_PORT: Joi.number()
+    .port()
+    .default(465),
+
+  SMTP_SECURE: Joi.boolean()
+    .truthy("true")
+    .falsy("false")
+    .default(true),
+
+  SMTP_USER: Joi.string()
+    .trim()
+    .required(),
+
+  SMTP_PASSWORD: Joi.string()
+    .required(),
+
+  EMAIL_FROM_NAME: Joi.string()
+    .trim()
+    .default("ZentraBank"),
+
+  EMAIL_FROM_ADDRESS: Joi.string()
+    .email()
+    .required(),
+
+  /*
+  |--------------------------------------------------------------------------
   | Default tenant
   |--------------------------------------------------------------------------
   */
@@ -154,6 +188,25 @@ const environmentSchema = Joi.object({
 
   /*
   |--------------------------------------------------------------------------
+  | Cloudflare
+  |--------------------------------------------------------------------------
+  */
+
+  CLOUDFLARE_API_TOKEN: Joi.string()
+    .allow("")
+    .optional(),
+
+  CLOUDFLARE_ZONE_ID: Joi.string()
+    .allow("")
+    .optional(),
+
+  CLOUDFLARE_FALLBACK_ORIGIN: Joi.string()
+    .hostname()
+    .allow("")
+    .optional(),
+
+  /*
+  |--------------------------------------------------------------------------
   | Platform administrator seed
   |--------------------------------------------------------------------------
   */
@@ -176,18 +229,6 @@ const environmentSchema = Joi.object({
     .min(8)
     .required(),
 
-  CLOUDFLARE_API_TOKEN: Joi.string()
-  .allow("")
-  .optional(),
-
-CLOUDFLARE_ZONE_ID: Joi.string()
-  .allow("")
-  .optional(),
-
-CLOUDFLARE_FALLBACK_ORIGIN: Joi.string()
-  .hostname()
-  .allow("")
-  .optional(),
   /*
   |--------------------------------------------------------------------------
   | Tenant administrator seed
@@ -240,7 +281,8 @@ const env = Object.freeze({
   |--------------------------------------------------------------------------
   */
 
-  nodeEnv: value.NODE_ENV,
+  nodeEnv:
+    value.NODE_ENV,
 
   isDevelopment:
     value.NODE_ENV === "development",
@@ -276,7 +318,7 @@ const env = Object.freeze({
     value.SUPERADMIN_FRONTEND_URL || null,
 
   tenantTemporaryDomain:
-  value.TENANT_TEMPORARY_DOMAIN,
+    value.TENANT_TEMPORARY_DOMAIN,
 
   /*
   |--------------------------------------------------------------------------
@@ -340,6 +382,39 @@ const env = Object.freeze({
 
   /*
   |--------------------------------------------------------------------------
+  | Email / SMTP
+  |--------------------------------------------------------------------------
+  */
+
+  email: {
+    smtp: {
+      host:
+        value.SMTP_HOST,
+
+      port:
+        value.SMTP_PORT,
+
+      secure:
+        value.SMTP_SECURE,
+
+      user:
+        value.SMTP_USER,
+
+      password:
+        value.SMTP_PASSWORD,
+    },
+
+    from: {
+      name:
+        value.EMAIL_FROM_NAME,
+
+      address:
+        value.EMAIL_FROM_ADDRESS,
+    },
+  },
+
+  /*
+  |--------------------------------------------------------------------------
   | Default tenant
   |--------------------------------------------------------------------------
   */
@@ -372,6 +447,23 @@ const env = Object.freeze({
       apiVersion:
         value.FACEBOOK_API_VERSION,
     },
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Cloudflare
+  |--------------------------------------------------------------------------
+  */
+
+  cloudflare: {
+    apiToken:
+      value.CLOUDFLARE_API_TOKEN || null,
+
+    zoneId:
+      value.CLOUDFLARE_ZONE_ID || null,
+
+    fallbackOrigin:
+      value.CLOUDFLARE_FALLBACK_ORIGIN || null,
   },
 
   /*

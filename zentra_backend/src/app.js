@@ -41,6 +41,11 @@ const transfersRoutes = require(
   "./modules/transfers/transfers.routes"
 );
 
+const tenantRegistrationRoutes =
+  require(
+    "./modules/tenant-registration/tenant-registration.routes"
+  );
+
 const clientTransactionsRoutes = require(
   "./modules/client-transactions/client-transactions.routes"
 );
@@ -401,6 +406,11 @@ app.use(
 app.use(
   `${env.apiPrefix}/donations`,
   donationsRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/tenant-registration`,
+  tenantRegistrationRoutes
 );
 
 app.use(

@@ -92,7 +92,7 @@ const findTenantById = async (tenantId) => {
 const createTenant = async ({
   connection,
   body,
-  createdBy,
+  createdBy = null,
 }) => {
   const tenantId = randomUUID();
 
@@ -413,32 +413,58 @@ const createTenantOwner = async ({
   connection,
   tenantId,
   body,
+  emailVerified = false,
 }) => {
-  const userId = randomUUID();
-  const membershipId = randomUUID();
+  const userId =
+    randomUUID();
 
-  const [roleRows] = await connection.query(
-    `
-      SELECT id
-      FROM roles
-      WHERE tenant_id = ?
-        AND code = 'tenant_admin'
-        AND is_active = TRUE
-      LIMIT 1
-    `,
-    [tenantId]
-  );
+  const membershipId =
+    randomUUID();
 
-  const role = roleRows[0];
+  /*
+  |--------------------------------------------------------------------------
+  | Find tenant administrator role
+  |--------------------------------------------------------------------------
+  */
 
-  if (!role) {
-    const error = new Error(
-      "Tenant administrator role was not found."
+  const [roleRows] =
+    await connection.query(
+      `
+        SELECT id
+        FROM roles
+        WHERE tenant_id = ?
+          AND code = 'tenant_admin'
+          AND is_active = TRUE
+        LIMIT 1
+      `,
+      [tenantId]
     );
 
+  const role =
+    roleRows[0];
+
+  if (!role) {
+    const error =
+      new Error(
+        "Tenant administrator role was not found."
+      );
+
     error.statusCode = 500;
+
     throw error;
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Create tenant owner
+  |--------------------------------------------------------------------------
+  |
+  | The user remains pending until the tenant itself is approved.
+  |
+  | emailVerified controls only whether email ownership has already
+  | been confirmed.
+  |
+  */
 
   await connection.query(
     `
@@ -458,19 +484,33 @@ const createTenantOwner = async ({
         ?,
         ?,
         'pending',
-        NULL
+        ${
+          emailVerified
+            ? "NOW()"
+            : "NULL"
+        }
       )
     `,
     [
       userId,
+
       body.ownerEmail
         .trim()
         .toLowerCase(),
+
       body.ownerFirstName,
+
       body.ownerLastName,
+
       body.ownerPasswordHash,
     ]
   );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Create tenant membership
+  |--------------------------------------------------------------------------
+  */
 
   await connection.query(
     `
