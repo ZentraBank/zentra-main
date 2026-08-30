@@ -262,3 +262,115 @@ export async function apiRequest<T>(
 
   return payload;
 }
+
+export async function apiBlobRequest(
+  path: string,
+  options: RequestOptions = {}
+): Promise<Blob> {
+  const {
+    auth = true,
+    retryOnUnauthorized = true,
+    ...requestOptions
+  } = options;
+
+  const headers = new Headers(
+    requestOptions.headers
+  );
+
+  /*
+   * Do not force Content-Type here.
+   * This endpoint returns binary data.
+   */
+  if (auth) {
+    const accessToken =
+      authStorage.getAccessToken();
+
+    if (accessToken) {
+      headers.set(
+        "Authorization",
+        `Bearer ${accessToken}`
+      );
+    }
+  }
+
+  let response: Response;
+
+  try {
+    response = await fetch(
+      `${API_BASE_URL}${path}`,
+      {
+        ...requestOptions,
+        credentials: "include",
+        headers,
+      }
+    );
+  } catch {
+    throw new ApiError(
+      "Unable to connect to the server.",
+      0
+    );
+  }
+
+  /*
+   * Access token expired.
+   * Refresh once, exactly like apiRequest().
+   */
+  if (
+    response.status === 401 &&
+    auth &&
+    retryOnUnauthorized
+  ) {
+    try {
+      await getRefreshedSession();
+
+      return apiBlobRequest(
+        path,
+        {
+          ...options,
+          retryOnUnauthorized: false,
+        }
+      );
+    } catch (error) {
+      sendToLogin();
+      throw error;
+    }
+  }
+
+  if (!response.ok) {
+    /*
+     * The backend may still return a JSON
+     * error even though the successful
+     * response is binary.
+     */
+    let message =
+      "The file could not be loaded.";
+
+    try {
+      const payload =
+        await parseResponse<unknown>(
+          response
+        );
+
+      if (payload.message) {
+        message =
+          payload.message;
+      }
+    } catch {
+      // Keep fallback message.
+    }
+
+    if (
+      response.status === 401 &&
+      auth
+    ) {
+      sendToLogin();
+    }
+
+    throw new ApiError(
+      message,
+      response.status
+    );
+  }
+
+  return response.blob();
+}

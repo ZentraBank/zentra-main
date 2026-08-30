@@ -13,6 +13,8 @@ const {
   "./realtime/socket"
 );
 
+const emailService = require("./services/email.service");
+
 const {
   testDatabaseConnection,
   closeDatabaseConnection,
@@ -164,7 +166,18 @@ const startServer =
            * server is successfully
            * listening.
            */
+
+          emailService
+          .verifyConnection()
+          .catch((error) => {
+            console.error(
+              "[EMAIL] SMTP verification error:",
+              error
+            );
+          });
+          
           startInvestmentMaturityScheduler();
+          
         }
       );
     } catch (error) {

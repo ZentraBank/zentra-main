@@ -23,10 +23,11 @@ export default function TenantProvider({
 
   useEffect(() => {
     const isPublicRoute =
-      pathname === "/" ||
-      pathname === "/login" ||
-      pathname.startsWith("/register") ||
-      pathname.startsWith("/forgot-password");
+  pathname === "/" ||
+  pathname === "/login" ||
+  pathname.startsWith("/register") ||
+  pathname.startsWith("/subscribe") ||
+  pathname.startsWith("/forgot-password");  
 
     if (isPublicRoute) {
       setTenantLoading(false);

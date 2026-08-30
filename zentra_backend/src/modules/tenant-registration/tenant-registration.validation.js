@@ -107,6 +107,13 @@ const completeRegistrationSchema =
 
     email,
 
+    registrationToken:
+  Joi.string()
+    .trim()
+    .length(96)
+    .hex()
+    .required(),
+
     ownerFirstName:
       Joi.string()
         .trim()
@@ -194,13 +201,13 @@ const completeRegistrationSchema =
     |--------------------------------------------------------------------------
     */
 
-    planCode:
-      Joi.string()
-        .trim()
-        .lowercase()
-        .min(2)
-        .max(100)
-        .required(),
+    // planCode:
+    //   Joi.string()
+    //     .trim()
+    //     .lowercase()
+    //     .min(2)
+    //     .max(100)
+    //     .required(),
   });
 
 module.exports = {

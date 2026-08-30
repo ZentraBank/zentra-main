@@ -134,4 +134,95 @@ module.exports = {
           }),
       })
   ),
+  listRequests: asyncHandler(
+  async (req, res) => {
+    const result =
+      await service.listRequests({
+        query: req.query,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Subscription payment requests loaded successfully.",
+      data: result.rows,
+      meta: result.meta,
+    });
+  }
+),
+
+getRequest: asyncHandler(
+  async (req, res) =>
+    sendSuccess(res, {
+      message:
+        "Subscription payment request loaded successfully.",
+      data:
+        await service.getRequest({
+          requestId:
+            req.params.requestId,
+        }),
+    })
+),
+
+getPaymentProof: asyncHandler(
+  async (req, res) => {
+    const file =
+      await service.getPaymentProof({
+        requestId:
+          req.params.requestId,
+      });
+
+    res.setHeader(
+      "Content-Type",
+      file.mimeType
+    );
+
+    res.setHeader(
+      "Content-Length",
+      file.buffer.length
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${encodeURIComponent(
+        file.originalName
+      )}"`
+    );
+
+    return res.send(
+      file.buffer
+    );
+  }
+),
+
+approveRequest: asyncHandler(
+  async (req, res) =>
+    sendSuccess(res, {
+      message:
+        "Subscription payment approved successfully.",
+      data:
+        await service.approveRequest({
+          auth: req.auth,
+          requestId:
+            req.params.requestId,
+          durationDays:
+            req.body.durationDays,
+        }),
+    })
+),
+
+rejectRequest: asyncHandler(
+  async (req, res) =>
+    sendSuccess(res, {
+      message:
+        "Subscription payment rejected successfully.",
+      data:
+        await service.rejectRequest({
+          auth: req.auth,
+          requestId:
+            req.params.requestId,
+          reason:
+            req.body.reason,
+        }),
+    })
+),
 };

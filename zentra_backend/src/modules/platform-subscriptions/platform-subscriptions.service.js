@@ -1,6 +1,10 @@
 const db = require("../../config/db");
 const repo = require("./platform-subscriptions.repository");
 
+const {
+  readPrivateFile,
+} = require("../../services/private-file.service");
+
 const httpError = (statusCode, message) => {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -34,7 +38,7 @@ const createPlan = async ({
     );
   }
 
-  const connection = await db.getConnection();
+  const connection = await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -72,7 +76,7 @@ const updatePlanFeatures = async ({
     throw httpError(404, "Subscription plan not found.");
   }
 
-  const connection = await db.getConnection();
+  const connection = await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -221,14 +225,14 @@ const renewTenantSubscription = async ({
     );
   }
 
-  const updated =
-    await repo.updateTenantSubscription({
-      tenantId,
-      subscriptionId: subscription.id,
-      status: "active",
-      renewedAt: new Date(),
-      expiresAt,
-    });
+const updated =
+  await repo.updateTenantSubscription({
+    tenantId,
+    subscriptionId: subscription.id,
+    status: "active",
+    startsAt: new Date(),
+    expiresAt,
+  });
 
   await repo.createSubscriptionHistory({
     tenantId,
@@ -245,6 +249,380 @@ const renewTenantSubscription = async ({
   return updated;
 };
 
+const listRequests = async ({
+  query,
+}) => {
+  return repo.listSubscriptionRequests({
+    page: Number(query.page || 1),
+
+    limit: Math.min(
+      Number(query.limit || 20),
+      100
+    ),
+
+    status: query.status,
+
+    search: query.search,
+  });
+};
+
+const getRequest = async ({
+  requestId,
+}) => {
+  const request =
+    await repo.findSubscriptionRequestById({
+      requestId,
+    });
+
+  if (!request) {
+    throw httpError(
+      404,
+      "Subscription payment request not found."
+    );
+  }
+
+  return request;
+};
+
+const getPaymentProof = async ({
+  requestId,
+}) => {
+  const request =
+    await repo.findSubscriptionRequestById({
+      requestId,
+    });
+
+  if (!request) {
+    throw httpError(
+      404,
+      "Subscription payment request not found."
+    );
+  }
+
+  if (!request.payment_proof_file_id) {
+    throw httpError(
+      404,
+      "No payment proof has been uploaded for this request."
+    );
+  }
+
+  const proof =
+    await repo.findSubscriptionPaymentProof({
+      requestId,
+    });
+
+  if (!proof) {
+    throw httpError(
+      404,
+      "Payment proof file not found."
+    );
+  }
+
+  const buffer =
+    await readPrivateFile({
+      storagePath: proof.storage_path,
+    });
+
+  return {
+    id: proof.id,
+    originalName: proof.original_name,
+    mimeType: proof.mime_type,
+    sizeBytes: Number(
+      proof.size_bytes || 0
+    ),
+    buffer,
+  };
+};
+
+const approveRequest = async ({
+  auth,
+  requestId,
+  durationDays,
+}) => {
+  const connection =
+    await db.pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Lock the payment request
+    |--------------------------------------------------------------------------
+    */
+
+    const request =
+      await repo.findSubscriptionRequestById({
+        requestId,
+        connection,
+        forUpdate: true,
+      });
+
+    if (!request) {
+      throw httpError(
+        404,
+        "Subscription payment request not found."
+      );
+    }
+
+    if (
+      request.status !==
+      "payment_submitted"
+    ) {
+      throw httpError(
+        409,
+        `This subscription request cannot be approved because its current status is "${request.status}".`
+      );
+    }
+
+    if (
+      !request.payment_proof_file_id
+    ) {
+      throw httpError(
+        409,
+        "This subscription request does not have a payment proof."
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Verify the proof still exists
+    |--------------------------------------------------------------------------
+    */
+
+    const proof =
+      await repo.findSubscriptionPaymentProof({
+        requestId,
+      });
+
+    if (!proof) {
+      throw httpError(
+        409,
+        "The payment proof attached to this request could not be found."
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Calculate subscription expiry
+    |--------------------------------------------------------------------------
+    */
+
+    const days =
+      Number(durationDays || 30);
+
+    const expiresAt =
+      new Date(
+        Date.now() +
+          days *
+            24 *
+            60 *
+            60 *
+            1000
+      );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find existing user subscription
+    |--------------------------------------------------------------------------
+    */
+
+    const existingSubscription =
+      await repo.findUserSubscription({
+        connection,
+        tenantId:
+          request.tenant_id,
+        userId:
+          request.user_id,
+      });
+
+    let subscriptionId;
+
+    if (existingSubscription) {
+      /*
+      |--------------------------------------------------------------------------
+      | Existing pending/expired/cancelled subscription
+      |--------------------------------------------------------------------------
+      */
+
+      await repo.activateUserSubscription({
+        connection,
+        subscriptionId:
+          existingSubscription.id,
+        planId:
+          request.plan_id,
+        expiresAt,
+      });
+
+      subscriptionId =
+        existingSubscription.id;
+    } else {
+      /*
+      |--------------------------------------------------------------------------
+      | First subscription for this tenant owner
+      |--------------------------------------------------------------------------
+      */
+
+      subscriptionId =
+        await repo.createUserSubscription({
+          connection,
+          tenantId:
+            request.tenant_id,
+          userId:
+            request.user_id,
+          planId:
+            request.plan_id,
+          expiresAt,
+        });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Activate tenant
+    |--------------------------------------------------------------------------
+    */
+
+    await repo.activateTenant({
+      connection,
+      tenantId:
+        request.tenant_id,
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Approve payment request
+    |--------------------------------------------------------------------------
+    */
+
+    const approved =
+      await repo.approveSubscriptionRequest({
+        connection,
+        requestId,
+        reviewerUserId:
+          auth.userId,
+      });
+
+    if (!approved) {
+      throw httpError(
+        409,
+        "The subscription request could not be approved."
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Consume onboarding session
+    |--------------------------------------------------------------------------
+    */
+
+    await repo.consumeTenantOnboardingSessions({
+      connection,
+      tenantId:
+        request.tenant_id,
+      userId:
+        request.user_id,
+    });
+
+    await connection.commit();
+
+    return {
+      requestId,
+      subscriptionId,
+
+      tenantId:
+        request.tenant_id,
+
+      userId:
+        request.user_id,
+
+      planId:
+        request.plan_id,
+
+      status: "approved",
+
+      subscriptionStatus:
+        "active",
+
+      tenantStatus:
+        "active",
+
+      startsAt:
+        new Date(),
+
+      expiresAt,
+    };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
+
+const rejectRequest = async ({
+  auth,
+  requestId,
+  reason,
+}) => {
+  const request =
+    await repo.findSubscriptionRequestById({
+      requestId,
+    });
+
+  if (!request) {
+    throw httpError(
+      404,
+      "Subscription payment request not found."
+    );
+  }
+
+  if (
+    request.status !==
+    "payment_submitted"
+  ) {
+    throw httpError(
+      409,
+      `This subscription request cannot be rejected because its current status is "${request.status}".`
+    );
+  }
+
+  const rejected =
+    await repo.rejectSubscriptionRequest({
+      requestId,
+      reviewerUserId:
+        auth.userId,
+      reason,
+    });
+
+  if (!rejected) {
+    throw httpError(
+      409,
+      "The subscription request could not be rejected."
+    );
+  }
+
+  return {
+    requestId,
+
+    tenantId:
+      request.tenant_id,
+
+    userId:
+      request.user_id,
+
+    planId:
+      request.plan_id,
+
+    status: "rejected",
+
+    rejectionReason:
+      reason,
+
+    tenantStatus:
+      request.tenant_status,
+  };
+};
+
 module.exports = {
   createPlan,
   getPlan,
@@ -252,6 +630,12 @@ module.exports = {
   changeTenantPlan,
   changeTenantSubscriptionStatus,
   renewTenantSubscription,
+  listRequests,
+  getRequest,
+  getPaymentProof,
+  approveRequest,
+  rejectRequest,
+
 
   listPlans: ({ query }) =>
     repo.listPlans({

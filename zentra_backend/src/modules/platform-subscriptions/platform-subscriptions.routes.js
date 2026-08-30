@@ -75,6 +75,51 @@ router.get(
   controller.getTenantSubscription
 );
 
+router.get(
+  "/requests",
+  validate(schemas.listRequests),
+  requireAllPermissions(
+    "platform.subscriptions.read"
+  ),
+  controller.listRequests
+);
+
+router.get(
+  "/requests/:requestId",
+  validate(schemas.requestId),
+  requireAllPermissions(
+    "platform.subscriptions.read"
+  ),
+  controller.getRequest
+);
+
+router.get(
+  "/requests/:requestId/payment-proof",
+  validate(schemas.requestId),
+  requireAllPermissions(
+    "platform.subscriptions.read"
+  ),
+  controller.getPaymentProof
+);
+
+router.post(
+  "/requests/:requestId/approve",
+  validate(schemas.approveRequest),
+  requireAllPermissions(
+    "platform.subscriptions.update"
+  ),
+  controller.approveRequest
+);
+
+router.post(
+  "/requests/:requestId/reject",
+  validate(schemas.rejectRequest),
+  requireAllPermissions(
+    "platform.subscriptions.update"
+  ),
+  controller.rejectRequest
+);
+
 router.patch(
   "/tenants/:tenantId/plan",
   validate(schemas.changeTenantPlan),

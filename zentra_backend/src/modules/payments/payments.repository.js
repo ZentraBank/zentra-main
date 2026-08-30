@@ -484,7 +484,7 @@ const addInstructionToBatch = async ({
   instructionId,
 }) => {
   const connection =
-    await db.getConnection();
+    await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();

@@ -150,6 +150,34 @@ const getCompletionTokenExpiry =
           1000
     );
 
+    /*
+|--------------------------------------------------------------------------
+| Subscription onboarding token
+|--------------------------------------------------------------------------
+|
+| Created only after the tenant has been successfully provisioned.
+|
+| The raw token is returned to the frontend once.
+| Only the SHA-256 hash is stored in the database.
+|
+| This token does NOT authenticate the tenant dashboard.
+| It is restricted to the pre-login subscription onboarding flow.
+|
+*/
+
+const ONBOARDING_TOKEN_EXPIRY_HOURS =
+  24;
+
+const generateOnboardingToken = () =>
+  randomBytes(48)
+    .toString("hex");
+
+const hashOnboardingToken = (
+  token
+) =>
+  createHash("sha256")
+    .update(token)
+    .digest("hex");
 /*
 |--------------------------------------------------------------------------
 | Check existing account
@@ -237,12 +265,18 @@ const requestRegistration =
       expiresAt,
     });
 
-    /*
+        /*
     |--------------------------------------------------------------------------
     | Send OTP email
     |--------------------------------------------------------------------------
+    |
+    | TEMPORARILY DISABLED FOR LOCAL DEVELOPMENT.
+    |
+    | Restore this block when SMTP/email has been configured.
+    |
     */
 
+    /*
     try {
       await emailService
         .sendRegistrationOtp({
@@ -255,12 +289,6 @@ const requestRegistration =
             OTP_EXPIRY_MINUTES,
         });
     } catch (error) {
-      /*
-      |--------------------------------------------------------------------------
-      | Never leave a usable OTP behind if the email failed
-      |--------------------------------------------------------------------------
-      */
-
       await repo.consumeVerification(
         verificationId
       );
@@ -281,6 +309,50 @@ const requestRegistration =
         "Unable to send verification email. Please try again."
       );
     }
+    */
+
+    /*
+    |--------------------------------------------------------------------------
+    | DEVELOPMENT EMAIL BYPASS
+    |--------------------------------------------------------------------------
+    */
+
+    /*
+|--------------------------------------------------------------------------
+| TEMPORARY DEVELOPMENT EMAIL BYPASS
+|--------------------------------------------------------------------------
+|
+| SMTP is currently disabled.
+| The OTP is printed to the backend console instead.
+|
+| REMOVE THIS BLOCK AND RESTORE THE EMAIL BLOCK
+| BEFORE PRODUCTION.
+|
+*/
+
+console.warn(
+  "\n========================================"
+);
+
+console.warn(
+  "[DEV] TENANT REGISTRATION OTP"
+);
+
+console.warn(
+  `[DEV] Email: ${normalizedEmail}`
+);
+
+console.warn(
+  `[DEV] OTP: ${code}`
+);
+
+console.warn(
+  `[DEV] Expires in: ${OTP_EXPIRY_MINUTES} minutes`
+);
+
+console.warn(
+  "========================================\n"
+);
 
     return {
       email:
@@ -706,13 +778,11 @@ const completeRegistration =
     logoUrl,
     primaryColor,
 
-    planCode,
-
     requestContext,
   }) => {
     /*
     |--------------------------------------------------------------------------
-    | Verify email proof
+    | 1. Verify email proof
     |--------------------------------------------------------------------------
     */
 
@@ -724,7 +794,7 @@ const completeRegistration =
 
     /*
     |--------------------------------------------------------------------------
-    | Check tenant + user availability
+    | 2. Check tenant + user availability
     |--------------------------------------------------------------------------
     */
 
@@ -739,7 +809,7 @@ const completeRegistration =
 
     /*
     |--------------------------------------------------------------------------
-    | Prepare sanitized payload
+    | 3. Sanitize registration data
     |--------------------------------------------------------------------------
     */
 
@@ -753,8 +823,6 @@ const completeRegistration =
       ownerLastName:
         ownerLastName.trim(),
 
-      ownerPassword,
-
       name:
         name.trim(),
 
@@ -767,56 +835,335 @@ const completeRegistration =
       logoUrl:
         logoUrl || null,
 
-      primaryColor,
-
-      planCode:
-        planCode
-          .trim()
-          .toLowerCase(),
-
-      requestContext:
-        requestContext || null,
+      primaryColor:
+        primaryColor || "#2458E8",
     };
 
     /*
     |--------------------------------------------------------------------------
-    | STOP POINT
-    |--------------------------------------------------------------------------
-    |
-    | We do not create a partial tenant here.
-    |
-    | Tenant creation must happen inside ONE database transaction:
-    |
-    | tenant
-    |   ↓
-    | roles
-    |   ↓
-    | role permissions
-    |   ↓
-    | subscription plans
-    |   ↓
-    | temporary domain
-    |   ↓
-    | tenant administrator
-    |   ↓
-    | membership
-    |   ↓
-    | subscription
-    |   ↓
-    | consume registration verification
-    |
+    | 4. Hash owner password
     |--------------------------------------------------------------------------
     */
 
-    return {
-      readyForTenantCreation:
-        true,
+    const ownerPasswordHash =
+      await bcrypt.hash(
+        ownerPassword,
+        12
+      );
 
-      verificationId:
-        verification.id,
+    /*
+    |--------------------------------------------------------------------------
+    | 5. Start provisioning transaction
+    |--------------------------------------------------------------------------
+    |
+    | Nothing is committed unless all core tenant resources are created.
+    |
+    */
 
-      registrationData,
-    };
+    const connection =
+      await db.pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      /*
+      |--------------------------------------------------------------------------
+      | 6. Create tenant
+      |--------------------------------------------------------------------------
+      |
+      | Self-registration has no platform superadmin actor.
+      |
+      */
+
+      const tenantId =
+        await tenantRepo.createTenant({
+          connection,
+
+          body: {
+            name:
+              registrationData.name,
+
+            code:
+              registrationData.code,
+
+            appName:
+              registrationData.appName,
+
+            logoUrl:
+              registrationData.logoUrl,
+
+            primaryColor:
+              registrationData.primaryColor,
+          },
+
+          createdBy:
+            null,
+        });
+
+      /*
+      |--------------------------------------------------------------------------
+      | 7. Create tenant system roles + permissions
+      |--------------------------------------------------------------------------
+      */
+
+      await tenantRepo
+        .createTenantSystemRoles({
+          connection,
+          tenantId,
+        });
+
+      /*
+      |--------------------------------------------------------------------------
+      | 8. Create tenant subscription plan catalogue
+      |--------------------------------------------------------------------------
+      |
+      | This creates the Bronze / Gold / Diamond plans that are available
+      | to this tenant.
+      |
+      | It does NOT choose one yet.
+      |
+      */
+
+      await tenantRepo
+        .createTenantSubscriptionPlans({
+          connection,
+          tenantId,
+        });
+
+      /*
+      |--------------------------------------------------------------------------
+      | 9. Create temporary tenant domain
+      |--------------------------------------------------------------------------
+      */
+
+      const temporaryDomain =
+        await tenantRepo
+          .createTemporaryTenantDomain({
+            connection,
+
+            tenantId,
+
+            slug:
+              registrationData.code,
+
+            rootDomain:
+              env.tenantTemporaryDomain,
+          });
+
+      /*
+      |--------------------------------------------------------------------------
+      | 10. Create verified tenant administrator
+      |--------------------------------------------------------------------------
+      */
+
+      const owner =
+        await tenantRepo
+          .createTenantOwner({
+            connection,
+
+            tenantId,
+
+            body: {
+              ownerEmail:
+                registrationData.ownerEmail,
+
+              ownerFirstName:
+                registrationData.ownerFirstName,
+
+              ownerLastName:
+                registrationData.ownerLastName,
+
+              ownerPasswordHash,
+            },
+
+            emailVerified:
+              true,
+          });
+
+      /*
+      |--------------------------------------------------------------------------
+      | 11. Make email verification explicit
+      |--------------------------------------------------------------------------
+      |
+      | The owner already proved ownership through OTP.
+      |
+      */
+
+      await connection.query(
+        `
+          UPDATE users
+          SET email_verified_at = NOW()
+          WHERE id = ?
+        `,
+        [
+          owner.userId,
+        ]
+      );
+
+     /*
+|--------------------------------------------------------------------------
+| 12. Create subscription onboarding session
+|--------------------------------------------------------------------------
+|
+| The registration token has completed its job.
+|
+| From this point forward, the frontend uses a separate restricted token
+| for:
+|
+| - selecting a subscription
+| - submitting payment proof
+| - checking onboarding subscription status
+|
+*/
+
+const onboardingToken =
+  generateOnboardingToken();
+
+const onboardingTokenHash =
+  hashOnboardingToken(
+    onboardingToken
+  );
+
+const onboardingSessionId =
+  randomUUID();
+
+await connection.query(
+  `
+    INSERT INTO tenant_onboarding_sessions (
+      id,
+      tenant_id,
+      user_id,
+      token_hash,
+      expires_at
+    )
+    VALUES (
+      ?,
+      ?,
+      ?,
+      ?,
+      DATE_ADD(
+        NOW(),
+        INTERVAL 24 HOUR
+      )
+    )
+  `,
+  [
+    onboardingSessionId,
+    tenantId,
+    owner.userId,
+    onboardingTokenHash,
+  ]
+);
+
+      const [
+        verificationResult,
+      ] =
+        await connection.query(
+          `
+            UPDATE tenant_registration_verifications
+            SET
+              consumed_at = NOW(),
+              updated_at = NOW()
+            WHERE id = ?
+              AND verified_at IS NOT NULL
+              AND consumed_at IS NULL
+              AND completion_token_expires_at > NOW()
+          `,
+          [
+            verification.id,
+          ]
+        );
+
+      if (
+        verificationResult.affectedRows !==
+        1
+      ) {
+        throw httpError(
+          409,
+          "This registration has already been completed or has expired"
+        );
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | 13. Commit core tenant registration
+      |--------------------------------------------------------------------------
+      */
+
+      await connection.commit();
+
+      /*
+      |--------------------------------------------------------------------------
+      | 14. Return completed registration
+      |--------------------------------------------------------------------------
+      |
+      | No subscription exists yet.
+      |
+      | The frontend should now continue to the dedicated subscription flow.
+      |
+      */
+
+      return {
+        tenant: {
+          id:
+            tenantId,
+
+          name:
+            registrationData.name,
+
+          code:
+            registrationData.code,
+
+          status:
+            "pending",
+
+          temporaryDomain:
+            temporaryDomain.domain,
+        },
+
+        owner: {
+          id:
+            owner.userId,
+
+          membershipId:
+            owner.membershipId,
+
+          email:
+            registrationData.ownerEmail,
+
+          emailVerified:
+            true,
+
+          status:
+            "pending",
+        },
+
+        subscription:
+            null,
+
+            onboardingToken,
+
+            onboardingTokenExpiresIn:
+            ONBOARDING_TOKEN_EXPIRY_HOURS *
+            60 *
+            60,
+
+            nextStep:
+            "choose_subscription",
+      };
+    } catch (error) {
+      /*
+      |--------------------------------------------------------------------------
+      | Roll back everything
+      |--------------------------------------------------------------------------
+      */
+
+      await connection.rollback();
+
+      throw error;
+    } finally {
+      connection.release();
+    }
   };
 
 /*

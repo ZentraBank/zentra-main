@@ -52,14 +52,12 @@ export type TenantRegistrationCompleteResponse = {
     status: "pending" | "active" | string;
   };
 
-  subscription: {
-    id: string;
-    planId: string;
-    planCode: string;
-    planName: string;
-  };
+  subscription: null;
 
-  nextStep: string;
+  onboardingToken: string;
+  onboardingTokenExpiresIn: number;
+
+  nextStep: "choose_subscription" | string;
 };
 
 export type CompleteTenantRegistrationPayload = {
@@ -76,8 +74,6 @@ export type CompleteTenantRegistrationPayload = {
 
   logoUrl?: string | null;
   primaryColor: string;
-
-  planCode: string;
 };
 
 /*
@@ -175,11 +171,6 @@ export async function completeTenantRegistration(
 
       logoUrl:
         payload.logoUrl || null,
-
-      planCode:
-        payload.planCode
-          .trim()
-          .toLowerCase(),
     },
   );
 

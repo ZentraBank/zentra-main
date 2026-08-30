@@ -27,7 +27,7 @@ const createUser = async ({
     );
   }
 
-  const connection = await db.getConnection();
+  const connection = await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -97,7 +97,7 @@ const updatePermissions = async ({
     );
   }
 
-  const connection = await db.getConnection();
+  const connection = await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();

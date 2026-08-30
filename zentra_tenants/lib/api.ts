@@ -76,6 +76,12 @@ export const api =
     },
   });
 
+/*
+|--------------------------------------------------------------------------
+| Request interceptor
+|--------------------------------------------------------------------------
+*/
+
 api.interceptors.request.use(
   (config) => {
     config.headers.set(
@@ -104,6 +110,12 @@ api.interceptors.request.use(
     return config;
   },
 );
+
+/*
+|--------------------------------------------------------------------------
+| Refresh session
+|--------------------------------------------------------------------------
+*/
 
 const refreshSession =
   async (): Promise<AuthSessionResponse> => {
@@ -153,6 +165,50 @@ const refreshSession =
     return refreshPromise;
   };
 
+/*
+|--------------------------------------------------------------------------
+| Public endpoints
+|--------------------------------------------------------------------------
+|
+| These endpoints must NEVER trigger automatic refresh.
+|
+| Tenant registration happens before the user has authenticated, therefore
+| there is no refresh token yet. If one of these endpoints returns 401, the
+| original error must be returned instead of calling /auth/refresh.
+|
+*/
+
+const isPublicEndpoint = (
+  url?: string,
+) => {
+  if (!url) {
+    return false;
+  }
+
+  const publicEndpoints = [
+    "/auth/login",
+    "/auth/refresh",
+
+    "/tenant-registration/request",
+    "/tenant-registration/verify",
+    "/tenant-registration/resend",
+    "/tenant-registration/complete",
+  ];
+
+  return publicEndpoints.some(
+    (endpoint) =>
+      url.includes(
+        endpoint,
+      ),
+  );
+};
+
+/*
+|--------------------------------------------------------------------------
+| Response interceptor
+|--------------------------------------------------------------------------
+*/
+
 api.interceptors.response.use(
   (response) =>
     response,
@@ -167,25 +223,31 @@ api.interceptors.response.use(
           })
         | undefined;
 
-    const isAuthEndpoint =
-      original?.url?.includes(
-        "/auth/login",
-      ) ||
-      original?.url?.includes(
-        "/auth/refresh",
-      );
+    /*
+    |--------------------------------------------------------------------------
+    | Return immediately when refresh should not happen
+    |--------------------------------------------------------------------------
+    */
 
     if (
       error.response
         ?.status !== 401 ||
       !original ||
       original._retry ||
-      isAuthEndpoint
+      isPublicEndpoint(
+        original.url,
+      )
     ) {
       return Promise.reject(
         error,
       );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Retry protected request once after refreshing session
+    |--------------------------------------------------------------------------
+    */
 
     original._retry =
       true;
@@ -205,6 +267,12 @@ api.interceptors.response.use(
     } catch (
       refreshError
     ) {
+      /*
+      |--------------------------------------------------------------------------
+      | Session is no longer valid
+      |--------------------------------------------------------------------------
+      */
+
       setAccessToken(
         null,
       );
@@ -219,6 +287,12 @@ api.interceptors.response.use(
     }
   },
 );
+
+/*
+|--------------------------------------------------------------------------
+| API error helper
+|--------------------------------------------------------------------------
+*/
 
 export const getApiErrorMessage = (
   error: unknown,

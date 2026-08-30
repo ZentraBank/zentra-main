@@ -103,6 +103,37 @@ const findNotificationById = async ({
   return rows[0] || null;
 };
 
+const listActiveSubscriptionReviewers =
+  async () => {
+    const [rows] = await db.query(
+      `
+        SELECT DISTINCT
+          pu.id
+
+        FROM platform_users pu
+
+        INNER JOIN platform_user_roles pur
+          ON pur.platform_user_id = pu.id
+
+        INNER JOIN platform_roles pr
+          ON pr.id = pur.platform_role_id
+
+        INNER JOIN platform_role_permissions prp
+          ON prp.platform_role_id = pr.id
+
+        INNER JOIN permissions p
+          ON p.id = prp.permission_id
+
+        WHERE pu.status = 'active'
+          AND p.code = 'platform.subscriptions.update'
+      `
+    );
+
+    return rows.map(
+      (row) => row.id
+    );
+  };
+
 const createNotification = async ({
   type,
   severity,
@@ -113,7 +144,7 @@ const createNotification = async ({
   entityId,
   recipientUserIds,
 }) => {
-  const connection = await db.getConnection();
+  const connection = await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -229,4 +260,5 @@ module.exports = {
   markRead,
   markAllRead,
   countUnread,
+  listActiveSubscriptionReviewers,
 };

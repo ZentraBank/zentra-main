@@ -41,6 +41,76 @@ module.exports = {
     }),
   },
 
+  listRequests: {
+  query: Joi.object({
+    page: Joi.number()
+      .integer()
+      .min(1)
+      .default(1),
+
+    limit: Joi.number()
+      .integer()
+      .min(1)
+      .max(100)
+      .default(20),
+
+    status: Joi.string()
+      .valid(
+        "pending_payment",
+        "payment_submitted",
+        "approved",
+        "rejected",
+        "cancelled"
+      )
+      .optional(),
+
+    search: Joi.string()
+      .trim()
+      .max(255)
+      .optional(),
+  }),
+},
+
+requestId: {
+  params: Joi.object({
+    requestId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+},
+
+approveRequest: {
+  params: Joi.object({
+    requestId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+
+  body: Joi.object({
+    durationDays: Joi.number()
+      .integer()
+      .min(1)
+      .max(3650)
+      .default(30),
+  }),
+},
+
+rejectRequest: {
+  params: Joi.object({
+    requestId: Joi.string()
+      .uuid()
+      .required(),
+  }),
+
+  body: Joi.object({
+    reason: Joi.string()
+      .trim()
+      .min(3)
+      .max(500)
+      .required(),
+  }),
+},
+
   createPlan: {
     body: Joi.object({
       code: Joi.string()

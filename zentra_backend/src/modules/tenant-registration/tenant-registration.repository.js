@@ -194,7 +194,11 @@ const markVerificationCompleted = async ({
       SET
         verified_at = NOW(),
         completion_token_hash = ?,
-        completion_token_expires_at = ?
+        completion_token_expires_at =
+          DATE_ADD(
+            NOW(),
+            INTERVAL 30 MINUTE
+          )
       WHERE id = ?
         AND consumed_at IS NULL
         AND verified_at IS NULL
@@ -202,7 +206,6 @@ const markVerificationCompleted = async ({
     `,
     [
       completionTokenHash,
-      completionTokenExpiresAt,
       id,
     ]
   );

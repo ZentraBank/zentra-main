@@ -56,7 +56,7 @@ async function createInternalTransfer({
   description,
   createdBy,
 }) {
-  const connection = await db.getConnection();
+  const connection = await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -211,7 +211,7 @@ async function createAdminCredit({
   description,
   createdBy,
 }) {
-  const connection = await db.getConnection();
+  const connection = await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
@@ -300,7 +300,7 @@ async function createAdminDebit({
   description,
   createdBy,
 }) {
-  const connection = await db.getConnection();
+  const connection = await db.pool.getConnection();
 
   try {
     await connection.beginTransaction();

@@ -83,7 +83,7 @@ const runLedgerVsAccounts =
         });
 
       const connection =
-        await repo.db.getConnection();
+        await repo.db.pool.getConnection();
 
       let matched = 0;
       let mismatched = 0;

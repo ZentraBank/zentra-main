@@ -246,17 +246,34 @@ const findTenantSubscription = async (tenantId) => {
   const [rows] = await db.query(
     `
       SELECT
-        s.*,
+        us.*,
+
         p.code AS plan_code,
         p.name AS plan_name,
         p.price AS plan_price,
         p.currency AS plan_currency,
-        p.billing_interval AS plan_billing_interval
-      FROM subscriptions s
+        p.billing_interval AS plan_billing_interval,
+
+        u.email AS user_email
+
+      FROM user_subscriptions us
+
       INNER JOIN subscription_plans p
-        ON p.id = s.plan_id
-      WHERE s.tenant_id = ?
-      ORDER BY s.created_at DESC
+        ON p.id = us.plan_id
+
+      INNER JOIN users u
+        ON u.id = us.user_id
+
+      WHERE us.tenant_id = ?
+
+      ORDER BY
+        CASE
+          WHEN us.status = 'active' THEN 0
+          WHEN us.status = 'pending' THEN 1
+          ELSE 2
+        END,
+        us.created_at DESC
+
       LIMIT 1
     `,
     [tenantId]
@@ -264,32 +281,33 @@ const findTenantSubscription = async (tenantId) => {
 
   return rows[0] || null;
 };
-
 const updateTenantSubscription = async ({
   tenantId,
   subscriptionId,
   planId,
   status,
-  renewedAt,
+  startsAt,
   expiresAt,
 }) => {
   await db.query(
     `
-      UPDATE subscriptions
+      UPDATE user_subscriptions
+
       SET
         plan_id = COALESCE(?, plan_id),
         status = COALESCE(?, status),
-        renewed_at = COALESCE(?, renewed_at),
+        starts_at = COALESCE(?, starts_at),
         expires_at = COALESCE(?, expires_at),
         updated_at = NOW()
+
       WHERE id = ?
         AND tenant_id = ?
     `,
     [
-      planId || null,
-      status || null,
-      renewedAt || null,
-      expiresAt || null,
+      planId ?? null,
+      status ?? null,
+      startsAt ?? null,
+      expiresAt ?? null,
       subscriptionId,
       tenantId,
     ]
@@ -420,6 +438,534 @@ const getTenantOverride = async ({
   return rows[0] || null;
 };
 
+/*
+|--------------------------------------------------------------------------
+| Platform subscription payment requests
+|--------------------------------------------------------------------------
+*/
+
+const listSubscriptionRequests =
+  async ({
+    page,
+    limit,
+    status,
+    search,
+  }) => {
+    const offset =
+      (page - 1) * limit;
+
+    const conditions = [];
+    const values = [];
+
+    if (status) {
+      conditions.push(
+        "sr.status = ?"
+      );
+
+      values.push(
+        status
+      );
+    }
+
+    if (search) {
+      conditions.push(
+        `(
+          t.name LIKE ?
+          OR t.slug LIKE ?
+          OR u.email LIKE ?
+          OR sp.name LIKE ?
+          OR sp.code LIKE ?
+          OR sr.payment_reference LIKE ?
+        )`
+      );
+
+      const term =
+        `%${search}%`;
+
+      values.push(
+        term,
+        term,
+        term,
+        term,
+        term,
+        term
+      );
+    }
+
+    const where =
+      conditions.length
+        ? `WHERE ${conditions.join(
+            " AND "
+          )}`
+        : "";
+
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            sr.id,
+            sr.tenant_id,
+            sr.user_id,
+            sr.plan_id,
+            sr.status,
+            sr.payment_reference,
+            sr.payment_proof_file_id,
+            sr.payment_note,
+            sr.reviewed_by,
+            sr.reviewed_at,
+            sr.rejection_reason,
+            sr.created_at,
+            sr.updated_at,
+
+            t.name AS tenant_name,
+            t.slug AS tenant_slug,
+            t.domain AS tenant_domain,
+            t.status AS tenant_status,
+
+            u.email AS user_email,
+            u.status AS user_status,
+
+            sp.code AS plan_code,
+            sp.name AS plan_name,
+            sp.price AS plan_price,
+            sp.currency AS plan_currency,
+            sp.billing_interval
+              AS plan_billing_interval,
+
+            pf.original_name
+              AS payment_proof_original_name,
+            pf.mime_type
+              AS payment_proof_mime_type,
+            pf.size_bytes
+              AS payment_proof_size_bytes
+
+          FROM subscription_requests sr
+
+          INNER JOIN tenants t
+            ON t.id = sr.tenant_id
+
+          INNER JOIN users u
+            ON u.id = sr.user_id
+
+          INNER JOIN subscription_plans sp
+            ON sp.id = sr.plan_id
+
+          LEFT JOIN private_files pf
+            ON pf.id =
+              sr.payment_proof_file_id
+            AND pf.tenant_id =
+              sr.tenant_id
+            AND pf.status = 'active'
+
+          ${where}
+
+          ORDER BY
+            CASE
+              WHEN sr.status =
+                'payment_submitted'
+              THEN 0
+              ELSE 1
+            END,
+            sr.updated_at DESC
+
+          LIMIT ?
+          OFFSET ?
+        `,
+        [
+          ...values,
+          limit,
+          offset,
+        ]
+      );
+
+    const [countRows] =
+      await db.query(
+        `
+          SELECT
+            COUNT(*) AS total
+
+          FROM subscription_requests sr
+
+          INNER JOIN tenants t
+            ON t.id = sr.tenant_id
+
+          INNER JOIN users u
+            ON u.id = sr.user_id
+
+          INNER JOIN subscription_plans sp
+            ON sp.id = sr.plan_id
+
+          ${where}
+        `,
+        values
+      );
+
+    const total =
+      Number(
+        countRows[0]?.total || 0
+      );
+
+    return {
+      rows,
+
+      meta: {
+        page,
+        limit,
+        total,
+
+        totalPages:
+          Math.max(
+            1,
+            Math.ceil(
+              total / limit
+            )
+          ),
+      },
+    };
+  };
+
+  const findSubscriptionRequestById =
+  async ({
+    requestId,
+    connection = db,
+    forUpdate = false,
+  }) => {
+    const [rows] =
+      await connection.query(
+        `
+          SELECT
+            sr.*,
+
+            t.name AS tenant_name,
+            t.slug AS tenant_slug,
+            t.domain AS tenant_domain,
+            t.status AS tenant_status,
+
+            u.email AS user_email,
+            u.status AS user_status,
+
+            sp.code AS plan_code,
+            sp.name AS plan_name,
+            sp.price AS plan_price,
+            sp.currency AS plan_currency,
+            sp.billing_interval
+              AS plan_billing_interval,
+
+            pf.original_name
+              AS payment_proof_original_name,
+            pf.mime_type
+              AS payment_proof_mime_type,
+            pf.size_bytes
+              AS payment_proof_size_bytes
+
+          FROM subscription_requests sr
+
+          INNER JOIN tenants t
+            ON t.id = sr.tenant_id
+
+          INNER JOIN users u
+            ON u.id = sr.user_id
+
+          INNER JOIN subscription_plans sp
+            ON sp.id = sr.plan_id
+
+          LEFT JOIN private_files pf
+            ON pf.id =
+              sr.payment_proof_file_id
+            AND pf.tenant_id =
+              sr.tenant_id
+            AND pf.status = 'active'
+
+          WHERE sr.id = ?
+
+          LIMIT 1
+
+          ${
+            forUpdate
+              ? "FOR UPDATE"
+              : ""
+          }
+        `,
+        [
+          requestId
+        ]
+      );
+
+    return (
+      rows[0] || null
+    );
+  };
+
+  const findSubscriptionPaymentProof =
+  async ({
+    requestId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            pf.id,
+            pf.tenant_id,
+            pf.user_id,
+            pf.module,
+            pf.document_type,
+            pf.original_name,
+            pf.stored_name,
+            pf.mime_type,
+            pf.size_bytes,
+            pf.storage_path,
+            pf.status
+
+          FROM subscription_requests sr
+
+          INNER JOIN private_files pf
+            ON pf.id =
+              sr.payment_proof_file_id
+            AND pf.tenant_id =
+              sr.tenant_id
+
+          WHERE sr.id = ?
+            AND pf.status = 'active'
+            AND pf.module =
+              'subscriptions'
+            AND pf.document_type =
+              'payment_proof'
+
+          LIMIT 1
+        `,
+        [
+          requestId
+        ]
+      );
+
+    return (
+      rows[0] || null
+    );
+  };
+
+  const rejectSubscriptionRequest =
+  async ({
+    requestId,
+    reviewerUserId,
+    reason,
+  }) => {
+    const [result] =
+      await db.query(
+        `
+          UPDATE subscription_requests
+
+          SET
+            status = 'rejected',
+            reviewed_by = ?,
+            reviewed_at = NOW(),
+            rejection_reason = ?,
+            updated_at = NOW()
+
+          WHERE id = ?
+            AND status =
+              'payment_submitted'
+        `,
+        [
+          reviewerUserId,
+          reason,
+          requestId,
+        ]
+      );
+
+    return (
+      result.affectedRows === 1
+    );
+  };
+
+  const approveSubscriptionRequest =
+  async ({
+    connection,
+    requestId,
+    reviewerUserId,
+  }) => {
+    const [result] =
+      await connection.query(
+        `
+          UPDATE subscription_requests
+
+          SET
+            status = 'approved',
+            reviewed_by = ?,
+            reviewed_at = NOW(),
+            rejection_reason = NULL,
+            updated_at = NOW()
+
+          WHERE id = ?
+            AND status =
+              'payment_submitted'
+        `,
+        [
+          reviewerUserId,
+          requestId,
+        ]
+      );
+
+    return (
+      result.affectedRows === 1
+    );
+  };
+
+  const activateTenant =
+  async ({
+    connection,
+    tenantId,
+  }) => {
+    const [result] =
+      await connection.query(
+        `
+          UPDATE tenants
+
+          SET
+            status = 'active',
+            updated_at = NOW()
+
+          WHERE id = ?
+            AND deleted_at IS NULL
+            AND status = 'pending'
+        `,
+        [
+          tenantId
+        ]
+      );
+
+    return (
+      result.affectedRows === 1
+    );
+  };
+
+  const findUserSubscription = async ({
+  tenantId,
+  userId,
+  connection = db,
+}) => {
+  const [rows] =
+    await connection.query(
+      `
+        SELECT *
+        FROM user_subscriptions
+
+        WHERE tenant_id = ?
+          AND user_id = ?
+
+        ORDER BY created_at DESC
+
+        LIMIT 1
+      `,
+      [
+        tenantId,
+        userId,
+      ]
+    );
+
+  return rows[0] || null;
+};
+const createUserSubscription =
+  async ({
+    connection,
+    tenantId,
+    userId,
+    planId,
+    expiresAt,
+  }) => {
+    const id = randomUUID();
+
+    await connection.query(
+      `
+        INSERT INTO user_subscriptions (
+          id,
+          tenant_id,
+          user_id,
+          plan_id,
+          status,
+          starts_at,
+          expires_at
+        )
+        VALUES (
+          ?,
+          ?,
+          ?,
+          ?,
+          'active',
+          NOW(),
+          ?
+        )
+      `,
+      [
+        id,
+        tenantId,
+        userId,
+        planId,
+        expiresAt,
+      ]
+    );
+
+    return id;
+  };
+
+  const activateUserSubscription =
+  async ({
+    connection,
+    subscriptionId,
+    planId,
+    expiresAt,
+  }) => {
+    const [result] =
+      await connection.query(
+        `
+          UPDATE user_subscriptions
+
+          SET
+            plan_id = ?,
+            status = 'active',
+            starts_at = NOW(),
+            expires_at = ?,
+            updated_at = NOW()
+
+          WHERE id = ?
+        `,
+        [
+          planId,
+          expiresAt,
+          subscriptionId,
+        ]
+      );
+
+    return result.affectedRows === 1;
+  };
+
+const consumeTenantOnboardingSessions =
+  async ({
+    connection,
+    tenantId,
+    userId,
+  }) => {
+    await connection.query(
+      `
+        UPDATE tenant_onboarding_sessions
+
+        SET
+          consumed_at = COALESCE(
+            consumed_at,
+            NOW()
+          ),
+          updated_at = NOW()
+
+        WHERE tenant_id = ?
+          AND user_id = ?
+          AND consumed_at IS NULL
+      `,
+      [
+        tenantId,
+        userId,
+      ]
+    );
+  };
+
 module.exports = {
   listPlans,
   findPlanById,
@@ -434,4 +980,18 @@ module.exports = {
   listTenantSubscriptionHistory,
   upsertTenantOverride,
   getTenantOverride,
+
+  listSubscriptionRequests,
+  findSubscriptionRequestById,
+  findSubscriptionPaymentProof,
+  rejectSubscriptionRequest,
+  approveSubscriptionRequest,
+
+  activateTenant,
+
+  findUserSubscription,
+  createUserSubscription,
+  activateUserSubscription,
+
+  consumeTenantOnboardingSessions,
 };

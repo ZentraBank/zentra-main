@@ -320,7 +320,7 @@ const decide = async ({
   body,
 }) => {
   const connection =
-    await repo.db.getConnection();
+    await repo.db.pool.getConnection();
 
   try {
     await connection.beginTransaction();
