@@ -4,10 +4,17 @@ export type PlatformAdministratorRole =
   | "platform_auditor";
 
 export type PlatformAdministratorStatus =
-  | "pending"
   | "active"
-  | "suspended"
-  | "disabled";
+  | "inactive"
+  | "suspended";
+
+export type PlatformPermission = {
+  id: string;
+  name: string;
+  code: string;
+  description: string | null;
+  module: string;
+};
 
 export type PlatformAdministrator = {
   id: string;

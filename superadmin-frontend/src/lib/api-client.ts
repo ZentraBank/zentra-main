@@ -297,13 +297,14 @@ export async function apiBlobRequest(
 
   try {
     response = await fetch(
-      `${API_BASE_URL}${path}`,
-      {
-        ...requestOptions,
-        credentials: "include",
-        headers,
-      }
-    );
+  `${API_BASE_URL}${path}`,
+  {
+    ...requestOptions,
+    credentials: "include",
+    headers,
+    cache: "no-store",
+  }
+);
   } catch {
     throw new ApiError(
       "Unable to connect to the server.",

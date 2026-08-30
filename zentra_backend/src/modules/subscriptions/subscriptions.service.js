@@ -5,6 +5,16 @@ const {
   "../../services/private-file.service"
 );
 
+const platformAuthRepository = require(
+  "../platform-auth/platform-auth.repository"
+);
+
+const platformNotificationsService = require(
+  "../platform-notifications/platform-notifications.service"
+);
+
+
+
 const httpError = (statusCode, message) => {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -159,7 +169,125 @@ const submitSubscriptionProof =
         "Payment proof cannot be submitted"
       );
     }
+    try {
+  console.log(
+    "=== PAYMENT PROOF NOTIFICATION START ==="
+  );
 
+  console.log(
+    "tenantId:",
+    tenantId
+  );
+
+  console.log(
+    "requestId:",
+    requestId
+  );
+
+  console.log(
+    "platformAuthRepository has function:",
+    typeof platformAuthRepository
+      .listActiveUsersWithPermission
+  );
+
+  console.log(
+    "platformNotificationsService has function:",
+    typeof platformNotificationsService
+      .createNotification
+  );
+
+  const reviewers =
+    await platformAuthRepository
+      .listActiveUsersWithPermission(
+        "platform.subscriptions.update"
+      );
+
+  console.log(
+    "REVIEWERS:",
+    reviewers
+  );
+
+  const recipientUserIds =
+    reviewers.map(
+      (reviewer) => reviewer.id
+    );
+
+  console.log(
+    "RECIPIENT IDS:",
+    recipientUserIds
+  );
+
+  if (!recipientUserIds.length) {
+    console.log(
+      "NO RECIPIENTS FOUND"
+    );
+  } else {
+    const notificationResult =
+      await platformNotificationsService
+        .createNotification({
+          body: {
+            type:
+              "subscription_payment_proof",
+
+            severity:
+              "info",
+
+            title:
+              "New payment proof submitted",
+
+            message:
+              "A new subscription payment proof has been submitted and is awaiting review.",
+
+            tenantId,
+
+            entityType:
+              "subscription_request",
+
+            entityId:
+              requestId,
+
+            recipientUserIds,
+          },
+        });
+
+    console.log(
+      "NOTIFICATION RESULT:",
+      notificationResult
+    );
+  }
+
+  console.log(
+    "=== PAYMENT PROOF NOTIFICATION END ==="
+  );
+} catch (error) {
+  console.error(
+    "=== PAYMENT PROOF NOTIFICATION ERROR ==="
+  );
+
+  console.error(
+    "name:",
+    error?.name
+  );
+
+  console.error(
+    "message:",
+    error?.message
+  );
+
+  console.error(
+    "code:",
+    error?.code
+  );
+
+  console.error(
+    "sqlMessage:",
+    error?.sqlMessage
+  );
+
+  console.error(error);
+}
+
+  
     return repo.findRequestById({
       tenantId,
       requestId,

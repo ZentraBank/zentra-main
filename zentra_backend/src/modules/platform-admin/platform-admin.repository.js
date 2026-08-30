@@ -126,7 +126,6 @@ const create = async ({
   roleCode,
   passwordHash,
   status,
-  createdBy,
 }) => {
   const id = randomUUID();
 
@@ -139,9 +138,8 @@ const create = async ({
         first_name,
         last_name,
         role_code,
-        status,
-        created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
     [
       id,
@@ -151,7 +149,6 @@ const create = async ({
       lastName,
       roleCode,
       status,
-      createdBy,
     ]
   );
 
@@ -161,9 +158,60 @@ const create = async ({
 const replacePermissions = async ({
   connection,
   platformUserId,
-  permissions,
+  permissions = [],
   grantedBy,
 }) => {
+  const requestedPermissions = [
+    ...new Set(
+      permissions
+        .filter(
+          (permission) =>
+            typeof permission === "string"
+        )
+        .map((permission) => permission.trim())
+        .filter(Boolean)
+    ),
+  ];
+
+  if (requestedPermissions.length > 0) {
+    const placeholders =
+      requestedPermissions
+        .map(() => "?")
+        .join(", ");
+
+    const [validRows] =
+      await connection.query(
+        `
+          SELECT code
+          FROM permissions
+          WHERE code IN (${placeholders})
+            AND code LIKE 'platform.%'
+        `,
+        requestedPermissions
+      );
+
+    const validPermissions = new Set(
+      validRows.map((row) => row.code)
+    );
+
+    const invalidPermissions =
+      requestedPermissions.filter(
+        (permission) =>
+          !validPermissions.has(permission)
+      );
+
+    if (invalidPermissions.length > 0) {
+      const error = new Error(
+        `Invalid platform permissions: ${invalidPermissions.join(
+          ", "
+        )}`
+      );
+
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
   await connection.query(
     `
       DELETE FROM platform_user_permissions
@@ -172,24 +220,36 @@ const replacePermissions = async ({
     [platformUserId]
   );
 
-  for (const permissionCode of permissions) {
-    await connection.query(
-      `
-        INSERT INTO platform_user_permissions (
-          id,
-          platform_user_id,
-          permission_code,
-          granted_by
-        ) VALUES (?, ?, ?, ?)
-      `,
-      [
-        randomUUID(),
-        platformUserId,
-        permissionCode,
-        grantedBy,
-      ]
+  if (requestedPermissions.length === 0) {
+    return;
+  }
+
+  const values = [];
+  const placeholders = [];
+
+  for (const permissionCode of requestedPermissions) {
+    placeholders.push("(?, ?, ?, ?)");
+
+    values.push(
+      randomUUID(),
+      platformUserId,
+      permissionCode,
+      grantedBy
     );
   }
+
+  await connection.query(
+    `
+      INSERT INTO platform_user_permissions (
+        id,
+        platform_user_id,
+        permission_code,
+        granted_by
+      )
+      VALUES ${placeholders.join(", ")}
+    `,
+    values
+  );
 };
 
 const listPermissions = async (platformUserId) => {
@@ -204,6 +264,26 @@ const listPermissions = async (platformUserId) => {
   );
 
   return rows.map((row) => row.permission_code);
+};
+
+const listAvailablePermissions = async () => {
+  const [rows] = await db.query(
+    `
+      SELECT
+        id,
+        name,
+        code,
+        description,
+        module
+      FROM permissions
+      WHERE code LIKE 'platform.%'
+      ORDER BY
+        module ASC,
+        code ASC
+    `
+  );
+
+  return rows;
 };
 
 const update = async ({
@@ -257,4 +337,5 @@ module.exports = {
   listPermissions,
   update,
   updateStatus,
+  listAvailablePermissions,
 };

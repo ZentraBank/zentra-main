@@ -78,4 +78,14 @@ module.exports = {
       }),
     })
   ),
+
+  listAvailablePermissions: asyncHandler(
+  async (req, res) =>
+    sendSuccess(res, {
+      message:
+        "Platform permissions loaded successfully.",
+      data:
+        await service.listAvailablePermissions(),
+    })
+),
 };

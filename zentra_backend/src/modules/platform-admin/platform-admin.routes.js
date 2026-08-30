@@ -19,6 +19,7 @@ const {
 } = require("../../middleware/permission.middleware");
 
 router.use(authenticate);
+
 router.use(requirePlatformScope);
 
 router.get(
@@ -37,6 +38,14 @@ router.post(
     "platform.administrators.create"
   ),
   controller.createUser
+);
+
+router.get(
+  "/permissions",
+  requireAllPermissions(
+    "platform.administrators.permissions.manage"
+  ),
+  controller.listAvailablePermissions
 );
 
 router.get(

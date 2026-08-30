@@ -61,6 +61,65 @@ const listPermissions = async (platformUserId) => {
   return rows.map((row) => row.permission_code);
 };
 
+
+const listActiveUsersWithPermission = async (
+  permissionCode
+) => {
+  const [rows] = await db.query(
+    `
+      SELECT DISTINCT
+        pu.id,
+        pu.email,
+        pu.first_name,
+        pu.last_name,
+        pu.role_code
+
+      FROM platform_users pu
+
+      WHERE pu.status = 'active'
+        AND pu.deleted_at IS NULL
+
+        AND (
+          /* Direct permission assigned to this platform user */
+          EXISTS (
+            SELECT 1
+            FROM platform_user_permissions pup
+            WHERE pup.platform_user_id = pu.id
+              AND pup.permission_code = ?
+          )
+
+          OR
+
+          /* Permission inherited from platform role */
+          EXISTS (
+            SELECT 1
+            FROM roles r
+
+            INNER JOIN role_permissions rp
+              ON rp.role_id = r.id
+
+            INNER JOIN permissions p
+              ON p.id = rp.permission_id
+
+            WHERE r.code = pu.role_code
+              AND r.tenant_id IS NULL
+              AND r.is_active = 1
+              AND p.code = ?
+          )
+        )
+
+      ORDER BY pu.created_at ASC
+    `,
+    [
+      permissionCode,
+      permissionCode,
+    ]
+  );
+
+  return rows;
+};
+
+
 const updateLastLogin = async (platformUserId) => {
   await db.query(
     `
@@ -225,4 +284,5 @@ module.exports = {
   revokeAllRefreshTokens,
   recordLoginAttempt,
   countRecentFailedAttempts,
+  listActiveUsersWithPermission,
 };

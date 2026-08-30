@@ -38,8 +38,25 @@ export function NotificationList() {
           platformNotificationsService.unreadCount(),
         ]);
 
-      setRows(notifications.data);
-      setUnreadCount(count.data.unreadCount);
+      console.log(
+  "NOTIFICATIONS API RESPONSE:",
+  notifications
+);
+
+console.log(
+  "UNREAD COUNT API RESPONSE:",
+  count
+);
+
+setRows(
+  Array.isArray(notifications.data)
+    ? notifications.data
+    : []
+);
+
+setUnreadCount(
+  Number(count.data?.unreadCount ?? 0)
+);
     } catch (caught) {
       setError(
         caught instanceof ApiError
@@ -51,9 +68,17 @@ export function NotificationList() {
     }
   }, [unreadOnly]);
 
-  useEffect(() => {
+useEffect(() => {
+  void load();
+
+  const interval = window.setInterval(() => {
     void load();
-  }, [load]);
+  }, 5000);
+
+  return () => {
+    window.clearInterval(interval);
+  };
+}, [load]);
 
   const markRead = async (
     notificationId: string
@@ -137,7 +162,7 @@ export function NotificationList() {
           <p className="text-sm text-neutral-500">
             Loading notifications…
           </p>
-        ) : rows.length === 0 ? (
+        )  : !Array.isArray(rows) || rows.length === 0 ? (
           <p className="text-sm text-neutral-500">
             No notifications found.
           </p>

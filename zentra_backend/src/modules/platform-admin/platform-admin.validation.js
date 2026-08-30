@@ -6,6 +6,24 @@ const roles = [
   "platform_auditor",
 ];
 
+const statuses = [
+  "active",
+  "inactive",
+  "suspended",
+];
+
+const platformPermission = Joi.string()
+  .trim()
+  .pattern(
+    /^platform\.[a-z0-9_]+(?:\.[a-z0-9_]+)*$/
+  )
+  .min(3)
+  .max(180)
+  .messages({
+    "string.pattern.base":
+      "Permissions must be valid platform permission codes.",
+  });
+
 module.exports = {
   listUsers: {
     query: Joi.object({
@@ -30,19 +48,16 @@ module.exports = {
         .optional(),
 
       status: Joi.string()
-        .valid(
-          "pending",
-          "active",
-          "suspended",
-          "disabled"
-        )
+        .valid(...statuses)
         .optional(),
     }),
   },
 
   userId: {
     params: Joi.object({
-      userId: Joi.string().uuid().required(),
+      userId: Joi.string()
+        .uuid()
+        .required(),
     }),
   },
 
@@ -51,6 +66,7 @@ module.exports = {
       email: Joi.string()
         .email()
         .max(255)
+        .lowercase()
         .required(),
 
       firstName: Joi.string()
@@ -70,12 +86,7 @@ module.exports = {
         .required(),
 
       status: Joi.string()
-        .valid(
-          "pending",
-          "active",
-          "suspended",
-          "disabled"
-        )
+        .valid(...statuses)
         .default("active"),
 
       temporaryPassword: Joi.string()
@@ -84,12 +95,7 @@ module.exports = {
         .required(),
 
       permissions: Joi.array()
-        .items(
-          Joi.string()
-            .trim()
-            .min(3)
-            .max(180)
-        )
+        .items(platformPermission)
         .unique()
         .min(1)
         .required(),
@@ -98,7 +104,9 @@ module.exports = {
 
   updateUser: {
     params: Joi.object({
-      userId: Joi.string().uuid().required(),
+      userId: Joi.string()
+        .uuid()
+        .required(),
     }),
 
     body: Joi.object({
@@ -122,17 +130,14 @@ module.exports = {
 
   updatePermissions: {
     params: Joi.object({
-      userId: Joi.string().uuid().required(),
+      userId: Joi.string()
+        .uuid()
+        .required(),
     }),
 
     body: Joi.object({
       permissions: Joi.array()
-        .items(
-          Joi.string()
-            .trim()
-            .min(3)
-            .max(180)
-        )
+        .items(platformPermission)
         .unique()
         .required(),
     }),
@@ -140,16 +145,14 @@ module.exports = {
 
   updateStatus: {
     params: Joi.object({
-      userId: Joi.string().uuid().required(),
+      userId: Joi.string()
+        .uuid()
+        .required(),
     }),
 
     body: Joi.object({
       status: Joi.string()
-        .valid(
-          "active",
-          "suspended",
-          "disabled"
-        )
+        .valid(...statuses)
         .required(),
     }),
   },

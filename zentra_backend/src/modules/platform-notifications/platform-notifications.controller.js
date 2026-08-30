@@ -4,19 +4,26 @@ const service = require("./platform-notifications.service");
 
 module.exports = {
   list: asyncHandler(async (req, res) => {
-    const result =
-      await service.listNotifications({
-        auth: req.auth,
-        query: req.query,
-      });
+  res.set({
+    "Cache-Control":
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  });
 
-    return sendSuccess(res, {
-      message:
-        "Platform notifications loaded successfully.",
-      data: result.rows,
-      meta: result.meta,
+  const result =
+    await service.listNotifications({
+      auth: req.auth,
+      query: req.query,
     });
-  }),
+
+  return sendSuccess(res, {
+    message:
+      "Platform notifications loaded successfully.",
+    data: result.rows,
+    meta: result.meta,
+  });
+}),
 
   getOne: asyncHandler(async (req, res) =>
     sendSuccess(res, {
@@ -67,16 +74,23 @@ module.exports = {
     })
   ),
 
-  unreadCount: asyncHandler(async (req, res) =>
-    sendSuccess(res, {
-      message:
-        "Unread notification count loaded.",
-      data: {
-        unreadCount:
-          await service.getUnreadCount({
-            auth: req.auth,
-          }),
-      },
-    })
-  ),
+  unreadCount: asyncHandler(async (req, res) => {
+  res.set({
+    "Cache-Control":
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+  });
+
+  return sendSuccess(res, {
+    message:
+      "Unread notification count loaded.",
+    data: {
+      unreadCount:
+        await service.getUnreadCount({
+          auth: req.auth,
+        }),
+    },
+  });
+}),
 };

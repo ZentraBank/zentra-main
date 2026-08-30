@@ -4,6 +4,7 @@ import type {
   PlatformAdministrator,
   PlatformAdministratorRole,
   PlatformAdministratorStatus,
+  PlatformPermission,
 } from "@/src/types/platform-admin";
 
 type ListFilters = {
@@ -17,13 +18,28 @@ type ListFilters = {
 const toQuery = (filters: ListFilters) => {
   const query = new URLSearchParams();
 
-  if (filters.page) query.set("page", String(filters.page));
-  if (filters.limit) query.set("limit", String(filters.limit));
-  if (filters.search) query.set("search", filters.search);
-  if (filters.role) query.set("role", filters.role);
-  if (filters.status) query.set("status", filters.status);
+  if (filters.page) {
+    query.set("page", String(filters.page));
+  }
+
+  if (filters.limit) {
+    query.set("limit", String(filters.limit));
+  }
+
+  if (filters.search) {
+    query.set("search", filters.search);
+  }
+
+  if (filters.role) {
+    query.set("role", filters.role);
+  }
+
+  if (filters.status) {
+    query.set("status", filters.status);
+  }
 
   const value = query.toString();
+
   return value ? `?${value}` : "";
 };
 
@@ -34,13 +50,21 @@ export const platformAdminsService = {
     );
   },
 
+  listPermissions() {
+    return apiRequest<PlatformPermission[]>(
+      "/superadmin/administrators/permissions"
+    );
+  },
+
   getById(userId: string) {
     return apiRequest<PlatformAdministrator>(
       `/superadmin/administrators/${userId}`
     );
   },
 
-  create(payload: CreatePlatformAdministratorPayload) {
+  create(
+    payload: CreatePlatformAdministratorPayload
+  ) {
     return apiRequest<PlatformAdministrator>(
       "/superadmin/administrators",
       {
@@ -75,23 +99,24 @@ export const platformAdminsService = {
       `/superadmin/administrators/${userId}/permissions`,
       {
         method: "PATCH",
-        body: JSON.stringify({ permissions }),
+        body: JSON.stringify({
+          permissions,
+        }),
       }
     );
   },
 
   updateStatus(
     userId: string,
-    status: Exclude<
-      PlatformAdministratorStatus,
-      "pending"
-    >
+    status: PlatformAdministratorStatus
   ) {
     return apiRequest<PlatformAdministrator>(
       `/superadmin/administrators/${userId}/status`,
       {
         method: "PATCH",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({
+          status,
+        }),
       }
     );
   },

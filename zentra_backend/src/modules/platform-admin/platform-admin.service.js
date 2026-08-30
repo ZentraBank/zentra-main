@@ -37,23 +37,22 @@ const createUser = async ({
       Number(process.env.BCRYPT_ROUNDS || 12)
     );
 
-    const userId = await repo.create({
-      connection,
-      email: body.email,
-      firstName: body.firstName,
-      lastName: body.lastName,
-      roleCode: body.roleCode,
-      passwordHash,
-      status: body.status || "active",
-      createdBy: auth.userId,
-    });
+   const userId = await repo.create({
+  connection,
+  email: body.email,
+  firstName: body.firstName,
+  lastName: body.lastName,
+  roleCode: body.roleCode,
+  passwordHash,
+  status: body.status || "active",
+});
 
     await repo.replacePermissions({
-      connection,
-      platformUserId: userId,
-      permissions: body.permissions,
-      grantedBy: auth.userId,
-    });
+  connection,
+  platformUserId: userId,
+  permissions: body.permissions,
+  grantedBy: auth.userId,
+});
 
     await connection.commit();
 
@@ -162,11 +161,15 @@ const updateStatus = async ({
   return updated;
 };
 
+const listAvailablePermissions = async () =>
+  repo.listAvailablePermissions();
+
 module.exports = {
   createUser,
   getUser,
   updatePermissions,
   updateStatus,
+  listAvailablePermissions,
 
   listUsers: ({ query }) =>
     repo.listUsers({
