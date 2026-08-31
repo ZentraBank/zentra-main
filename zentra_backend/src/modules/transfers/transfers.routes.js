@@ -6,6 +6,12 @@ const schemas = require("./transfers.validation");
 const validate = require("../../middleware/validate.middleware");
 
 const {
+  requirePlanLimit,
+} = require(
+  "../../middleware/subscription.middleware"
+);
+
+const {
   resolveTenantMiddleware,
 } = require("../../middleware/tenant.middleware");
 
@@ -29,7 +35,14 @@ router.use(authenticate);
 router.post(
   "/",
   validate(schemas.createTransferSchema),
+
+  requirePlanLimit(
+    "transfer_limit",
+    (req) => req.body.amount
+  ),
+
   requireAllPermissions("transfers.create"),
+
   controller.createOwn
 );
 

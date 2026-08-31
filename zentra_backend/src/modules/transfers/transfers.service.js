@@ -1,6 +1,12 @@
 const crypto = require("crypto");
 const db = require("../../config/db");
 const repo = require("./transfers.repository");
+const subscriptionService = require(
+  "../subscriptions/subscriptions.service"
+);
+const tenantRepo = require(
+  "../tenants/tenant.repository"
+);
 
 const transactionPinService = require(
   "../transaction-pin/transaction-pin.service"
@@ -20,54 +26,126 @@ const httpError = (statusCode, message) => {
   return error;
 };
 
-const featureNumber = (auth, key) => {
-  const feature = auth.planFeatures?.[key];
-  const value = Number(feature?.value);
+const getTransferEntitlements = async ({
+  tenantId,
+}) => {
+  const {
+    subscription,
+    entitlements,
+  } =
+    await subscriptionService.getTenantEntitlements({
+      tenantId,
+    });
 
-  if (
-    !feature?.enabled ||
-    !Number.isFinite(value)
-  ) {
+  if (!subscription) {
     throw httpError(
       403,
-      `Your current plan does not include ${key}`
+      "An active subscription is required"
     );
   }
 
-  return value;
-};
-
-const getTransferLimits = (auth) => {
-  const defaultTransferLimit = 10000;
-  const defaultDailyTransferLimit = 25000;
-
-  if (
-    !auth.subscriptionId ||
-    !auth.planId
-  ) {
-    return {
-      transferLimit:
-        defaultTransferLimit,
-
-      dailyTransferLimit:
-        defaultDailyTransferLimit,
-    };
-  }
-
   return {
-    transferLimit:
-      featureNumber(
-        auth,
-        "transfer_limit"
-      ),
-
-    dailyTransferLimit:
-      featureNumber(
-        auth,
-        "daily_transfer_limit"
-      ),
+    subscription,
+    entitlements,
   };
 };
+
+const getPlanLimit = ({
+  entitlements,
+  featureKey,
+}) => {
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      entitlements,
+      featureKey
+    )
+  ) {
+    throw httpError(
+      500,
+      `Subscription feature ${featureKey} is not configured`
+    );
+  }
+
+  const value =
+    entitlements[featureKey];
+
+  /*
+   * null means unlimited by subscription.
+   */
+  if (value === null) {
+    return null;
+  }
+
+  if (value === false) {
+    throw httpError(
+      403,
+      `Your current subscription does not include ${featureKey}`
+    );
+  }
+
+  const limit = Number(value);
+
+  if (
+    !Number.isFinite(limit) ||
+    limit < 0
+  ) {
+    throw httpError(
+      500,
+      `Invalid ${featureKey} subscription configuration`
+    );
+  }
+
+  return limit;
+};
+
+// const featureNumber = (auth, key) => {
+//   const feature = auth.planFeatures?.[key];
+//   const value = Number(feature?.value);
+
+//   if (
+//     !feature?.enabled ||
+//     !Number.isFinite(value)
+//   ) {
+//     throw httpError(
+//       403,
+//       `Your current plan does not include ${key}`
+//     );
+//   }
+
+//   return value;
+// };
+
+// const getTransferLimits = (auth) => {
+//   const defaultTransferLimit = 10000;
+//   const defaultDailyTransferLimit = 25000;
+
+//   if (
+//     !auth.subscriptionId ||
+//     !auth.planId
+//   ) {
+//     return {
+//       transferLimit:
+//         defaultTransferLimit,
+
+//       dailyTransferLimit:
+//         defaultDailyTransferLimit,
+//     };
+//   }
+
+//   return {
+//     transferLimit:
+//       featureNumber(
+//         auth,
+//         "transfer_limit"
+//       ),
+
+//     dailyTransferLimit:
+//       featureNumber(
+//         auth,
+//         "daily_transfer_limit"
+//       ),
+//   };
+// };
 
 const makeReference = () =>
   `ZTR-${Date.now()}-${crypto
@@ -92,6 +170,31 @@ const createInternalTransfer = async ({
     body.transferType ||
     "internal";
 
+    const destinationCountryCode =
+  transferType === "external"
+    ? body.destinationCountryCode
+        ?.trim()
+        .toUpperCase()
+    : sourceCountryCode;
+
+const isInternational =
+  transferType === "external" &&
+  destinationCountryCode !==
+    sourceCountryCode;
+
+if (
+  isInternational &&
+  entitlements.international_transfers !==
+    true
+) {
+  throw httpError(
+    403,
+    "International transfers are not included in your current subscription plan"
+  );
+}
+
+
+
   /*
   |--------------------------------------------------------------------------
   | Basic validation
@@ -109,9 +212,49 @@ const createInternalTransfer = async ({
   }
 
   const {
-    transferLimit,
-    dailyTransferLimit,
-  } = getTransferLimits(auth);
+  entitlements,
+} =
+  await getTransferEntitlements({
+    tenantId: auth.tenantId,
+  });
+
+const transferLimit =
+  getPlanLimit({
+    entitlements,
+    featureKey:
+      "transfer_limit",
+  });
+
+const dailyTransferLimit =
+  getPlanLimit({
+    entitlements,
+    featureKey:
+      "daily_transfer_limit",
+  });
+
+const tenant =
+  await tenantRepo.findTenantById(
+    auth.tenantId
+  );
+
+if (!tenant) {
+  throw httpError(
+    404,
+    "Tenant not found"
+  );
+}
+
+if (!tenant.country_code) {
+  throw httpError(
+    500,
+    "Tenant country is not configured"
+  );
+}
+
+const sourceCountryCode =
+  tenant.country_code
+    .trim()
+    .toUpperCase();
 
   /*
   |--------------------------------------------------------------------------
@@ -134,14 +277,14 @@ const createInternalTransfer = async ({
   */
 
   if (
-    amount >
-    transferLimit
-  ) {
-    throw httpError(
-      403,
-      `Your current account allows a maximum of ${transferLimit} per transfer`
-    );
-  }
+  transferLimit !== null &&
+  amount > transferLimit
+) {
+  throw httpError(
+    403,
+    `Your current subscription plan allows a maximum transfer of ${transferLimit}`
+  );
+}
 
   const dailyTotal =
     Number(
@@ -155,13 +298,14 @@ const createInternalTransfer = async ({
     ) || 0;
 
   if (
-    dailyTotal + amount >
+  dailyTransferLimit !== null &&
+  dailyTotal + amount >
     dailyTransferLimit
-  ) {
+) {
     throw httpError(
-      403,
-      `Your current account allows a maximum of ${dailyTransferLimit} per day`
-    );
+  403,
+  `Your current subscription plan allows a maximum daily transfer total of ${dailyTransferLimit}`
+);
   }
 
   /*
@@ -308,6 +452,14 @@ const createInternalTransfer = async ({
         source.currency;
 
       if (requiresFx) {
+        if (
+  entitlements.fx_access !== true
+) {
+  throw httpError(
+    403,
+    "Foreign exchange transfers are not included in your current subscription plan"
+  );
+}
         if (
           !body.fxRateId ||
           body.fxRate ===
@@ -1130,4 +1282,5 @@ module.exports = {
   listTenant,
   getTenant,
   updateTenant,
+ 
 };

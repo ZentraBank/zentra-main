@@ -31,6 +31,12 @@ const {
 );
 
 const {
+  requirePlanFeature,
+} = require(
+  "../../middleware/subscription.middleware"
+);
+
+const {
   uploadSingleDocument,
 } = require(
   "../../middleware/upload.middleware"
@@ -144,6 +150,10 @@ router.post(
 
 router.post(
   "/",
+
+  requirePlanFeature(
+    "gift_access"
+  ),
 
   validate(
     schemas.createGift

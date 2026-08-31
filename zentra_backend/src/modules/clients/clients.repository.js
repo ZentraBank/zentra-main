@@ -176,9 +176,144 @@ const updatePassword = async ({
   return result.affectedRows > 0;
 };
 
+const findTenantClientById =
+  async ({
+    tenantId,
+    userId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT
+            u.id AS user_id,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.email
+
+          FROM tenant_memberships tm
+
+          INNER JOIN users u
+            ON u.id = tm.user_id
+
+          INNER JOIN roles r
+            ON r.id = tm.role_id
+           AND r.code = 'customer'
+
+          WHERE tm.tenant_id = ?
+            AND tm.user_id = ?
+            AND tm.status = 'active'
+            AND u.status = 'active'
+            AND u.deleted_at IS NULL
+
+          LIMIT 1
+        `,
+        [
+          tenantId,
+          userId,
+        ]
+      );
+
+    return rows[0] || null;
+  };
+
+
+const findTenantClientsByIds =
+  async ({
+    tenantId,
+    userIds,
+  }) => {
+    if (
+      !Array.isArray(userIds) ||
+      userIds.length === 0
+    ) {
+      return [];
+    }
+
+    const placeholders =
+      userIds
+        .map(() => "?")
+        .join(", ");
+
+    const [rows] =
+      await db.query(
+        `
+          SELECT DISTINCT
+            u.id AS user_id,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.email
+
+          FROM tenant_memberships tm
+
+          INNER JOIN users u
+            ON u.id = tm.user_id
+
+          INNER JOIN roles r
+            ON r.id = tm.role_id
+           AND r.code = 'customer'
+
+          WHERE tm.tenant_id = ?
+            AND tm.user_id IN (
+              ${placeholders}
+            )
+            AND tm.status = 'active'
+            AND u.status = 'active'
+            AND u.deleted_at IS NULL
+        `,
+        [
+          tenantId,
+          ...userIds,
+        ]
+      );
+
+    return rows;
+  };
+
+
+const findAllTenantClients =
+  async ({
+    tenantId,
+  }) => {
+    const [rows] =
+      await db.query(
+        `
+          SELECT DISTINCT
+            u.id AS user_id,
+            u.first_name,
+            u.middle_name,
+            u.last_name,
+            u.email
+
+          FROM tenant_memberships tm
+
+          INNER JOIN users u
+            ON u.id = tm.user_id
+
+          INNER JOIN roles r
+            ON r.id = tm.role_id
+           AND r.code = 'customer'
+
+          WHERE tm.tenant_id = ?
+            AND tm.status = 'active'
+            AND u.status = 'active'
+            AND u.deleted_at IS NULL
+        `,
+        [
+          tenantId,
+        ]
+      );
+
+    return rows;
+  };
+
 module.exports = {
   listByTenant,
   findById,
   updateAvatar,
   updatePassword,
+  findTenantClientById,
+  findTenantClientsByIds,
+  findAllTenantClients,
 };

@@ -7,6 +7,12 @@ const validate =
   require("../../middleware/validate.middleware");
 
 const {
+  requirePlanLimit,
+} = require(
+  "../../middleware/subscription.middleware"
+);
+
+const {
   resolveTenantMiddleware,
 } = require("../../middleware/tenant.middleware");
 

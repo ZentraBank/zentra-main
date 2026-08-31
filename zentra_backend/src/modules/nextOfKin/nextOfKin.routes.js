@@ -21,7 +21,7 @@ const {
 const {
   authenticate,
 } = require(
-  "../../middleware/auth.middleware"
+    "../../middleware/auth.middleware"
 );
 
 const {
@@ -40,6 +40,12 @@ const {
   uploadSingleDocument,
 } = require(
   "../../middleware/upload.middleware"
+);
+
+const {
+  requirePlanFeature,
+} = require(
+  "../../middleware/subscription.middleware"
 );
 
 
@@ -62,10 +68,18 @@ router.use(
 |--------------------------------------------------------------------------
 | Client document upload
 |--------------------------------------------------------------------------
+|
+| Uploading documents here is part of starting
+| a new next-of-kin claim.
+|
 */
 
 router.post(
   "/files",
+
+  requirePlanFeature(
+    "next_of_kin"
+  ),
 
   requireApprovedKyc,
 
@@ -87,10 +101,18 @@ router.post(
 |--------------------------------------------------------------------------
 | Client claim submission
 |--------------------------------------------------------------------------
+|
+| Starting a new NOK claim requires the tenant's
+| subscription to include next_of_kin.
+|
 */
 
 router.post(
   "/claims",
+
+  requirePlanFeature(
+    "next_of_kin"
+  ),
 
   requireApprovedKyc,
 
@@ -110,6 +132,10 @@ router.post(
 |--------------------------------------------------------------------------
 | Client claims
 |--------------------------------------------------------------------------
+|
+| Existing claims remain accessible even if the
+| tenant's subscription changes later.
+|
 */
 
 router.get(
@@ -140,6 +166,20 @@ router.get(
   controller.getMine
 );
 
+
+/*
+|--------------------------------------------------------------------------
+| Additional information for existing claim
+|--------------------------------------------------------------------------
+|
+| This is deliberately NOT gated by next_of_kin.
+|
+| Once a claim exists, a client must still be
+| able to respond to requests for additional
+| information even if the subscription changes.
+|
+*/
+
 router.post(
   "/claims/me/:claimId/additional-information",
 
@@ -156,10 +196,16 @@ router.post(
   controller.submitAdditionalInformation
 );
 
+
 /*
 |--------------------------------------------------------------------------
 | Tenant claim review
 |--------------------------------------------------------------------------
+|
+| Tenant administrators must retain access to
+| existing claims so they can complete their
+| review obligations.
+|
 */
 
 router.get(
@@ -179,8 +225,12 @@ router.get(
 
 /*
 |--------------------------------------------------------------------------
-| Tenant secure claim document
+| Tenant secure claim documents
 |--------------------------------------------------------------------------
+|
+| Existing claim documents must remain available
+| to authorised reviewers.
+|
 */
 
 router.get(
@@ -223,6 +273,10 @@ router.get(
 |--------------------------------------------------------------------------
 | Tenant claim status
 |--------------------------------------------------------------------------
+|
+| Existing claims must remain reviewable and
+| completable after a subscription downgrade.
+|
 */
 
 router.patch(

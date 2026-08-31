@@ -137,7 +137,7 @@ const permissions = [
     name: "Manage donations",
   },
 
-  {
+    {
     module: "chat",
     code: "chat.read",
     name: "Read chat messages",
@@ -149,9 +149,169 @@ const permissions = [
   },
 
   {
+    module: "platform_chat",
+    code: "platform_chat.read",
+    name: "Read platform support chat",
+  },
+  {
+    module: "platform_chat",
+    code: "platform_chat.send",
+    name: "Send platform support messages",
+  },
+
+  {
     module: "audit_logs",
     code: "audit_logs.read",
     name: "Read audit logs",
+  },
+];
+
+const platformPermissions = [
+  {
+    module: "dashboard",
+    code: "platform.dashboard.read",
+    name: "Read platform dashboard",
+  },
+
+  {
+    module: "tenants",
+    code: "platform.tenants.read",
+    name: "Read tenants",
+  },
+  {
+    module: "tenants",
+    code: "platform.tenants.create",
+    name: "Create tenants",
+  },
+  {
+    module: "tenants",
+    code: "platform.tenants.update",
+    name: "Update tenants",
+  },
+  {
+    module: "tenants",
+    code: "platform.tenants.features.manage",
+    name: "Manage tenant features",
+  },
+
+  {
+    module: "administrators",
+    code: "platform.administrators.read",
+    name: "Read platform administrators",
+  },
+  {
+    module: "administrators",
+    code: "platform.administrators.create",
+    name: "Create platform administrators",
+  },
+  {
+    module: "administrators",
+    code: "platform.administrators.update",
+    name: "Update platform administrators",
+  },
+  {
+    module: "administrators",
+    code: "platform.administrators.suspend",
+    name: "Suspend platform administrators",
+  },
+  {
+    module: "administrators",
+    code: "platform.administrators.permissions.manage",
+    name: "Manage platform administrator permissions",
+  },
+
+  {
+    module: "subscriptions",
+    code: "platform.subscriptions.read",
+    name: "Read subscriptions",
+  },
+  {
+    module: "subscriptions",
+    code: "platform.subscriptions.create",
+    name: "Create subscriptions",
+  },
+  {
+    module: "subscriptions",
+    code: "platform.subscriptions.update",
+    name: "Update subscriptions",
+  },
+  {
+    module: "subscriptions",
+    code: "platform.subscriptions.cancel",
+    name: "Cancel subscriptions",
+  },
+
+  {
+    module: "users",
+    code: "platform.users.read",
+    name: "Read platform users",
+  },
+
+  {
+    module: "accounts",
+    code: "platform.accounts.read",
+    name: "Read platform accounts",
+  },
+
+  {
+    module: "transactions",
+    code: "platform.transactions.read",
+    name: "Read platform transactions",
+  },
+
+  {
+    module: "notifications",
+    code: "platform.notifications.read",
+    name: "Read platform notifications",
+  },
+  {
+    module: "notifications",
+    code: "platform.notifications.create",
+    name: "Create platform notifications",
+  },
+
+  {
+    module: "audit_logs",
+    code: "platform.audit_logs.read",
+    name: "Read platform audit logs",
+  },
+
+  {
+    module: "settings",
+    code: "platform.settings.read",
+    name: "Read platform settings",
+  },
+  {
+    module: "settings",
+    code: "platform.settings.manage",
+    name: "Manage platform settings",
+  },
+
+  {
+    module: "domains",
+    code: "platform.domains.read",
+    name: "Read platform domains",
+  },
+  {
+    module: "domains",
+    code: "platform.domains.manage",
+    name: "Manage platform domains",
+  },
+
+    {
+    module: "chat",
+    code: "platform.chat.read",
+    name: "Read tenant platform chats",
+  },
+  {
+    module: "chat",
+    code: "platform.chat.reply",
+    name: "Reply to tenant platform chats",
+  },
+  {
+    module: "chat",
+    code: "platform.chat.manage",
+    name: "Manage tenant platform chats",
   },
 ];
 
@@ -164,6 +324,7 @@ const tenantFeatures = [
   "donations",
   "next_of_kin",
   "chat",
+  "platform_chat",
 ];
 
 const seedDatabase = async () => {
@@ -176,6 +337,8 @@ const seedDatabase = async () => {
       connection
     );
 
+    
+
     const tenantId = await seedTenant(
       connection,
       platformAdminId
@@ -185,9 +348,17 @@ const seedDatabase = async () => {
     await seedTenantFeatures(connection, tenantId);
 
     const permissionIds = await seedPermissions(
-      connection
-    );
+  connection
+);
 
+await seedPlatformPermissions(
+  connection
+);
+
+await seedPlatformAdminPermissions(
+  connection,
+  platformAdminId
+);
     const roleIds = await seedRoles(
       connection,
       tenantId
@@ -262,15 +433,25 @@ const seedPlatformAdmin = async (connection) => {
   await connection.execute(
     `
       INSERT INTO platform_users (
-        id,
-        first_name,
-        last_name,
-        email,
-        password_hash,
-        status,
-        email_verified_at
-      )
-      VALUES (?, ?, ?, ?, ?, 'active', NOW())
+  id,
+  first_name,
+  last_name,
+  email,
+  password_hash,
+  role_code,
+  status,
+  email_verified_at
+)
+VALUES (
+  ?,
+  ?,
+  ?,
+  ?,
+  ?,
+  'platform_superadmin',
+  'active',
+  NOW()
+)
     `,
     [
       id,
@@ -479,6 +660,108 @@ const seedPermissions = async (connection) => {
   return permissionIds;
 };
 
+const seedPlatformPermissions = async (
+  connection
+) => {
+  for (const permission of platformPermissions) {
+    const [existingRows] =
+      await connection.execute(
+        `
+          SELECT id
+          FROM permissions
+          WHERE code = ?
+          LIMIT 1
+        `,
+        [permission.code]
+      );
+
+    if (existingRows.length > 0) {
+      await connection.execute(
+        `
+          UPDATE permissions
+          SET
+            name = ?,
+            description = ?,
+            module = ?
+          WHERE id = ?
+        `,
+        [
+          permission.name,
+          permission.name,
+          permission.module,
+          existingRows[0].id,
+        ]
+      );
+
+      continue;
+    }
+
+    await connection.execute(
+      `
+        INSERT INTO permissions (
+          id,
+          name,
+          code,
+          description,
+          module
+        )
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      [
+        createId(),
+        permission.name,
+        permission.code,
+        permission.name,
+        permission.module,
+      ]
+    );
+  }
+};
+
+const seedPlatformAdminPermissions = async (
+  connection,
+  platformAdminId
+) => {
+  for (const permission of platformPermissions) {
+    const [existingRows] =
+      await connection.execute(
+        `
+          SELECT id
+          FROM platform_user_permissions
+          WHERE platform_user_id = ?
+            AND permission_code = ?
+          LIMIT 1
+        `,
+        [
+          platformAdminId,
+          permission.code,
+        ]
+      );
+
+    if (existingRows.length > 0) {
+      continue;
+    }
+
+    await connection.execute(
+      `
+        INSERT INTO platform_user_permissions (
+          id,
+          platform_user_id,
+          permission_code,
+          granted_by
+        )
+        VALUES (?, ?, ?, ?)
+      `,
+      [
+        createId(),
+        platformAdminId,
+        permission.code,
+        platformAdminId,
+      ]
+    );
+  }
+};
+
 const seedRoles = async (
   connection,
   tenantId
@@ -582,6 +865,8 @@ const seedRolePermissions = async (
     "donations.read",
     "chat.read",
     "chat.respond",
+    "platform_chat.read",
+    "platform_chat.send",
   ];
 
 const customerPermissionCodes = [

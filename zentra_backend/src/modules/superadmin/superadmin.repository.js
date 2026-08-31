@@ -198,38 +198,207 @@ const createTenantSystemRoles = async ({
   connection,
   tenantId,
 }) => {
-  const permissions = [
-    ["Accounts Read", "accounts.read", "accounts"],
-    ["Accounts Create", "accounts.create", "accounts"],
-    ["Accounts Manage", "accounts.manage", "accounts"],
+ const permissions = [
+  /*
+  |--------------------------------------------------------------------------
+  | Tenant administration
+  |--------------------------------------------------------------------------
+  */
 
-    ["Transfers Read", "transfers.read", "transfers"],
-    ["Transfers Create", "transfers.create", "transfers"],
-    ["Transfers Approve", "transfers.approve", "transfers"],
+  [
+    "Tenant Settings Read",
+    "tenant.settings.read",
+    "tenant",
+  ],
+  [
+    "Tenant Settings Manage",
+    "tenant.settings.manage",
+    "tenant",
+  ],
+  [
+    "Tenant Domains Read",
+    "tenant.domains.read",
+    "tenant",
+  ],
+  [
+    "Tenant Domains Manage",
+    "tenant.domains.manage",
+    "tenant",
+  ],
 
-    ["Cards Read", "cards.read", "cards"],
-    ["Cards Create", "cards.create", "cards"],
-    ["Cards Manage", "cards.manage", "cards"],
+  /*
+  |--------------------------------------------------------------------------
+  | Accounts
+  |--------------------------------------------------------------------------
+  */
 
-    ["Subscriptions Read", "subscriptions.read", "subscriptions"],
-    ["Subscriptions Manage", "subscriptions.manage", "subscriptions"],
+  [
+    "Accounts Read",
+    "accounts.read",
+    "accounts",
+  ],
+  [
+    "Accounts Create",
+    "accounts.create",
+    "accounts",
+  ],
+  [
+    "Accounts Manage",
+    "accounts.manage",
+    "accounts",
+  ],
 
-    ["Users Read", "users.read", "users"],
-    ["Users Manage", "users.manage", "users"],
+  /*
+  |--------------------------------------------------------------------------
+  | Transfers
+  |--------------------------------------------------------------------------
+  */
 
-    ["Notifications Read", "notifications.read", "notifications"],
-    ["Notifications Manage", "notifications.manage", "notifications"],
+  [
+    "Transfers Read",
+    "transfers.read",
+    "transfers",
+  ],
+  [
+    "Transfers Create",
+    "transfers.create",
+    "transfers",
+  ],
+  [
+    "Transfers Approve",
+    "transfers.approve",
+    "transfers",
+  ],
 
-    ["Donations Read", "donations.read", "donations"],
-    ["Donations Create", "donations.create", "donations"],
-    ["Donations Approve", "donations.approve", "donations"],
+  /*
+  |--------------------------------------------------------------------------
+  | Cards
+  |--------------------------------------------------------------------------
+  */
 
-    ["Investments Read", "investments.read", "investments"],
-    ["Investments Create", "investments.create", "investments"],
-    ["Investments Approve", "investments.approve", "investments"],
+  [
+    "Cards Read",
+    "cards.read",
+    "cards",
+  ],
+  [
+    "Cards Create",
+    "cards.create",
+    "cards",
+  ],
+  [
+    "Cards Manage",
+    "cards.manage",
+    "cards",
+  ],
 
-    ["Audit Logs Read", "audit_logs.read", "audit"],
-  ];
+  /*
+  |--------------------------------------------------------------------------
+  | Subscriptions
+  |--------------------------------------------------------------------------
+  */
+
+  [
+    "Subscriptions Read",
+    "subscriptions.read",
+    "subscriptions",
+  ],
+  [
+    "Subscriptions Manage",
+    "subscriptions.manage",
+    "subscriptions",
+  ],
+
+  /*
+  |--------------------------------------------------------------------------
+  | Users
+  |--------------------------------------------------------------------------
+  */
+
+  [
+    "Users Read",
+    "users.read",
+    "users",
+  ],
+  [
+    "Users Manage",
+    "users.manage",
+    "users",
+  ],
+
+  /*
+  |--------------------------------------------------------------------------
+  | Notifications
+  |--------------------------------------------------------------------------
+  */
+
+  [
+    "Notifications Read",
+    "notifications.read",
+    "notifications",
+  ],
+  [
+    "Notifications Manage",
+    "notifications.manage",
+    "notifications",
+  ],
+
+  /*
+  |--------------------------------------------------------------------------
+  | Donations
+  |--------------------------------------------------------------------------
+  */
+
+  [
+    "Donations Read",
+    "donations.read",
+    "donations",
+  ],
+  [
+    "Donations Create",
+    "donations.create",
+    "donations",
+  ],
+  [
+    "Donations Approve",
+    "donations.approve",
+    "donations",
+  ],
+
+  /*
+  |--------------------------------------------------------------------------
+  | Investments
+  |--------------------------------------------------------------------------
+  */
+
+  [
+    "Investments Read",
+    "investments.read",
+    "investments",
+  ],
+  [
+    "Investments Create",
+    "investments.create",
+    "investments",
+  ],
+  [
+    "Investments Approve",
+    "investments.approve",
+    "investments",
+  ],
+
+  /*
+  |--------------------------------------------------------------------------
+  | Audit logs
+  |--------------------------------------------------------------------------
+  */
+
+  [
+    "Audit Logs Read",
+    "audit_logs.read",
+    "audit",
+  ],
+];
 
   const roles = [
     {
@@ -846,46 +1015,88 @@ const createTenantSubscriptionPlans = async ({
       code: "bronze",
       price: 40,
       features: {
-        transfer_limit: 10000,
-        daily_transfer_limit: 25000,
-        virtual_cards: false,
-        international_transfers: false,
-        number_of_accounts: 1,
-        priority_support: false,
-        donation_access: true,
-        investment_access: false,
-      },
+  transfer_limit: 10000,
+  daily_transfer_limit: 25000,
+  number_of_accounts: 1,
+
+  fx_access: false,
+  virtual_cards: false,
+  international_transfers: false,
+
+  kyc_access: true,
+  next_of_kin: true,
+  donation_access: true,
+  investment_access: false,
+  gift_access: false,
+
+  client_chat: false,
+
+  platform_chat: false,
+
+  push_notifications: true,
+  push_notification_limit: 1000,
+
+  priority_support: false,
+},
     },
     {
       name: "Gold",
       code: "gold",
       price: 80,
       features: {
-        transfer_limit: 100000,
-        daily_transfer_limit: 250000,
-        virtual_cards: true,
-        international_transfers: false,
-        number_of_accounts: 3,
-        priority_support: true,
-        donation_access: true,
-        investment_access: true,
-      },
+  transfer_limit: 100000,
+  daily_transfer_limit: 250000,
+  number_of_accounts: 3,
+
+  fx_access: true,
+  virtual_cards: true,
+  international_transfers: false,
+
+  kyc_access: true,
+  next_of_kin: true,
+  donation_access: true,
+  investment_access: true,
+  gift_access: true,
+
+  client_chat: true,
+
+  platform_chat: true,
+
+  push_notifications: true,
+  push_notification_limit: 10000,
+
+  priority_support: true,
+},
     },
     {
-      name: "Diamond",
-      code: "diamond",
-      price: 120,
-      features: {
-        transfer_limit: 1000000,
-        daily_transfer_limit: 2500000,
-        virtual_cards: true,
-        international_transfers: true,
-        number_of_accounts: 10,
-        priority_support: true,
-        donation_access: true,
-        investment_access: true,
-      },
-    },
+  name: "Diamond",
+  code: "diamond",
+  price: 120,
+  features: {
+  transfer_limit: null,
+  daily_transfer_limit: null,
+  number_of_accounts: null,
+
+  fx_access: true,
+  virtual_cards: true,
+  international_transfers: true,
+
+  kyc_access: true,
+  next_of_kin: true,
+  donation_access: true,
+  investment_access: true,
+  gift_access: true,
+
+  client_chat: true,
+
+  platform_chat: true,
+
+  push_notifications: true,
+  push_notification_limit: null,
+
+  priority_support: true,
+},
+},
   ];
 
   for (const plan of plans) {

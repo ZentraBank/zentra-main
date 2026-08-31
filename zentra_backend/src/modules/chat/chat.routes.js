@@ -35,12 +35,34 @@ const {
   "../../middleware/permission.middleware"
 );
 
+const {
+  requirePlanFeature,
+} = require(
+  "../../middleware/subscription.middleware"
+);
+
 router.use(
   resolveTenantMiddleware
 );
 
 router.use(
   authenticate
+);
+
+/*
+|--------------------------------------------------------------------------
+| Subscription access
+|--------------------------------------------------------------------------
+|
+| Bronze tenants cannot use client chat.
+| Gold and Diamond tenants can.
+|
+*/
+
+router.use(
+  requirePlanFeature(
+    "client_chat"
+  )
 );
 
 /*

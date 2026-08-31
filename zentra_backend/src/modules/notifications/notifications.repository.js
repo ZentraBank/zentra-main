@@ -464,9 +464,140 @@ const deleteTemplate =
     return rows;
   };
 
+  const lockActiveTenantSubscription =
+  async ({
+    connection,
+    tenantId,
+  }) => {
+    const [rows] =
+      await connection.query(
+        `
+          SELECT
+            us.id,
+            us.tenant_id,
+            us.user_id,
+            us.plan_id,
+            us.status,
+            us.starts_at,
+            us.expires_at,
+            us.created_at,
+            sp.code AS plan_code,
+            sp.name AS plan_name
+          FROM user_subscriptions us
+
+          INNER JOIN subscription_plans sp
+            ON sp.id = us.plan_id
+
+          WHERE us.tenant_id = ?
+            AND us.status = 'active'
+            AND sp.is_active = TRUE
+            AND (
+              us.expires_at IS NULL
+              OR us.expires_at > NOW()
+            )
+
+          ORDER BY
+            us.starts_at DESC,
+            us.created_at DESC
+
+          LIMIT 1
+
+          FOR UPDATE
+        `,
+        [
+          tenantId,
+        ]
+      );
+
+    return rows[0] || null;
+  };
+
+
+const countTenantPushDeliveries =
+  async ({
+    connection = db,
+    tenantId,
+    periodStart,
+    periodEnd,
+  }) => {
+    const [rows] =
+      await connection.query(
+        `
+          SELECT
+            COUNT(*) AS total
+          FROM notifications
+          WHERE tenant_id = ?
+            AND notification_type IN (
+              'tenant_notification',
+              'admin_broadcast'
+            )
+            AND created_at >= ?
+            AND created_at < ?
+        `,
+        [
+          tenantId,
+          periodStart,
+          periodEnd,
+        ]
+      );
+
+    return Number(
+      rows[0]?.total || 0
+    );
+  };
+
+
+const findByIdWithConnection =
+  async ({
+    connection = db,
+    tenantId,
+    notificationId,
+  }) => {
+    const [rows] =
+      await connection.query(
+        `
+          SELECT *
+          FROM notifications
+          WHERE id = ?
+            AND tenant_id = ?
+          LIMIT 1
+        `,
+        [
+          notificationId,
+          tenantId,
+        ]
+      );
+
+    return rows[0] || null;
+  };
+
+
+const emitCreatedNotification =
+  async ({
+    tenantId,
+    userId,
+    notificationId,
+  }) => {
+    const notification =
+      await findByIdWithConnection({
+        connection: db,
+        tenantId,
+        notificationId,
+      });
+
+    if (!notification) {
+      return;
+    }
+
+    emitToUser(
+      userId,
+      "notification:new",
+      notification
+    );
+  };
 
 module.exports = {
   db,create,listByUser,findById,countUnread,markRead,
   markAllRead,archive,audienceUsers,
-  createTemplate,findTemplateById,listTemplates,updateTemplate,deleteTemplate,findTenantClientById,findTenantClientsByIds,findAllTenantClients
+  createTemplate,findTemplateById,listTemplates,updateTemplate,deleteTemplate,findTenantClientById,findTenantClientsByIds,findAllTenantClients,lockActiveTenantSubscription,countTenantPushDeliveries,findByIdWithConnection,emitCreatedNotification,
 };

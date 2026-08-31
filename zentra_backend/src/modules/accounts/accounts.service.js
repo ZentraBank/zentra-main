@@ -4,6 +4,11 @@ const generateAccountNumber = require("../../utils/generateAccountNumber");
 const notificationsRepo =
   require("../notifications/notifications.repository");
 
+const subscriptionService =
+  require(
+    "../subscriptions/subscriptions.service"
+  );
+
 const httpError = (statusCode, message) => {
   const error = new Error(message);
   error.statusCode = statusCode;
@@ -44,11 +49,173 @@ const createOwn = async ({
   auth,
   body,
 }) => {
-  /*
-   * Clients can create accounts without
-   * requiring a subscription plan.
-   */
+  const {
+    userId,
+    tenantId,
+  } = auth;
 
+  /*
+   * Only an active customer/client may create
+   * a banking account for themselves.
+   *
+   * Tenant administrators and other tenant
+   * staff must not use this endpoint to create
+   * accounts for themselves.
+   */
+  const customerMembership =
+    await repo.findActiveCustomerMembership({
+      userId,
+      tenantId,
+    });
+
+  if (!customerMembership) {
+    const error = httpError(
+      403,
+      "Only clients can create banking accounts"
+    );
+
+    error.code =
+      "CUSTOMER_ACCOUNT_REQUIRED";
+
+    throw error;
+  }
+
+  /*
+   * The account allowance comes from the
+   * subscription owned by the client's tenant.
+   *
+   * The allowance applies PER CLIENT.
+   */
+  const {
+    subscription,
+    entitlements,
+  } =
+    await subscriptionService
+      .getTenantEntitlements({
+        tenantId,
+      });
+
+  if (!subscription) {
+    const error = httpError(
+      403,
+      "An active subscription is required to create an account"
+    );
+
+    error.code =
+      "ACTIVE_SUBSCRIPTION_REQUIRED";
+
+    throw error;
+  }
+
+  if (
+    !Object.prototype.hasOwnProperty.call(
+      entitlements,
+      "number_of_accounts"
+    )
+  ) {
+    throw httpError(
+      500,
+      "Subscription feature number_of_accounts is not configured"
+    );
+  }
+
+  const rawAccountLimit =
+    entitlements.number_of_accounts;
+
+  /*
+   * null = unlimited.
+   *
+   * This is important for Diamond.
+   */
+  let accountLimit = null;
+
+  if (
+    rawAccountLimit !== null
+  ) {
+    if (
+      rawAccountLimit === false
+    ) {
+      const error = httpError(
+        403,
+        "Your current subscription plan does not allow account creation"
+      );
+
+      error.code =
+        "SUBSCRIPTION_FEATURE_REQUIRED";
+
+      error.feature =
+        "number_of_accounts";
+
+      error.currentPlan =
+        subscription.plan_code;
+
+      throw error;
+    }
+
+    accountLimit =
+      Number(rawAccountLimit);
+
+    if (
+      !Number.isFinite(
+        accountLimit
+      ) ||
+      accountLimit < 0
+    ) {
+      throw httpError(
+        500,
+        "Invalid number_of_accounts subscription configuration"
+      );
+    }
+  }
+
+  /*
+   * Count only this client's non-closed
+   * accounts.
+   *
+   * Other clients under the same tenant do
+   * not consume this client's allowance.
+   */
+  const currentAccountCount =
+    await repo.countByUser({
+      userId,
+      tenantId,
+    });
+
+  if (
+    accountLimit !== null &&
+    currentAccountCount >=
+      accountLimit
+  ) {
+    const error = httpError(
+      403,
+      `Your current subscription plan allows a maximum of ${accountLimit} account${
+        accountLimit === 1
+          ? ""
+          : "s"
+      } per client`
+    );
+
+    error.code =
+      "SUBSCRIPTION_LIMIT_EXCEEDED";
+
+    error.feature =
+      "number_of_accounts";
+
+    error.limit =
+      accountLimit;
+
+    error.current =
+      currentAccountCount;
+
+    error.currentPlan =
+      subscription.plan_code;
+
+    throw error;
+  }
+
+  /*
+   * Generate a unique account number.
+   */
   let accountNumber;
 
   for (
@@ -64,8 +231,7 @@ const createOwn = async ({
         accountNumber:
           candidate,
 
-        tenantId:
-          auth.tenantId,
+        tenantId,
       });
 
     if (!exists) {
@@ -84,12 +250,8 @@ const createOwn = async ({
   }
 
   return repo.create({
-    userId:
-      auth.userId,
-
-    tenantId:
-      auth.tenantId,
-
+    userId,
+    tenantId,
     accountNumber,
 
     accountName:

@@ -838,6 +838,86 @@ const listSubscriptionRequests =
     );
   };
 
+  const activateTenantOwner =
+  async ({
+    connection,
+    tenantId,
+    userId,
+  }) => {
+    const [rows] =
+      await connection.query(
+        `
+          SELECT
+            u.id,
+            u.status AS user_status,
+            tm.status AS membership_status,
+            r.code AS role_code,
+            r.is_active AS role_is_active
+
+          FROM users u
+
+          INNER JOIN tenant_memberships tm
+            ON tm.user_id = u.id
+            AND tm.tenant_id = ?
+
+          INNER JOIN roles r
+            ON r.id = tm.role_id
+            AND r.tenant_id = tm.tenant_id
+
+          WHERE u.id = ?
+            AND u.deleted_at IS NULL
+            AND r.code = 'tenant_admin'
+
+          LIMIT 1
+
+          FOR UPDATE
+        `,
+        [
+          tenantId,
+          userId,
+        ]
+      );
+
+    const owner = rows[0];
+
+    if (!owner) {
+      return false;
+    }
+
+    if (
+      owner.membership_status !== "active" ||
+      !Boolean(owner.role_is_active)
+    ) {
+      return false;
+    }
+
+    if (owner.user_status === "active") {
+      return true;
+    }
+
+    if (owner.user_status !== "pending") {
+      return false;
+    }
+
+    const [result] =
+      await connection.query(
+        `
+          UPDATE users
+
+          SET
+            status = 'active',
+            updated_at = NOW()
+
+          WHERE id = ?
+            AND status = 'pending'
+            AND deleted_at IS NULL
+        `,
+        [userId]
+      );
+
+    return result.affectedRows === 1;
+  };
+
   const findUserSubscription = async ({
   tenantId,
   userId,
@@ -988,6 +1068,7 @@ module.exports = {
   approveSubscriptionRequest,
 
   activateTenant,
+  activateTenantOwner,
 
   findUserSubscription,
   createUserSubscription,

@@ -477,16 +477,47 @@ const approveRequest = async ({
     }
 
     /*
-    |--------------------------------------------------------------------------
-    | Activate tenant
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| Activate tenant
+|--------------------------------------------------------------------------
+*/
 
-    await repo.activateTenant({
-      connection,
-      tenantId:
-        request.tenant_id,
-    });
+await repo.activateTenant({
+  connection,
+  tenantId:
+    request.tenant_id,
+});
+
+/*
+|--------------------------------------------------------------------------
+| Activate tenant owner
+|--------------------------------------------------------------------------
+|
+| The tenant owner is intentionally created as "pending" during onboarding.
+| Once the subscription payment has been reviewed and approved, the owner
+| can be activated so that tenant authentication succeeds.
+|
+| This is performed inside the same transaction as subscription and tenant
+| activation so we cannot end up with a partially activated tenant.
+|
+*/
+
+    const ownerActivated =
+      await repo.activateTenantOwner({
+        connection,
+        tenantId:
+          request.tenant_id,
+        userId:
+          request.user_id,
+      });
+
+    if (!ownerActivated) {
+      throw httpError(
+        409,
+        "The tenant owner account could not be activated."
+      );
+    }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -495,35 +526,52 @@ const approveRequest = async ({
     */
 
     const approved =
-      await repo.approveSubscriptionRequest({
-        connection,
-        requestId,
-        reviewerUserId:
-          auth.userId,
-      });
+      await repo.activateTenant({
+  connection,
+  tenantId:
+    request.tenant_id,
+});
 
-    if (!approved) {
-      throw httpError(
-        409,
-        "The subscription request could not be approved."
-      );
-    }
+// const ownerActivated =
+//   await repo.activateTenantOwner({
+//     connection,
+//     tenantId:
+//       request.tenant_id,
+//     userId:
+//       request.user_id,
+//   });
 
-    /*
-    |--------------------------------------------------------------------------
-    | Consume onboarding session
-    |--------------------------------------------------------------------------
-    */
+if (!ownerActivated) {
+  throw httpError(
+    409,
+    "The tenant owner account could not be activated."
+  );
+}
 
-    await repo.consumeTenantOnboardingSessions({
-      connection,
-      tenantId:
-        request.tenant_id,
-      userId:
-        request.user_id,
-    });
+// const approved =
+//   await repo.approveSubscriptionRequest({
+//     connection,
+//     requestId,
+//     reviewerUserId:
+//       auth.userId,
+//   });
 
-    await connection.commit();
+if (!approved) {
+  throw httpError(
+    409,
+    "The subscription request could not be approved."
+  );
+}
+
+await repo.consumeTenantOnboardingSessions({
+  connection,
+  tenantId:
+    request.tenant_id,
+  userId:
+    request.user_id,
+});
+
+await connection.commit();
 
     return {
       requestId,
@@ -544,6 +592,9 @@ const approveRequest = async ({
         "active",
 
       tenantStatus:
+        "active",
+
+      userStatus:
         "active",
 
       startsAt:

@@ -1,10 +1,80 @@
-const repo = require("./notifications.repository");
+const repo =
+  require("./notifications.repository");
+
+const subscriptionService =
+  require(
+    "../subscriptions/subscriptions.service"
+  );
 
 const httpError = (statusCode,message) => {
   const e = new Error(message);
   e.statusCode = statusCode;
   return e;
 };
+
+const getPushNotificationQuota =
+  async ({
+    tenantId,
+  }) => {
+    const {
+      subscription,
+      entitlements,
+    } =
+      await subscriptionService
+        .getTenantEntitlements({
+          tenantId,
+        });
+
+    if (!subscription) {
+      throw httpError(
+        403,
+        "An active subscription is required"
+      );
+    }
+
+    if (
+      entitlements
+        .push_notifications !==
+      true
+    ) {
+      throw httpError(
+        403,
+        "Push notifications are not included in your current subscription plan"
+      );
+    }
+
+    const rawLimit =
+      entitlements
+        .push_notification_limit;
+
+    /*
+     * null means unlimited.
+     */
+    if (rawLimit === null) {
+      return {
+        subscription,
+        limit: null,
+      };
+    }
+
+    const limit =
+      Number(rawLimit);
+
+    if (
+      !Number.isFinite(limit) ||
+      limit < 0
+    ) {
+      throw httpError(
+        500,
+        "Invalid push notification limit configuration"
+      );
+    }
+
+    return {
+      subscription,
+      limit,
+    };
+  };
 
 const listMine = ({ auth, page = 1, pageSize = 20 }) => {
   const safePage =
@@ -49,29 +119,76 @@ const archive = async ({auth,notificationId}) => {
   return repo.findById({tenantId:auth.tenantId,notificationId});
 };
 
-const broadcast = async ({auth,body}) => {
-  const recipients = await repo.audienceUsers({
-    tenantId:auth.tenantId,
-    audienceType:body.audienceType,
-    audienceValue:body.audienceValue
-  });
-  if (!recipients.length) throw httpError(404,"No users matched the audience");
+const broadcast =
+  async ({
+    auth,
+    body,
+  }) => {
+    const recipients =
+      await repo.audienceUsers({
+        tenantId:
+          auth.tenantId,
 
-  for (const recipient of recipients) {
-    await repo.create({
-      tenantId:auth.tenantId,
-      userId:recipient.user_id,
-      notificationType:"admin_broadcast",
-      title:body.title,
-      message:body.message,
-      priority:body.priority,
-      actionUrl:body.actionUrl,
-      metadata:{audienceType:body.audienceType,audienceValue:body.audienceValue || null}
-    });
-  }
+        audienceType:
+          body.audienceType,
 
-  return {recipientCount:recipients.length};
-};
+        audienceValue:
+          body.audienceValue,
+      });
+
+    if (
+      !recipients.length
+    ) {
+      throw httpError(
+        404,
+        "No users matched the audience"
+      );
+    }
+
+    const result =
+      await createTenantNotificationsWithQuota({
+        auth,
+        recipients,
+
+        notificationType:
+          "admin_broadcast",
+
+        buildNotification:
+          () => ({
+            notificationType:
+              "admin_broadcast",
+
+            title:
+              body.title,
+
+            message:
+              body.message,
+
+            priority:
+              body.priority,
+
+            actionUrl:
+              body.actionUrl,
+
+            metadata: {
+              audienceType:
+                body.audienceType,
+
+              audienceValue:
+                body.audienceValue ||
+                null,
+
+              sentBy:
+                auth.userId,
+            },
+          }),
+      });
+
+    return {
+      recipientCount:
+        result.sentCount,
+    };
+  };
 
 const notifyUser = (payload) => repo.create(payload);
 
@@ -298,13 +415,13 @@ const deleteTemplate =
       );
     }
 
-    let sentCount =
-      0;
+  return createTenantNotificationsWithQuota({
+  auth,
 
-    for (
-      const recipient
-      of recipients
-    ) {
+  recipients,
+
+  buildNotification:
+    (recipient) => {
       const variables = {
         firstName:
           recipient.first_name ||
@@ -335,13 +452,7 @@ const deleteTemplate =
           variables
         );
 
-      await repo.create({
-        tenantId:
-          auth.tenantId,
-
-        userId:
-          recipient.user_id,
-
+      return {
         notificationType:
           "tenant_notification",
 
@@ -370,14 +481,285 @@ const deleteTemplate =
           audienceType:
             body.audienceType,
         },
+      };
+    },
+});
+  };
+
+  const getBillingPeriod =
+  ({
+    subscription,
+  }) => {
+    const anchor =
+      subscription.starts_at ||
+      subscription.created_at;
+
+    if (!anchor) {
+      throw httpError(
+        500,
+        "Subscription billing period could not be determined"
+      );
+    }
+
+    const anchorDate =
+      new Date(anchor);
+
+    if (
+      Number.isNaN(
+        anchorDate.getTime()
+      )
+    ) {
+      throw httpError(
+        500,
+        "Invalid subscription billing start date"
+      );
+    }
+
+    const now =
+      new Date();
+
+    let periodStart =
+      new Date(anchorDate);
+
+    while (
+      new Date(
+        periodStart.getFullYear(),
+        periodStart.getMonth() + 1,
+        periodStart.getDate(),
+        periodStart.getHours(),
+        periodStart.getMinutes(),
+        periodStart.getSeconds(),
+        periodStart.getMilliseconds()
+      ) <= now
+    ) {
+      periodStart =
+        new Date(
+          periodStart.getFullYear(),
+          periodStart.getMonth() + 1,
+          periodStart.getDate(),
+          periodStart.getHours(),
+          periodStart.getMinutes(),
+          periodStart.getSeconds(),
+          periodStart.getMilliseconds()
+        );
+    }
+
+    if (
+      periodStart > now
+    ) {
+      periodStart =
+        new Date(
+          periodStart.getFullYear(),
+          periodStart.getMonth() - 1,
+          periodStart.getDate(),
+          periodStart.getHours(),
+          periodStart.getMinutes(),
+          periodStart.getSeconds(),
+          periodStart.getMilliseconds()
+        );
+    }
+
+    const periodEnd =
+      new Date(
+        periodStart.getFullYear(),
+        periodStart.getMonth() + 1,
+        periodStart.getDate(),
+        periodStart.getHours(),
+        periodStart.getMinutes(),
+        periodStart.getSeconds(),
+        periodStart.getMilliseconds()
+      );
+
+    return {
+      periodStart,
+      periodEnd,
+    };
+  };
+
+  const createTenantNotificationsWithQuota =
+  async ({
+    auth,
+    recipients,
+    notificationType,
+    buildNotification,
+  }) => {
+    if (
+      !Array.isArray(recipients) ||
+      recipients.length === 0
+    ) {
+      return {
+        sentCount: 0,
+      };
+    }
+
+    const {
+      subscription,
+      limit,
+    } =
+      await getPushNotificationQuota({
+        tenantId:
+          auth.tenantId,
       });
 
-      sentCount +=
-        1;
+    const {
+      periodStart,
+      periodEnd,
+    } =
+      getBillingPeriod({
+        subscription,
+      });
+
+    const connection =
+      await repo.db.getConnection();
+
+    const created = [];
+
+    try {
+      await connection
+        .beginTransaction();
+
+      /*
+       * Serialises notification campaigns
+       * for this tenant.
+       */
+      const lockedSubscription =
+        await repo
+          .lockActiveTenantSubscription({
+            connection,
+            tenantId:
+              auth.tenantId,
+          });
+
+      if (!lockedSubscription) {
+        throw httpError(
+          403,
+          "An active subscription is required"
+        );
+      }
+
+      let used = 0;
+
+      if (limit !== null) {
+        used =
+          await repo
+            .countTenantPushDeliveries({
+              connection,
+              tenantId:
+                auth.tenantId,
+              periodStart,
+              periodEnd,
+            });
+
+        const requested =
+          recipients.length;
+
+        if (
+          used + requested >
+          limit
+        ) {
+          const remaining =
+            Math.max(
+              limit - used,
+              0
+            );
+
+          const error =
+            httpError(
+              403,
+              `Push notification monthly limit exceeded. ${remaining} recipient deliveries remaining.`
+            );
+
+          error.code =
+            "SUBSCRIPTION_LIMIT_EXCEEDED";
+
+          error.feature =
+            "push_notification_limit";
+
+          error.limit =
+            limit;
+
+          error.used =
+            used;
+
+          error.remaining =
+            remaining;
+
+          error.requested =
+            requested;
+
+          error.currentPlan =
+            subscription.plan_code;
+
+          throw error;
+        }
+      }
+
+      for (
+        const recipient
+        of recipients
+      ) {
+        const payload =
+          buildNotification(
+            recipient
+          );
+
+        const notificationId =
+          await repo.create({
+            connection,
+
+            tenantId:
+              auth.tenantId,
+
+            userId:
+              recipient.user_id,
+
+            ...payload,
+          });
+
+        created.push({
+          notificationId,
+          userId:
+            recipient.user_id,
+        });
+      }
+
+      await connection.commit();
+    } catch (error) {
+      try {
+        await connection.rollback();
+      } catch {
+        // Ignore rollback errors.
+      }
+
+      throw error;
+    } finally {
+      connection.release();
+    }
+
+    /*
+     * Emit websocket events only AFTER
+     * the transaction has committed.
+     */
+    for (
+      const item
+      of created
+    ) {
+      await repo
+        .emitCreatedNotification({
+          tenantId:
+            auth.tenantId,
+
+          userId:
+            item.userId,
+
+          notificationId:
+            item.notificationId,
+        });
     }
 
     return {
-      sentCount,
+      sentCount:
+        created.length,
     };
   };
 
@@ -397,4 +779,8 @@ module.exports = {
   deleteTemplate,
 
   sendToClients,
+  getPushNotificationQuota,
+  getBillingPeriod,
+
+  createTenantNotificationsWithQuota,
 };

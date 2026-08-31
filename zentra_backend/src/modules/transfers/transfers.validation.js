@@ -101,6 +101,20 @@ module.exports = {
                 Joi.optional(),
             }
           ),
+        destinationCountryCode:
+  Joi.string()
+    .trim()
+    .uppercase()
+    .length(2)
+    .pattern(/^[A-Z]{2}$/)
+    .when(
+      "transferType",
+      {
+        is: "external",
+        then: Joi.required(),
+        otherwise: Joi.optional(),
+      }
+    ),
 
       description:
         Joi.string()

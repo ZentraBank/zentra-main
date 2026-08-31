@@ -313,22 +313,154 @@ const listPlans = ({
 |--------------------------------------------------------------------------
 */
 
+/*
+|--------------------------------------------------------------------------
+| Subscription entitlement helpers
+|--------------------------------------------------------------------------
+*/
+
+const LIMIT_FEATURES =
+  new Set([
+    "transfer_limit",
+    "daily_transfer_limit",
+    "number_of_accounts",
+  ]);
+
+const parseFeatureValue = (
+  feature
+) => {
+  const key =
+    feature.feature_key;
+
+  /*
+  |--------------------------------------------------------------------------
+  | Disabled
+  |--------------------------------------------------------------------------
+  */
+
+  if (!Boolean(feature.is_enabled)) {
+    return false;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | SQL NULL
+  |--------------------------------------------------------------------------
+  |
+  | For limits:
+  |   null = unlimited by subscription
+  |
+  | For normal boolean features:
+  |   enabled + null = true
+  |
+  */
+
+  if (
+    feature.feature_value === null ||
+    feature.feature_value === undefined
+  ) {
+    return LIMIT_FEATURES.has(key)
+      ? null
+      : true;
+  }
+
+  try {
+    return JSON.parse(
+      feature.feature_value
+    );
+  } catch {
+    return feature.feature_value;
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| Resolve tenant subscription entitlements
+|--------------------------------------------------------------------------
+|
+| Subscription access belongs to the tenant, not the individual staff user.
+|
+| Role permissions answer:
+|   "May this user perform the action?"
+|
+| Entitlements answer:
+|   "Has this tenant's plan purchased the feature?"
+|
+*/
+
+const getTenantEntitlements = async ({
+  tenantId,
+}) => {
+  const subscription =
+    await repo.findActiveTenantSubscription({
+      tenantId,
+    });
+
+  /*
+  |--------------------------------------------------------------------------
+  | No active subscription
+  |--------------------------------------------------------------------------
+  */
+
+  if (!subscription) {
+    return {
+      subscription: null,
+      entitlements: {},
+    };
+  }
+
+  const features =
+    await repo.listPlanFeatures({
+      planId:
+        subscription.plan_id,
+    });
+
+  const entitlements = {};
+
+  for (const feature of features) {
+    entitlements[
+      feature.feature_key
+    ] =
+      parseFeatureValue(
+        feature
+      );
+  }
+
+  return {
+    subscription,
+    entitlements,
+  };
+};
+
 const getMine = async ({
   tenantId,
-  userId
-}) => ({
-  subscription:
-    await repo.findActiveSubscription({
-      tenantId,
-      userId
-    }),
+  userId,
+}) => {
+  const [
+    tenantAccess,
+    openRequest,
+  ] =
+    await Promise.all([
+      getTenantEntitlements({
+        tenantId,
+      }),
 
-  openRequest:
-    await repo.findOpenRequest({
-      tenantId,
-      userId
-    })
-});
+      repo.findOpenRequest({
+        tenantId,
+        userId,
+      }),
+    ]);
+
+  return {
+    subscription:
+      tenantAccess.subscription,
+
+    entitlements:
+      tenantAccess.entitlements,
+
+    openRequest,
+  };
+};
 
 /*
 |--------------------------------------------------------------------------
@@ -858,7 +990,9 @@ const reject = async ({
 
 module.exports = {
   listPlans,
+
   getMine,
+  getTenantEntitlements,
 
   startUpgrade,
   submitProof,

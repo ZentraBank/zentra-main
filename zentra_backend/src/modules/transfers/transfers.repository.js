@@ -109,6 +109,11 @@ const createTransfer = async ({
   destinationAccountName = null,
   destinationBankName = null,
   destinationBankCode = null,
+
+  sourceCountryCode = null,
+  destinationCountryCode = null,
+  isInternational = false,
+
   settlementMode = "internal",
   isSimulated = false,
   amount,
@@ -119,50 +124,56 @@ const createTransfer = async ({
 }) => {
   const id = randomUUID();
 
-  await connection.query(
-    `
-      INSERT INTO transfers (
-        id,
-        tenant_id,
-        user_id,
-        source_account_id,
-        destination_account_id,
-        destination_account_number,
-        transfer_type,
-        destination_account_name,
-        destination_bank_name,
-        destination_bank_code,
-        settlement_mode,
-        is_simulated,
-        amount,
-        currency,
-        description,
-        status,
-        reference,
-        completed_at
-      )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-    `,
-    [
+ await connection.query(
+  `
+    INSERT INTO transfers (
       id,
-      tenantId,
-      userId,
-      sourceAccountId,
-      destinationAccountId,
-      destinationAccountNumber,
-      transferType,
-      destinationAccountName,
-      destinationBankName,
-      destinationBankCode,
-      settlementMode,
-      isSimulated,
+      tenant_id,
+      user_id,
+      source_account_id,
+      destination_account_id,
+      destination_account_number,
+      transfer_type,
+      destination_account_name,
+      destination_bank_name,
+      destination_bank_code,
+      source_country_code,
+      destination_country_code,
+      is_international,
+      settlement_mode,
+      is_simulated,
       amount,
       currency,
       description,
       status,
       reference,
-    ]
-  );
+      completed_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+  `,
+  [
+    id,
+    tenantId,
+    userId,
+    sourceAccountId,
+    destinationAccountId,
+    destinationAccountNumber,
+    transferType,
+    destinationAccountName,
+    destinationBankName,
+    destinationBankCode,
+    sourceCountryCode,
+    destinationCountryCode,
+    isInternational,
+    settlementMode,
+    isSimulated,
+    amount,
+    currency,
+    description,
+    status,
+    reference,
+  ]
+);
 
   return id;
 };

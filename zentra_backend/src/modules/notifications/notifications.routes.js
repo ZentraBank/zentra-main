@@ -1,17 +1,58 @@
-const router = require("express").Router();
-const controller = require("./notifications.controller");
-const schema = require("./notifications.validation");
-const validate = require("../../middleware/validate.middleware");
-const { resolveTenantMiddleware } = require("../../middleware/tenant.middleware");
-const { authenticate } = require("../../middleware/auth.middleware");
-const { requireAllPermissions } = require("../../middleware/permission.middleware");
+const router =
+  require("express").Router();
+
+const controller =
+  require("./notifications.controller");
+
 const schemas =
+  require("./notifications.validation");
+
+const validate =
   require(
-    "./notifications.validation"
+    "../../middleware/validate.middleware"
   );
-  
-router.use(resolveTenantMiddleware);
-router.use(authenticate);
+
+const {
+  resolveTenantMiddleware,
+} = require(
+  "../../middleware/tenant.middleware"
+);
+
+const {
+  authenticate,
+} = require(
+  "../../middleware/auth.middleware"
+);
+
+const {
+  requireAllPermissions,
+} = require(
+  "../../middleware/permission.middleware"
+);
+
+const {
+  requirePlanFeature,
+} = require(
+  "../../middleware/subscription.middleware"
+);
+
+router.use(
+  resolveTenantMiddleware
+);
+
+router.use(
+  authenticate
+);
+
+/*
+|--------------------------------------------------------------------------
+| Notification templates
+|--------------------------------------------------------------------------
+|
+| Templates themselves are administrative records.
+| We do not need to subscription-gate reading/editing existing templates.
+|
+*/
 
 router.get(
   "/admin/templates",
@@ -69,8 +110,24 @@ router.delete(
   controller.deleteTemplate
 );
 
+/*
+|--------------------------------------------------------------------------
+| Tenant -> client notifications
+|--------------------------------------------------------------------------
+|
+| Subscription feature availability is checked here.
+|
+| Monthly recipient quota will be enforced inside
+| notifications.service.js.
+|
+*/
+
 router.post(
   "/admin/send",
+
+  requirePlanFeature(
+    "push_notifications"
+  ),
 
   validate(
     schemas.sendToClients
@@ -82,17 +139,96 @@ router.post(
 
   controller.sendToClients
 );
-router.get("/me",validate(schema.list),
-  requireAllPermissions("notifications.read"),controller.listMine);
-router.get("/me/unread-count",
-  requireAllPermissions("notifications.read"),controller.unreadCount);
-router.patch("/me/read-all",
-  requireAllPermissions("notifications.manage"),controller.markAllRead);
-router.patch("/me/:notificationId/read",validate(schema.id),
-  requireAllPermissions("notifications.manage"),controller.markRead);
-router.patch("/me/:notificationId/archive",validate(schema.id),
-  requireAllPermissions("notifications.manage"),controller.archive);
-router.post("/admin/broadcasts",validate(schema.broadcast),
-  requireAllPermissions("notifications.broadcast"),controller.broadcast);
 
-module.exports = router;
+router.post(
+  "/admin/broadcasts",
+
+  requirePlanFeature(
+    "push_notifications"
+  ),
+
+  validate(
+    schemas.broadcast
+  ),
+
+  requireAllPermissions(
+    "notifications.broadcast"
+  ),
+
+  controller.broadcast
+);
+
+/*
+|--------------------------------------------------------------------------
+| Client notifications
+|--------------------------------------------------------------------------
+|
+| These routes operate on notifications that already exist.
+| They must remain accessible even if a tenant later changes plan.
+|
+*/
+
+router.get(
+  "/me",
+
+  validate(
+    schemas.list
+  ),
+
+  requireAllPermissions(
+    "notifications.read"
+  ),
+
+  controller.listMine
+);
+
+router.get(
+  "/me/unread-count",
+
+  requireAllPermissions(
+    "notifications.read"
+  ),
+
+  controller.unreadCount
+);
+
+router.patch(
+  "/me/read-all",
+
+  requireAllPermissions(
+    "notifications.manage"
+  ),
+
+  controller.markAllRead
+);
+
+router.patch(
+  "/me/:notificationId/read",
+
+  validate(
+    schemas.id
+  ),
+
+  requireAllPermissions(
+    "notifications.manage"
+  ),
+
+  controller.markRead
+);
+
+router.patch(
+  "/me/:notificationId/archive",
+
+  validate(
+    schemas.id
+  ),
+
+  requireAllPermissions(
+    "notifications.manage"
+  ),
+
+  controller.archive
+);
+
+module.exports =
+  router;

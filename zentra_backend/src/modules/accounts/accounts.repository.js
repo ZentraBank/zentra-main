@@ -369,6 +369,48 @@ const findTransferDestinationByNumber = async ({
   return rows[0] || null;
 };
 
+const findActiveCustomerMembership =
+  async ({
+    userId,
+    tenantId,
+    connection = db,
+  }) => {
+    const [rows] =
+      await connection.query(
+        `
+          SELECT
+            tm.user_id,
+            tm.tenant_id,
+            tm.status,
+            r.code AS role_code
+
+          FROM tenant_memberships tm
+
+          INNER JOIN roles r
+            ON r.id = tm.role_id
+
+          INNER JOIN users u
+            ON u.id = tm.user_id
+
+          WHERE tm.user_id = ?
+            AND tm.tenant_id = ?
+            AND tm.status = 'active'
+            AND r.code = 'customer'
+            AND u.status = 'active'
+            AND u.deleted_at IS NULL
+
+          LIMIT 1
+        `,
+        [
+          userId,
+          tenantId,
+        ]
+      );
+
+    return rows[0] || null;
+  };
+
+
 module.exports = {
   findById, findByUser, countByUser,
   existsByNumber, create, updateStatus,
@@ -377,4 +419,5 @@ module.exports = {
   createAdjustmentLedgerEntry,
   findActivityByUser, countActivityByUser,
   findTransferDestinationByNumber,
+  findActiveCustomerMembership,
 };

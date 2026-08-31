@@ -81,6 +81,14 @@ const chatRoutes = require(
   "./modules/chat/chat.routes"
 );
 
+const platformChatRoutes = require(
+  "./modules/platform-chat/platform-chat.routes"
+);
+
+const platformChatPlatformRoutes = require(
+  "./modules/platform-chat/platform-chat.platform.routes"
+);
+
 // const loansRoutes = require(
 //   "./modules/loans/loans.routes"
 // );
@@ -417,6 +425,22 @@ app.use(
   `${env.apiPrefix}/chat`,
   chatRoutes
 );
+
+app.use(
+  `${env.apiPrefix}/chat`,
+  chatRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/platform-chat`,
+  platformChatRoutes
+);
+
+app.use(
+  `${env.apiPrefix}/superadmin/platform-chat`,
+  platformChatPlatformRoutes
+);
+
 
 app.use(
   "/uploads",
