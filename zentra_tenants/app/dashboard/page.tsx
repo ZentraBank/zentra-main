@@ -35,7 +35,7 @@ const mainServices = [
 const accountServices = [
   { title: "My Clients", icon: UsersRound, href: "/clients" },
   { title: "Me as Agent", icon: UserCog, href: "/agent" },
-  { title: "Chat Admin", icon: ArrowRightLeft, href: "/accounts" },
+  { title: "Chat Admin", icon: ArrowRightLeft, href: "/dashboard/communications" },
 ];
 
 function ServiceCard({ title, icon: Icon, href }: { title: string; icon: React.ElementType; href: string }) {

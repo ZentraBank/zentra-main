@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import {
   Bell,
+  Headphones,
+  Lock,
   MessageCircle,
   Send,
   Users,
@@ -19,12 +21,13 @@ export default function CommunicationsPage() {
           </h1>
 
           <p className="mt-1 text-[11px] text-black/40">
-            Chat with clients and send targeted notifications.
+            Chat with clients, contact ZentraBank support and send targeted
+            notifications.
           </p>
         </div>
 
-        <div className="mt-7 grid gap-5 md:grid-cols-2">
-          {/* Chat */}
+        <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {/* Client Chat */}
 
           <Link
             href="/dashboard/communications/chat"
@@ -32,9 +35,7 @@ export default function CommunicationsPage() {
           >
             <div className="flex items-start justify-between">
               <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-[#71D49B]/15 text-[#71D49B]">
-                <MessageCircle
-                  size={22}
-                />
+                <MessageCircle size={22} />
               </div>
 
               <span className="rounded-full bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-white/60">
@@ -47,18 +48,46 @@ export default function CommunicationsPage() {
             </h2>
 
             <p className="mt-2 max-w-[360px] text-[11px] leading-5 text-white/50">
-              Start and manage
-              real-time conversations
-              with any client in your
+              Start and manage real-time conversations with clients in your
               tenant.
             </p>
 
             <div className="mt-7 flex items-center gap-2 text-[10px] font-bold text-[#71D49B]">
-              <Users
-                size={14}
-              />
+              <Users size={14} />
 
               Open conversations
+            </div>
+          </Link>
+
+          {/* ZentraBank Platform Support */}
+
+          <Link
+            href="/dashboard/communications/support"
+            className="group rounded-[22px] bg-[#1D2A44] p-6 text-white shadow-sm transition hover:-translate-y-0.5"
+          >
+            <div className="flex items-start justify-between">
+              <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-white/10 text-[#AFC8FF]">
+                <Headphones size={22} />
+              </div>
+
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-white/60">
+                Support
+              </span>
+            </div>
+
+            <h2 className="mt-7 text-[22px] font-black">
+              ZentraBank Support
+            </h2>
+
+            <p className="mt-2 max-w-[360px] text-[11px] leading-5 text-white/50">
+              Speak directly with the ZentraBank platform team about your
+              tenant, subscription or technical support.
+            </p>
+
+            <div className="mt-7 flex items-center gap-2 text-[10px] font-bold text-[#AFC8FF]">
+              <MessageCircle size={14} />
+
+              Contact platform support
             </div>
           </Link>
 
@@ -70,9 +99,7 @@ export default function CommunicationsPage() {
           >
             <div className="flex items-start justify-between">
               <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-[#EEF3FF] text-[#2458E8]">
-                <Bell
-                  size={22}
-                />
+                <Bell size={22} />
               </div>
 
               <span className="rounded-full bg-[#EEF3FF] px-3 py-1 text-[9px] font-black uppercase tracking-[0.05em] text-[#2458E8]">
@@ -85,16 +112,12 @@ export default function CommunicationsPage() {
             </h2>
 
             <p className="mt-2 max-w-[360px] text-[11px] leading-5 text-black/45">
-              Send targeted messages
-              to one client, selected
-              clients or everyone using
-              reusable templates.
+              Send targeted messages to one client, selected clients or
+              everyone using reusable templates.
             </p>
 
             <div className="mt-7 flex items-center gap-2 text-[10px] font-bold text-[#2458E8]">
-              <Send
-                size={14}
-              />
+              <Send size={14} />
 
               Compose notification
             </div>
