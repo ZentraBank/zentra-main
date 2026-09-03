@@ -30,9 +30,7 @@ const one = async (
 |--------------------------------------------------------------------------
 */
 
-const listPlans = async ({
-  tenantId
-}) => {
+const listPlans = async () => {
   const [rows] =
     await db.query(
       `
@@ -40,24 +38,23 @@ const listPlans = async ({
           id,
           name,
           code,
+          description,
           price,
           currency,
-          billing_interval
+          billing_interval,
+          status,
+          is_public
         FROM subscription_plans
-        WHERE tenant_id = ?
-          AND is_active = TRUE
+        WHERE status = 'active'
+          AND is_public = TRUE
         ORDER BY price ASC
-      `,
-      [
-        tenantId
-      ]
+      `
     );
 
   return rows;
 };
 
 const findPlanByCode = ({
-  tenantId,
   planCode
 }) =>
   one(
@@ -65,13 +62,12 @@ const findPlanByCode = ({
       SELECT
         *
       FROM subscription_plans
-      WHERE tenant_id = ?
-        AND LOWER(code) = LOWER(?)
-        AND is_active = TRUE
+      WHERE LOWER(code) = LOWER(?)
+        AND status = 'active'
+        AND is_public = TRUE
       LIMIT 1
     `,
     [
-      tenantId,
       planCode
     ]
   );
@@ -156,7 +152,7 @@ const findActiveTenantSubscription = ({
 
       WHERE us.tenant_id = ?
         AND us.status = 'active'
-        AND sp.is_active = TRUE
+        AND sp.status = 'active'
         AND (
           us.expires_at IS NULL
           OR us.expires_at > NOW()

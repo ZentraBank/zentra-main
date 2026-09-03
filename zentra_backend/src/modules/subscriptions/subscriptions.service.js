@@ -37,10 +37,9 @@ const createSubscriptionRequest = async ({
   userId,
   planCode
 }) => {
-  const plan = await repo.findPlanByCode({
-    tenantId,
-    planCode
-  });
+ const plan = await repo.findPlanByCode({
+  planCode
+});
 
   if (!plan) {
     throw httpError(
@@ -300,12 +299,8 @@ const submitSubscriptionProof =
 |--------------------------------------------------------------------------
 */
 
-const listPlans = ({
-  tenantId
-}) =>
-  repo.listPlans({
-    tenantId
-  });
+const listPlans = () =>
+  repo.listPlans();
 
 /*
 |--------------------------------------------------------------------------

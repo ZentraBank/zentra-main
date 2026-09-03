@@ -27,6 +27,8 @@ const permissions = [
   "platform.notifications.create",
   "platform.settings.read",
   "platform.settings.manage",
+  "platform.domains.read",
+"platform.domains.manage",
 ];
 
 const run = async () => {

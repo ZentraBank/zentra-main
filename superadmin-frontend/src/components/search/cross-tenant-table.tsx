@@ -174,7 +174,9 @@ export function CrossTenantTable({
                     row as CrossTenantUser;
 
                   return (
-                    <tr key={user.id}>
+                    <tr
+  key={`${user.tenant_id}-${user.id}`}
+>
                       <td className="px-5 py-4">
                         <p className="font-medium">
                           {user.tenant_name}

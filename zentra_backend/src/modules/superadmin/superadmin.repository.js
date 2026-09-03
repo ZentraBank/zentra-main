@@ -1005,170 +1005,10 @@ const listAuditLogs = async ({ limit }) => {
   return rows;
 };
 
-const createTenantSubscriptionPlans = async ({
+
+
+const findPlatformPlanByCode = async ({
   connection,
-  tenantId,
-}) => {
-  const plans = [
-    {
-      name: "Bronze",
-      code: "bronze",
-      price: 40,
-      features: {
-  transfer_limit: 10000,
-  daily_transfer_limit: 25000,
-  number_of_accounts: 1,
-
-  fx_access: false,
-  virtual_cards: false,
-  international_transfers: false,
-
-  kyc_access: true,
-  next_of_kin: true,
-  donation_access: true,
-  investment_access: false,
-  gift_access: false,
-
-  client_chat: false,
-
-  platform_chat: false,
-
-  push_notifications: true,
-  push_notification_limit: 1000,
-
-  priority_support: false,
-},
-    },
-    {
-      name: "Gold",
-      code: "gold",
-      price: 80,
-      features: {
-  transfer_limit: 100000,
-  daily_transfer_limit: 250000,
-  number_of_accounts: 3,
-
-  fx_access: true,
-  virtual_cards: true,
-  international_transfers: false,
-
-  kyc_access: true,
-  next_of_kin: true,
-  donation_access: true,
-  investment_access: true,
-  gift_access: true,
-
-  client_chat: true,
-
-  platform_chat: true,
-
-  push_notifications: true,
-  push_notification_limit: 10000,
-
-  priority_support: true,
-},
-    },
-    {
-  name: "Diamond",
-  code: "diamond",
-  price: 120,
-  features: {
-  transfer_limit: null,
-  daily_transfer_limit: null,
-  number_of_accounts: null,
-
-  fx_access: true,
-  virtual_cards: true,
-  international_transfers: true,
-
-  kyc_access: true,
-  next_of_kin: true,
-  donation_access: true,
-  investment_access: true,
-  gift_access: true,
-
-  client_chat: true,
-
-  platform_chat: true,
-
-  push_notifications: true,
-  push_notification_limit: null,
-
-  priority_support: true,
-},
-},
-  ];
-
-  for (const plan of plans) {
-    const planId = randomUUID();
-
-    await connection.query(
-      `
-        INSERT INTO subscription_plans (
-          id,
-          tenant_id,
-          name,
-          code,
-          price,
-          currency,
-          billing_interval,
-          is_active
-        )
-        VALUES (
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          'USD',
-          'monthly',
-          TRUE
-        )
-      `,
-      [
-        planId,
-        tenantId,
-        plan.name,
-        plan.code,
-        plan.price,
-      ]
-    );
-
-    for (
-      const [featureKey, rawValue]
-      of Object.entries(plan.features)
-    ) {
-      const enabled =
-        typeof rawValue === "boolean"
-          ? rawValue
-          : true;
-
-      await connection.query(
-        `
-          INSERT INTO plan_features (
-            id,
-            plan_id,
-            feature_key,
-            is_enabled,
-            feature_value
-          )
-          VALUES (?, ?, ?, ?, ?)
-        `,
-        [
-          randomUUID(),
-          planId,
-          featureKey,
-          enabled,
-          JSON.stringify(rawValue),
-        ]
-      );
-    }
-  }
-};
-
-const findTenantPlanByCode = async ({
-  connection,
-  tenantId,
   planCode,
 }) => {
   const [rows] =
@@ -1176,21 +1016,20 @@ const findTenantPlanByCode = async ({
       `
         SELECT
           id,
-          tenant_id,
           name,
           code,
           price,
           currency,
           billing_interval,
-          is_active
+          status,
+          is_public
         FROM subscription_plans
-        WHERE tenant_id = ?
-          AND code = ?
-          AND is_active = TRUE
+        WHERE code = ?
+          AND status = 'active'
+        ORDER BY created_at ASC
         LIMIT 1
       `,
       [
-        tenantId,
         planCode,
       ]
     );
@@ -1677,8 +1516,7 @@ module.exports = {
   listTenantAdministrators,
   listAuditLogs,
   createTenantSystemRoles,
-  createTenantSubscriptionPlans,
-  findTenantPlanByCode,
+  findPlatformPlanByCode,
   updateTenantAdministratorsStatus,
   updateTenantDomainStatus,
   updateTenantDomainProviderDetails,

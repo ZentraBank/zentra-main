@@ -185,15 +185,17 @@ const isPublicEndpoint = (
     return false;
   }
 
-  const publicEndpoints = [
-    "/auth/login",
-    "/auth/refresh",
+const publicEndpoints = [
+  "/auth/login",
+  "/auth/refresh",
+  "/auth/forgot-password",
+  "/auth/reset-password",
 
-    "/tenant-registration/request",
-    "/tenant-registration/verify",
-    "/tenant-registration/resend",
-    "/tenant-registration/complete",
-  ];
+  "/tenant-registration/request",
+  "/tenant-registration/verify",
+  "/tenant-registration/resend",
+  "/tenant-registration/complete",
+];
 
   return publicEndpoints.some(
     (endpoint) =>

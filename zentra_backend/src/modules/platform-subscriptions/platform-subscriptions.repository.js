@@ -111,15 +111,12 @@ const listPlanFeatures = async (planId) => {
       SELECT
         id,
         plan_id,
-        feature_code,
+        feature_key,
         is_enabled,
-        usage_limit,
-        metadata,
-        created_at,
-        updated_at
-      FROM subscription_plan_features
+        feature_value
+      FROM plan_features
       WHERE plan_id = ?
-      ORDER BY feature_code ASC
+      ORDER BY feature_key ASC
     `,
     [planId]
   );
@@ -175,33 +172,57 @@ const replacePlanFeatures = async ({
 }) => {
   await connection.query(
     `
-      DELETE FROM subscription_plan_features
+      DELETE FROM plan_features
       WHERE plan_id = ?
     `,
     [planId]
   );
 
   for (const feature of features) {
+    const featureKey =
+      feature.featureKey ??
+      feature.featureCode;
+
+    if (!featureKey) {
+      continue;
+    }
+
+    let featureValue =
+      feature.featureValue ??
+      feature.value ??
+      null;
+
+    if (
+      featureValue === undefined ||
+      featureValue === ""
+    ) {
+      featureValue = null;
+    }
+
     await connection.query(
       `
-        INSERT INTO subscription_plan_features (
+        INSERT INTO plan_features (
           id,
           plan_id,
-          feature_code,
+          feature_key,
           is_enabled,
-          usage_limit,
-          metadata
-        ) VALUES (?, ?, ?, ?, ?, ?)
+          feature_value
+        )
+        VALUES (?, ?, ?, ?, ?)
       `,
       [
         randomUUID(),
         planId,
-        feature.featureCode,
-        feature.isEnabled,
-        feature.usageLimit ?? null,
-        feature.metadata
-          ? JSON.stringify(feature.metadata)
-          : null,
+        featureKey,
+        Boolean(
+          feature.isEnabled ??
+          feature.is_enabled
+        ),
+         featureValue === null
+  ? null
+  : typeof featureValue === "string"
+    ? featureValue
+    : JSON.stringify(featureValue),
       ]
     );
   }
@@ -918,6 +939,48 @@ const listSubscriptionRequests =
     return result.affectedRows === 1;
   };
 
+  const findTenantPrimaryAdmin = async ({
+  tenantId,
+  connection = db,
+}) => {
+  const [rows] =
+    await connection.query(
+      `
+        SELECT
+          u.id,
+          u.email,
+          u.status,
+
+          tm.id AS membership_id,
+          tm.status AS membership_status,
+
+          r.id AS role_id,
+          r.code AS role_code
+
+        FROM tenant_memberships tm
+
+        INNER JOIN users u
+          ON u.id = tm.user_id
+
+        INNER JOIN roles r
+          ON r.id = tm.role_id
+
+        WHERE tm.tenant_id = ?
+          AND r.code = 'tenant_admin'
+          AND tm.status = 'active'
+          AND u.deleted_at IS NULL
+          AND r.is_active = TRUE
+
+        ORDER BY
+          u.created_at ASC
+
+        LIMIT 1
+      `,
+      [tenantId]
+    );
+
+  return rows[0] || null;
+};
   const findUserSubscription = async ({
   tenantId,
   userId,
@@ -1075,4 +1138,5 @@ module.exports = {
   activateUserSubscription,
 
   consumeTenantOnboardingSessions,
+  findTenantPrimaryAdmin,
 };

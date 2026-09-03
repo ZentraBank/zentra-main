@@ -912,24 +912,7 @@ const completeRegistration =
           tenantId,
         });
 
-      /*
-      |--------------------------------------------------------------------------
-      | 8. Create tenant subscription plan catalogue
-      |--------------------------------------------------------------------------
-      |
-      | This creates the Bronze / Gold / Diamond plans that are available
-      | to this tenant.
-      |
-      | It does NOT choose one yet.
-      |
-      */
-
-      await tenantRepo
-        .createTenantSubscriptionPlans({
-          connection,
-          tenantId,
-        });
-
+      
       /*
       |--------------------------------------------------------------------------
       | 9. Create temporary tenant domain

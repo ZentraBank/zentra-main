@@ -264,3 +264,60 @@ export async function logout() {
     setAccessToken(null);
   }
 }
+
+/*
+|--------------------------------------------------------------------------
+| Password reset
+|--------------------------------------------------------------------------
+*/
+
+export type PasswordResetRequestResponse = {
+  email: string;
+  expiresIn: number;
+  message?: string;
+};
+
+export type ResetPasswordPayload = {
+  email: string;
+  code: string;
+  newPassword: string;
+};
+
+export async function requestPasswordReset(
+  email: string,
+) {
+  const response = await api.post<
+    ApiResponse<PasswordResetRequestResponse>
+  >(
+    "/auth/forgot-password",
+    {
+      email: email
+        .trim()
+        .toLowerCase(),
+    },
+  );
+
+  return response.data.data;
+}
+
+export async function resetPassword(
+  payload: ResetPasswordPayload,
+) {
+  const response = await api.post<
+    ApiResponse<null>
+  >(
+    "/auth/reset-password",
+    {
+      email: payload.email
+        .trim()
+        .toLowerCase(),
+
+      code: payload.code.trim(),
+
+      newPassword:
+        payload.newPassword,
+    },
+  );
+
+  return response.data.data;
+}

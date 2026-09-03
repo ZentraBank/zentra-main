@@ -44,10 +44,7 @@ const createTenant = async ({
       tenantId,
     });
 
-    await repo.createTenantSubscriptionPlans({
-  connection,
-  tenantId,
-});
+   
 
 const slug = body.code
   .trim()
@@ -63,17 +60,24 @@ const temporaryDomain =
       env.tenantTemporaryDomain,
   });
 
+/*
+ * 3. Resolve the tenant's selected
+ * platform subscription plan.
+ *
+ * Subscription plans belong to Zentra
+ * globally. They must not be recreated
+ * for every tenant.
+ */
 const selectedPlan =
-  await repo.findTenantPlanByCode({
+  await repo.findPlatformPlanByCode({
     connection,
-    tenantId,
     planCode: body.planCode,
   });
 
 if (!selectedPlan) {
   throw httpError(
-    500,
-    `Subscription plan "${body.planCode}" was not created for the tenant.`
+    400,
+    `Active subscription plan "${body.planCode}" was not found.`
   );
 }
 

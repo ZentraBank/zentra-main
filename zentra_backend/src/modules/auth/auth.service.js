@@ -1019,16 +1019,38 @@ const requestPasswordReset = async ({
   tenantId,
   email,
 }) => {
+  console.log(
+    "[DEV] Password reset request received:",
+    {
+      tenantId,
+      email,
+    }
+  );
+
   const normalizedEmail =
     email
       .trim()
       .toLowerCase();
 
+
   const user =
-    await authRepo.findUserByEmailAndTenant(
+  await authRepo.findUserByEmailAndTenant(
+    normalizedEmail,
+    tenantId
+  );
+
+console.log(
+  "[DEV] Password reset user lookup:",
+  {
+    tenantId,
+    email:
       normalizedEmail,
-      tenantId
-    );
+    userFound:
+      Boolean(user),
+    userId:
+      user?.id || null,
+  }
+);
 
   /*
   |--------------------------------------------------------------------------
@@ -1047,7 +1069,16 @@ const requestPasswordReset = async ({
   }
 
   const code =
-    generateOtp();
+  generateOtp();
+
+console.log(
+  "[DEV] Password reset OTP:",
+  {
+    email:
+      normalizedEmail,
+    code,
+  }
+);
 
   await authRepo.createVerificationCode({
     id:
@@ -1080,33 +1111,70 @@ const requestPasswordReset = async ({
   |--------------------------------------------------------------------------
   */
 
-  try {
-    await emailService.sendPasswordResetOtp({
-      email:
-        normalizedEmail,
+  // try {
+  //   await emailService.sendPasswordResetOtp({
+  //     email:
+  //       normalizedEmail,
 
-      code,
+  //     code,
 
-      expiresInMinutes:
-        OTP_EXPIRY_MINUTES,
-    });
-  } catch (error) {
-    console.error(
-      "[AUTH] Password reset email failed",
-      {
-        email:
-          normalizedEmail,
+  //     expiresInMinutes:
+  //       OTP_EXPIRY_MINUTES,
+  //   });
+  // } catch (error) {
+  //   console.error(
+  //     "[AUTH] Password reset email failed",
+  //     {
+  //       email:
+  //         normalizedEmail,
 
-        error:
-          error.message,
-      }
-    );
+  //       error:
+  //         error.message,
+  //     }
+  //   );
 
-    throw createHttpError(
-      503,
-      "Unable to send password reset email. Please try again."
-    );
-  }
+  //   throw createHttpError(
+  //     503,
+  //     "Unable to send password reset email. Please try again."
+  //   );
+  // }
+
+  /*
+|--------------------------------------------------------------------------
+| Development password reset OTP
+|--------------------------------------------------------------------------
+|
+| Email delivery is not currently configured.
+| For local development, print the OTP to the backend console.
+|
+| IMPORTANT:
+| Remove this before production and restore the email provider.
+|
+*/
+
+console.log(
+  "\n========================================"
+);
+
+console.log(
+  "[DEV] PASSWORD RESET OTP"
+);
+
+console.log(
+  `Email: ${normalizedEmail}`
+);
+
+console.log(
+  `OTP: ${code}`
+);
+
+console.log(
+  `Expires in: ${OTP_EXPIRY_MINUTES} minutes`
+);
+
+console.log(
+  "========================================\n"
+);
 
   return {
     email:
@@ -1137,6 +1205,12 @@ const resetPassword = async ({
       .trim()
       .toLowerCase();
 
+  /*
+  |--------------------------------------------------------------------------
+  | Find active password reset code
+  |--------------------------------------------------------------------------
+  */
+
   const record =
     await authRepo.findActiveVerificationCode(
       {
@@ -1150,6 +1224,12 @@ const resetPassword = async ({
       }
     );
 
+  /*
+  |--------------------------------------------------------------------------
+  | Validate reset record
+  |--------------------------------------------------------------------------
+  */
+
   if (
     !record ||
     record.attempts >=
@@ -1161,6 +1241,12 @@ const resetPassword = async ({
       "Reset code is invalid or expired"
     );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Verify reset code
+  |--------------------------------------------------------------------------
+  */
 
   const codeIsValid =
     await bcrypt.compare(
@@ -1180,16 +1266,81 @@ const resetPassword = async ({
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Load current credentials
+  |--------------------------------------------------------------------------
+  |
+  | We need the existing password hash so the user cannot reset their
+  | password to the password they are already using.
+  |
+  */
+
+  const user =
+    await authRepo.findUserByEmailAndTenant(
+      normalizedEmail,
+      tenantId
+    );
+
+  if (
+    !user ||
+    user.id !== record.user_id
+  ) {
+    throw createHttpError(
+      400,
+      "Unable to reset password"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Prevent password reuse
+  |--------------------------------------------------------------------------
+  */
+
+  const isCurrentPassword =
+    await bcrypt.compare(
+      newPassword,
+      user.password_hash
+    );
+
+  if (isCurrentPassword) {
+    throw createHttpError(
+      400,
+      "Your new password cannot be the same as your current password. Please choose a different password."
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Update password
+  |--------------------------------------------------------------------------
+  */
+
+  const passwordHash =
+    await bcrypt.hash(
+      newPassword,
+      12
+    );
+
   await authRepo.updatePassword({
     userId:
       record.user_id,
 
-    passwordHash:
-      await bcrypt.hash(
-        newPassword,
-        12
-      ),
+    passwordHash,
   });
+
+  /*
+  |--------------------------------------------------------------------------
+  | Consume reset code
+  |--------------------------------------------------------------------------
+  |
+  | Only consume the OTP after the password has actually been changed.
+  | If the user attempted to reuse their current password, they can
+  | return to the form and choose another password without requesting
+  | another OTP.
+  |
+  */
 
   await authRepo.consumeVerificationCode(
     record.id

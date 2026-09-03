@@ -1,21 +1,46 @@
 const Joi = require("joi");
 
 const featureSchema = Joi.object({
+  featureKey: Joi.string()
+    .trim()
+    .min(2)
+    .max(180)
+    .optional(),
+
+  // Temporary backward compatibility
+  // for older create-plan frontend.
   featureCode: Joi.string()
     .trim()
     .min(2)
     .max(180)
+    .optional(),
+
+  isEnabled: Joi.boolean()
     .required(),
 
-  isEnabled: Joi.boolean().required(),
+  featureValue: Joi.alternatives()
+    .try(
+      Joi.boolean(),
+      Joi.number(),
+      Joi.string().trim().max(500),
+      Joi.valid(null)
+    )
+    .optional(),
 
+  // Temporary backward compatibility
   usageLimit: Joi.number()
     .min(0)
     .allow(null)
     .optional(),
 
-  metadata: Joi.object().allow(null).optional(),
-});
+  metadata: Joi.object()
+    .allow(null)
+    .optional(),
+})
+  .or(
+    "featureKey",
+    "featureCode"
+  );
 
 module.exports = {
   listPlans: {
@@ -143,7 +168,7 @@ rejectRequest: {
 
       features: Joi.array()
         .items(featureSchema)
-        .unique("featureCode")
+        
         .default([]),
     }),
   },
@@ -177,17 +202,19 @@ rejectRequest: {
   },
 
   updatePlanFeatures: {
-    params: Joi.object({
-      planId: Joi.string().uuid().required(),
-    }),
+  params: Joi.object({
+    planId: Joi.string()
+      .uuid()
+      .required(),
+  }),
 
-    body: Joi.object({
-      features: Joi.array()
-        .items(featureSchema)
-        .unique("featureCode")
-        .required(),
-    }),
-  },
+  body: Joi.object({
+    features: Joi.array()
+      .items(featureSchema)
+      .min(1)
+      .required(),
+  }),
+},
 
   changeTenantPlan: {
     params: Joi.object({
@@ -198,7 +225,7 @@ rejectRequest: {
       planId: Joi.string().uuid().required(),
 
       action: Joi.string()
-        .valid("upgraded", "downgraded")
+        .valid("upgraded", "downgraded","assigned")
         .required(),
 
       reason: Joi.string().max(5000).optional(),

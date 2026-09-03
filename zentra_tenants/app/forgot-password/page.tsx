@@ -5,22 +5,107 @@
 import AuthCard from "@/components/auth/AuthCard";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
-import { ArrowLeft, X, Send } from "lucide-react";
+import { FormEvent, useState } from "react";
+import {
+  ArrowLeft,
+  X,
+  Send,
+  Loader2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import {
+  requestPasswordReset,
+} from "@/services/auth.service";
+
+import {
+  getApiErrorMessage,
+} from "@/lib/api";
+
 export default function ForgotPasswordPage() {
-  const [method, setMethod] = useState<"email" | "phone">("email");
   const router = useRouter();
 
-const handleSendResetCode = () => {
-  // Later: call backend to send OTP
-  router.push("/forgot-password/otp");
-};
+  const [email, setEmail] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const handleSendResetCode =
+    async (
+      event: FormEvent<HTMLFormElement>,
+    ) => {
+      event.preventDefault();
+
+      if (loading) {
+        return;
+      }
+
+      const normalizedEmail =
+        email
+          .trim()
+          .toLowerCase();
+
+      if (!normalizedEmail) {
+        setError(
+          "Please enter your email address.",
+        );
+
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
+      try {
+        await requestPasswordReset(
+          normalizedEmail,
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Keep email available for OTP/reset pages
+        |--------------------------------------------------------------------------
+        */
+
+        sessionStorage.setItem(
+          "zentrabank-password-reset-email",
+          normalizedEmail,
+        );
+
+        /*
+        |--------------------------------------------------------------------------
+        | Clear any previous reset code
+        |--------------------------------------------------------------------------
+        */
+
+        sessionStorage.removeItem(
+          "zentrabank-password-reset-code",
+        );
+
+        router.push(
+          "/forgot-password/otp",
+        );
+      } catch (error) {
+        setError(
+          getApiErrorMessage(
+            error,
+          ),
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
   return (
     <main className="auth-bg relative min-h-screen overflow-hidden">
-      <Link href="/login" className="absolute left-3 top-5 z-50 !text-white">
+      <Link
+        href="/login"
+        className="absolute left-3 top-5 z-50 !text-white"
+      >
         <ArrowLeft size={20} />
       </Link>
 
@@ -51,103 +136,91 @@ const handleSendResetCode = () => {
           </div>
         </div>
 
-        <p className="mb-3 text-[12px] leading-[15px] text-white">
-          Enter your email or phone number. We&apos;ll send you a reset code.
+        <p className="mb-5 text-[12px] leading-[15px] text-white">
+          Enter your email address. We&apos;ll generate a
+          password reset code.
         </p>
 
-        <form className="space-y-3">
-          <div className="overflow-hidden rounded-t-[10px] border border-[#1647BD]">
-            <div className="grid h-[30px] grid-cols-2">
-              <button
-                type="button"
-                onClick={() => setMethod("email")}
-                className={`relative flex items-center justify-center text-[11px] font-bold transition-all ${
-                  method === "email"
-                    ? "bg-white text-black"
-                    : "bg-black text-white"
-                }`}
-              >
-                Email
-                {method === "email" && (
-                  <span className="absolute bottom-0 left-0 h-[3px] w-full bg-[#2458E8]" />
-                )}
-              </button>
+        <form
+          onSubmit={
+            handleSendResetCode
+          }
+          className="space-y-3"
+        >
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => {
+              setEmail(
+                event.target.value,
+              );
 
-              <button
-                type="button"
-                onClick={() => setMethod("phone")}
-                className={`relative flex items-center justify-center text-[11px] font-bold transition-all ${
-                  method === "phone"
-                    ? "bg-white text-black"
-                    : "bg-black text-white"
-                }`}
-              >
-                Phone
-                {method === "phone" && (
-                  <span className="absolute bottom-0 left-0 h-[3px] w-full bg-[#2458E8]" />
-                )}
-              </button>
-            </div>
-          </div>
+              if (error) {
+                setError("");
+              }
+            }}
+            placeholder="example@gmail.com"
+            autoComplete="email"
+            required
+            disabled={loading}
+            className="h-[36px] w-full border-b border-white/70 bg-transparent px-1 text-[13px] text-white outline-none placeholder:text-white/70 disabled:cursor-not-allowed disabled:opacity-60"
+          />
 
-          {method === "email" ? (
-            <input
-              type="email"
-              placeholder="example@gmail.com"
-              className="h-[30px] w-full border-b border-white/70 bg-transparent px-1 text-[13px] text-white outline-none placeholder:text-white"
-            />
-          ) : (
-            <div className="flex h-[30px] w-full items-center border-b border-white/70">
-              <select title="Country code"
-                defaultValue="+44"
-                className="h-full bg-transparent pr-1 text-[13px] text-white outline-none"
-              >
-                <option className="text-black" value="+44">
-                  🇬🇧 +44
-                </option>
-                <option className="text-black" value="+234">
-                  🇳🇬 +234
-                </option>
-                <option className="text-black" value="+1">
-                  🇺🇸 +1
-                </option>
-                <option className="text-black" value="+33">
-                  🇫🇷 +33
-                </option>
-                <option className="text-black" value="+91">
-                  🇮🇳 +91
-                </option>
-              </select>
-
-              <input
-                type="tel"
-                placeholder="Phone number"
-                className="h-full flex-1 bg-transparent px-1 text-[13px] text-white outline-none placeholder:text-white"
-              />
-            </div>
+          {error && (
+            <p
+              role="alert"
+              className="text-[11px] leading-4 text-red-300"
+            >
+              {error}
+            </p>
           )}
 
-          <Link
-            href="/forgot-password/otp"
-            className="mt-8 flex w-full items-center justify-center gap-3 rounded-[8px] bg-[#2458E8] py-3 text-center text-[13px] font-semibold !text-white"
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-8 flex w-full items-center justify-center gap-3 rounded-[8px] bg-[#2458E8] py-3 text-center text-[13px] font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Send reset code
-            <Send size={16} className="!text-white" />
-          </Link>
+            {loading ? (
+              <>
+                Sending...
+                <Loader2
+                  size={16}
+                  className="animate-spin"
+                />
+              </>
+            ) : (
+              <>
+                Send reset code
+                <Send
+                  size={16}
+                  className="!text-white"
+                />
+              </>
+            )}
+          </button>
         </form>
 
         <div className="mt-6 text-center">
-          <Link href="/login" className="text-[12px] font-medium !text-[#2458E8]">
+          <Link
+            href="/login"
+            className="text-[12px] font-medium !text-[#2458E8]"
+          >
             Remember password? Log in
           </Link>
         </div>
 
         <div className="mt-20 flex justify-center gap-8 text-[11px] text-white">
-          <Link href="#" className="!text-white">
+          <Link
+            href="#"
+            className="!text-white"
+          >
             Privacy Policy
           </Link>
 
-          <Link href="#" className="!text-white">
+          <Link
+            href="#"
+            className="!text-white"
+          >
             Terms and Conditions
           </Link>
         </div>
