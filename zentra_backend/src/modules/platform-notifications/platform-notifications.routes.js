@@ -50,6 +50,20 @@ router.post(
   controller.create
 );
 
+router.post(
+  "/send-to-tenants",
+
+  validate(
+    schemas.sendToTenants
+  ),
+
+  requireAllPermissions(
+    "platform.notifications.create"
+  ),
+
+  controller.sendToTenants
+);
+
 router.get(
   "/:notificationId",
   validate(schemas.notificationId),

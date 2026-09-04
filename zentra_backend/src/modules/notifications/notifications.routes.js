@@ -160,6 +160,48 @@ router.post(
 
 /*
 |--------------------------------------------------------------------------
+| Browser push subscriptions
+|--------------------------------------------------------------------------
+|
+| Any authenticated tenant user who can receive notifications may
+| register their browser for Web Push.
+|
+| Do NOT gate these routes behind the tenant's push_notifications
+| subscription feature. These subscriptions are also used for
+| Zentra platform -> tenant notifications.
+|
+*/
+
+router.post(
+  "/push/subscription",
+
+  validate(
+    schemas.savePushSubscription
+  ),
+
+  requireAllPermissions(
+    "notifications.read"
+  ),
+
+  controller.savePushSubscription
+);
+
+router.delete(
+  "/push/subscription",
+
+  validate(
+    schemas.removePushSubscription
+  ),
+
+  requireAllPermissions(
+    "notifications.read"
+  ),
+
+  controller.removePushSubscription
+);
+
+/*
+|--------------------------------------------------------------------------
 | Client notifications
 |--------------------------------------------------------------------------
 |

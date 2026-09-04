@@ -29,9 +29,10 @@ export type TenantNotification = {
   entity_id?: string | null;
 
   priority:
-    | "low"
-    | "normal"
-    | "high";
+  | "low"
+  | "normal"
+  | "high"
+  | "urgent";
 
   action_url?: string | null;
 
@@ -53,7 +54,8 @@ export type TenantNotification = {
 export type NotificationPriority =
   | "low"
   | "normal"
-  | "high";
+  | "high"
+  | "urgent";
 
 export type NotificationTemplateStatus =
   | "active"
@@ -160,6 +162,27 @@ export type SendClientNotificationInput =
     actionUrl?:
       string | null;
   };
+
+  export type BrowserPushSubscriptionInput = {
+  endpoint: string;
+
+  keys: {
+    p256dh: string;
+    auth: string;
+  };
+};
+
+export type BrowserPushSubscriptionRecord = {
+  id: string;
+  tenant_id: string;
+  user_id: string;
+  endpoint: string;
+  user_agent?: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 
 /*
 |--------------------------------------------------------------------------
@@ -457,4 +480,57 @@ export const notificationService = {
       );
     }
   },
+  async savePushSubscription(
+  input:
+    BrowserPushSubscriptionInput,
+): Promise<BrowserPushSubscriptionRecord> {
+  try {
+    const response =
+      await api.post<
+        ApiResponse<
+          BrowserPushSubscriptionRecord
+        >
+      >(
+        "/notifications/push/subscription",
+        input,
+      );
+
+    return response.data.data;
+  } catch (error) {
+    throw new Error(
+      getApiErrorMessage(
+        error,
+      ),
+    );
+  }
+},
+async removePushSubscription(
+  endpoint: string,
+): Promise<{
+  removed: boolean;
+}> {
+  try {
+    const response =
+      await api.delete<
+        ApiResponse<{
+          removed: boolean;
+        }>
+      >(
+        "/notifications/push/subscription",
+        {
+          data: {
+            endpoint,
+          },
+        },
+      );
+
+    return response.data.data;
+  } catch (error) {
+    throw new Error(
+      getApiErrorMessage(
+        error,
+      ),
+    );
+  }
+},
 };

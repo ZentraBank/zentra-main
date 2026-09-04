@@ -270,12 +270,65 @@ const sendToClients = {
       ),
 };
 
+const savePushSubscription = {
+  body:
+    Joi.object({
+      endpoint:
+        Joi.string()
+          .uri({
+            scheme: [
+              "https",
+            ],
+          })
+          .max(4096)
+          .required(),
+
+      keys:
+        Joi.object({
+          p256dh:
+            Joi.string()
+              .trim()
+              .min(20)
+              .max(1024)
+              .required(),
+
+          auth:
+            Joi.string()
+              .trim()
+              .min(8)
+              .max(512)
+              .required(),
+        })
+          .required(),
+    })
+      .required(),
+};
+
+
+const removePushSubscription = {
+  body:
+    Joi.object({
+      endpoint:
+        Joi.string()
+          .uri({
+            scheme: [
+              "https",
+            ],
+          })
+          .max(4096)
+          .required(),
+    })
+      .required(),
+};
+
 module.exports = {
   templateId,
   createTemplate,
   updateTemplate,
   listTemplates,
   sendToClients,
+  savePushSubscription,
+removePushSubscription,
   
   list:{
     query:Joi.object({

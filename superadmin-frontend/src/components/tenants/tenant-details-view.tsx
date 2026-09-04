@@ -257,23 +257,20 @@ export function TenantDetailsView({
       selectedPlanId,
     ]);
 
-  const changeAction =
+ const changeAction =
   useMemo<
     TenantPlanChangeAction | null
   >(() => {
-    if (!selectedPlan) {
-      return null;
-    }
-
     /*
-     * Tenant has never had
-     * a subscription.
+     * Plan changes are only available
+     * after onboarding has created the
+     * tenant's initial subscription.
      */
-    if (!subscription) {
-      return "assigned";
-    }
-
-    if (!currentPlan) {
+    if (
+      !subscription ||
+      !currentPlan ||
+      !selectedPlan
+    ) {
       return null;
     }
 
@@ -285,14 +282,10 @@ export function TenantDetailsView({
     }
 
     const currentPrice =
-      Number(
-        currentPlan.price
-      );
+      Number(currentPlan.price);
 
     const selectedPrice =
-      Number(
-        selectedPlan.price
-      );
+      Number(selectedPlan.price);
 
     return selectedPrice >
       currentPrice
@@ -557,31 +550,31 @@ currentPlan ? (
 ) : (
   <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-5">
     <p className="font-semibold text-amber-200">
-      No subscription assigned
+      No active subscription
     </p>
 
     <p className="mt-1 text-sm text-neutral-400">
       This tenant does not currently
-      have a subscription. Select one
-      of the active plans below to
-      assign it.
+      have an active subscription.
+      Initial subscriptions are created
+      automatically after a submitted
+      payment proof is approved.
     </p>
   </div>
 )}
 
-{plans.length > 0 ? (
+{subscription &&
+currentPlan &&
+plans.length > 0 ? (
   <div className="mt-6">
     <h3 className="text-sm font-semibold">
-      {subscription
-        ? "Change subscription"
-        : "Assign subscription"}
-    </h3>
+  Change subscription
+</h3>
 
-    <p className="mt-1 text-sm text-neutral-400">
-      {subscription
-        ? "Select another plan to upgrade or downgrade this tenant."
-        : "Select the initial subscription plan for this tenant."}
-    </p>
+<p className="mt-1 text-sm text-neutral-400">
+  Select another plan to upgrade or
+  downgrade this tenant.
+</p>
 
     <div className="mt-4 grid gap-4 md:grid-cols-3">
       {plans.map((plan) => {
@@ -647,29 +640,20 @@ currentPlan ? (
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs uppercase tracking-wide text-neutral-500">
-              {changeAction ===
-              "assigned"
-                ? "Initial assignment"
-                : "Proposed change"}
-            </p>
+  Proposed change
+</p>
 
-            <p className="mt-2 text-lg font-semibold">
-              {changeAction ===
-              "assigned"
-                ? `No plan → ${selectedPlan.name}`
-                : `${currentPlan?.name} → ${selectedPlan.name}`}
-            </p>
+<p className="mt-2 text-lg font-semibold">
+  {currentPlan.name} →{" "}
+  {selectedPlan.name}
+</p>
           </div>
 
           <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-semibold uppercase">
-            {changeAction ===
-            "assigned"
-              ? "Assign"
-              : changeAction ===
-                  "upgraded"
-                ? "Upgrade"
-                : "Downgrade"}
-          </span>
+  {changeAction === "upgraded"
+    ? "Upgrade"
+    : "Downgrade"}
+</span>
         </div>
 
         <label className="mt-5 block">
@@ -685,12 +669,7 @@ currentPlan ? (
               )
             }
             rows={3}
-            placeholder={
-              changeAction ===
-              "assigned"
-                ? "Optional reason for assigning this plan…"
-                : "Optional reason for changing the subscription…"
-            }
+            placeholder="Optional reason for changing the subscription…"
             className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition focus:border-white/30"
           />
         </label>
@@ -706,30 +685,22 @@ currentPlan ? (
           className="mt-4 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isChangingPlan
-            ? changeAction ===
-              "assigned"
-              ? "Assigning subscription…"
-              : "Changing subscription…"
-            : changeAction ===
-              "assigned"
-              ? `Assign ${selectedPlan.name}`
-              : `${
-                  changeAction ===
-                  "upgraded"
-                    ? "Upgrade"
-                    : "Downgrade"
-                } to ${selectedPlan.name}`}
+  ? "Changing subscription…"
+  : `${
+      changeAction === "upgraded"
+        ? "Upgrade"
+        : "Downgrade"
+    } to ${selectedPlan.name}`}
         </button>
       </div>
     ) : null}
   </div>
-) : (
+) : subscription ? (
   <p className="mt-5 text-sm text-neutral-500">
-    No active subscription plans
-    are available.
+    No active alternative subscription
+    plans are available.
   </p>
-
-        )}
+) : null}
       </section>
 
       {/* Tenant-specific overrides */}

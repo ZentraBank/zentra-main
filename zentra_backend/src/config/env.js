@@ -144,6 +144,31 @@ const environmentSchema = Joi.object({
     .required(),
 
   /*
+|--------------------------------------------------------------------------
+| Web Push / VAPID
+|--------------------------------------------------------------------------
+*/
+
+VAPID_PUBLIC_KEY:
+  Joi.string()
+    .trim()
+    .min(40)
+    .required(),
+
+VAPID_PRIVATE_KEY:
+  Joi.string()
+    .trim()
+    .min(20)
+    .required(),
+
+VAPID_SUBJECT:
+  Joi.string()
+    .trim()
+    .pattern(
+      /^(mailto:|https:\/\/)/
+    )
+    .required(),
+  /*
   |--------------------------------------------------------------------------
   | Default tenant
   |--------------------------------------------------------------------------
@@ -413,6 +438,22 @@ const env = Object.freeze({
     },
   },
 
+  /*
+|--------------------------------------------------------------------------
+| Web Push / VAPID
+|--------------------------------------------------------------------------
+*/
+
+webPush: {
+  publicKey:
+    value.VAPID_PUBLIC_KEY,
+
+  privateKey:
+    value.VAPID_PRIVATE_KEY,
+
+  subject:
+    value.VAPID_SUBJECT,
+},
   /*
   |--------------------------------------------------------------------------
   | Default tenant

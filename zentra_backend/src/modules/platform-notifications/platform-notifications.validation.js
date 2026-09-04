@@ -98,4 +98,86 @@ module.exports = {
         .required(),
     }),
   },
+  sendToTenants: {
+  body: Joi.object({
+    audienceType: Joi.string()
+      .valid(
+        "single_tenant",
+        "selected_tenants",
+        "all_tenants"
+      )
+      .required(),
+
+    tenantId: Joi.when(
+      "audienceType",
+      {
+        is: "single_tenant",
+        then: Joi.string()
+          .uuid()
+          .required(),
+
+        otherwise: Joi.forbidden(),
+      }
+    ),
+
+    tenantIds: Joi.when(
+      "audienceType",
+      {
+        is: "selected_tenants",
+        then: Joi.array()
+          .items(
+            Joi.string().uuid()
+          )
+          .unique()
+          .min(1)
+          .max(100)
+          .required(),
+
+        otherwise: Joi.forbidden(),
+      }
+    ),
+
+    title: Joi.string()
+      .trim()
+      .min(2)
+      .max(255)
+      .required(),
+
+    message: Joi.string()
+      .trim()
+      .min(2)
+      .max(10000)
+      .required(),
+
+    priority: Joi.string()
+      .valid(
+        "low",
+        "normal",
+        "high",
+        "urgent"
+      )
+      .default("normal"),
+
+    actionUrl: Joi.string()
+      .trim()
+      .max(2048)
+      .allow(null, "")
+      .optional(),
+
+    entityType: Joi.string()
+      .trim()
+      .max(120)
+      .allow(null, "")
+      .optional(),
+
+    entityId: Joi.string()
+      .uuid()
+      .allow(null)
+      .optional(),
+
+    metadata: Joi.object()
+      .unknown(true)
+      .optional(),
+  }),
+},
 };

@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 
 import {
   Bell,
+  BellOff,
   CheckCheck,
   CreditCard,
   Loader2,
@@ -32,6 +33,12 @@ import {
 } from "@/store/notification.store";
 
 import { getApiErrorMessage } from "@/lib/api";
+import {
+  disableBrowserPush,
+  enableBrowserPush,
+  getBrowserPushStatus,
+  type BrowserPushStatus,
+} from "@/lib/browser-push";
 
 export default function NotificationsPage() {
   const router = useRouter();
@@ -88,6 +95,26 @@ const clearUnreadCount =
     setError,
   ] = useState("");
 
+  const [
+  pushStatus,
+  setPushStatus,
+] =
+  useState<BrowserPushStatus>(
+    "default",
+  );
+
+const [
+  pushBusy,
+  setPushBusy,
+] =
+  useState(false);
+
+const [
+  pushStatusLoaded,
+  setPushStatusLoaded,
+] =
+  useState(false);
+
   const load =
     useCallback(
       async (
@@ -138,6 +165,42 @@ const clearUnreadCount =
       [],
     );
 
+    useEffect(() => {
+  let cancelled = false;
+
+  const loadPushStatus =
+    async () => {
+      try {
+        const status =
+          await getBrowserPushStatus();
+
+        if (!cancelled) {
+          setPushStatus(
+            status,
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setPushStatus(
+            "unsupported",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setPushStatusLoaded(
+            true,
+          );
+        }
+      }
+    };
+
+  void loadPushStatus();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
   useEffect(() => {
     void load();
   }, [load]);
@@ -185,6 +248,65 @@ const clearUnreadCount =
       [notifications],
     );
 
+    const toggleBrowserPush =
+  async () => {
+    if (
+      pushBusy ||
+      pushStatus === "unsupported"
+    ) {
+      return;
+    }
+
+    setPushBusy(true);
+    setError("");
+
+    try {
+      if (
+        pushStatus ===
+        "subscribed"
+      ) {
+        await disableBrowserPush();
+
+        setPushStatus(
+          "unsubscribed",
+        );
+
+        return;
+      }
+
+      await enableBrowserPush();
+
+      setPushStatus(
+        "subscribed",
+      );
+    } catch (
+      pushError
+    ) {
+      /*
+       * Re-read the browser state because
+       * the user may have denied the
+       * permission prompt.
+       */
+      try {
+        const currentStatus =
+          await getBrowserPushStatus();
+
+        setPushStatus(
+          currentStatus,
+        );
+      } catch {
+        // Preserve current status.
+      }
+
+      setError(
+        pushError instanceof Error
+          ? pushError.message
+          : "Unable to update browser notifications.",
+      );
+    } finally {
+      setPushBusy(false);
+    }
+  };
 const openNotification =
   async (
     notification:
@@ -304,14 +426,58 @@ const markAllRead =
             </h1>
 
             <p className="text-sm text-gray-500">
-              Track card
-              requests,
-              transactions and
-              tenant activity.
+              Track platform announcements,
+              account activity, transactions,
+              card requests and other updates.
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {pushStatusLoaded &&
+  pushStatus !==
+    "unsupported" && (
+    <button
+      type="button"
+      onClick={() =>
+        void toggleBrowserPush()
+      }
+      disabled={
+        pushBusy ||
+        pushStatus ===
+          "denied"
+      }
+      title={
+        pushStatus === "denied"
+          ? "Browser notifications are blocked in your browser settings."
+          : undefined
+      }
+      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {pushBusy ? (
+        <Loader2
+          size={17}
+          className="animate-spin"
+        />
+      ) : pushStatus ===
+        "subscribed" ? (
+        <BellOff
+          size={17}
+        />
+      ) : (
+        <Bell
+          size={17}
+        />
+      )}
+
+      {pushStatus ===
+      "subscribed"
+        ? "Disable browser alerts"
+        : pushStatus ===
+            "denied"
+          ? "Browser alerts blocked"
+          : "Enable browser alerts"}
+    </button>
+  )}
             <button
               type="button"
               onClick={() =>
@@ -467,11 +633,18 @@ const markAllRead =
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <h2 className="font-bold text-gray-900">
-                            {
-                              item.title
-                            }
-                          </h2>
+                          <div className="flex flex-wrap items-center gap-2">
+  <h2 className="font-bold text-gray-900">
+    {item.title}
+  </h2>
+
+  {item.notification_type ===
+    "platform_notification" && (
+    <span className="rounded-full bg-tenant/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-tenant">
+      Zentra
+    </span>
+  )}
+</div>
 
                           <p className="mt-1 text-sm leading-5 text-gray-600">
                             {
@@ -492,12 +665,16 @@ const markAllRead =
                           )}
                         </p>
 
-                        {item.priority ===
-                          "high" && (
-                          <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-red-600">
-                            Priority
-                          </span>
-                        )}
+                        {(
+  item.priority === "high" ||
+  item.priority === "urgent"
+) && (
+  <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-red-600">
+    {item.priority === "urgent"
+      ? "Urgent"
+      : "Priority"}
+  </span>
+)}
                       </div>
                     </div>
                   </div>
@@ -513,10 +690,28 @@ const markAllRead =
 function getNotificationTarget(
   notification: TenantNotification,
 ): string | null {
+  /*
+   * Explicit notification action takes priority.
+   *
+   * Only allow internal application paths.
+   * Do not navigate directly to arbitrary
+   * external URLs supplied through a notification.
+   */
+  if (
+    notification.action_url &&
+    notification.action_url.startsWith("/") &&
+    !notification.action_url.startsWith("//")
+  ) {
+    return notification.action_url;
+  }
+
   // Card purchase requests
   if (
-    notification.entity_type === "card_purchase_request" ||
-    notification.notification_type.includes("card_purchase")
+    notification.entity_type ===
+      "card_purchase_request" ||
+    notification.notification_type.includes(
+      "card_purchase",
+    )
   ) {
     return "/dashboard/card-lock";
   }
@@ -524,23 +719,32 @@ function getNotificationTarget(
   // Card-related activity
   if (
     notification.entity_type === "card" ||
-    notification.notification_type.includes("card_")
+    notification.notification_type.includes(
+      "card_",
+    )
   ) {
     return "/dashboard/card-lock";
   }
 
   // Transfers
-  if (notification.entity_type === "transfer") {
+  if (
+    notification.entity_type ===
+    "transfer"
+  ) {
     return "/transactions";
   }
 
   // Accounts
-  if (notification.entity_type === "account") {
+  if (
+    notification.entity_type ===
+    "account"
+  ) {
     return "/accounts";
   }
 
   return null;
 }
+
 function Summary({
   label,
   value,
@@ -570,6 +774,17 @@ function NotificationIcon({
   const type =
     notification.notification_type ||
     "";
+
+    if (
+  type === "platform_notification"
+) {
+  return (
+    <Bell
+      size={20}
+      strokeWidth={2.4}
+    />
+  );
+}
 
   if (
     type.includes(

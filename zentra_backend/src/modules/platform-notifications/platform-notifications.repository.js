@@ -1,5 +1,8 @@
 const { randomUUID } = require("crypto");
 const db = require("../../config/db");
+const {
+  emitToUser,
+} = require("../../realtime/socket");
 
 const listNotifications = async ({
   platformUserId,
@@ -253,7 +256,203 @@ const countUnread = async (platformUserId) => {
   return Number(rows[0]?.total || 0);
 };
 
+const findActiveTenantStaff = async ({
+  tenantIds,
+  connection = db,
+}) => {
+  if (
+    !Array.isArray(tenantIds) ||
+    tenantIds.length === 0
+  ) {
+    return [];
+  }
+
+  const uniqueTenantIds = [
+    ...new Set(tenantIds),
+  ];
+
+  const placeholders =
+    uniqueTenantIds
+      .map(() => "?")
+      .join(", ");
+
+  const [rows] =
+    await connection.query(
+      `
+        SELECT DISTINCT
+          tm.tenant_id,
+          u.id AS user_id,
+          u.first_name,
+          u.middle_name,
+          u.last_name,
+          u.email,
+          r.code AS role_code
+
+        FROM tenant_memberships tm
+
+        INNER JOIN users u
+          ON u.id = tm.user_id
+
+        INNER JOIN roles r
+          ON r.id = tm.role_id
+
+        INNER JOIN tenants t
+          ON t.id = tm.tenant_id
+
+        WHERE tm.tenant_id IN (
+          ${placeholders}
+        )
+
+          AND tm.status = 'active'
+          AND u.status = 'active'
+          AND u.deleted_at IS NULL
+          AND t.status = 'active'
+          AND r.is_active = TRUE
+
+          /*
+           * Platform notifications are for
+           * tenant staff, not banking clients.
+           */
+          AND r.code NOT IN (
+            'customer',
+            'client'
+          )
+
+        ORDER BY
+          tm.tenant_id,
+          u.created_at ASC
+      `,
+      uniqueTenantIds
+    );
+
+  return rows;
+};
+
+const listActiveTenantIds = async ({
+  connection = db,
+} = {}) => {
+  const [rows] =
+    await connection.query(
+      `
+        SELECT id
+        FROM tenants
+        WHERE status = 'active'
+        ORDER BY created_at ASC
+      `
+    );
+
+  return rows.map(
+    (row) => row.id
+  );
+};
+
+const createTenantPlatformNotification =
+  async ({
+    connection = db,
+    tenantId,
+    userId,
+    title,
+    message,
+    priority = "normal",
+    actionUrl = null,
+    entityType = null,
+    entityId = null,
+    metadata = null,
+  }) => {
+    const id =
+      randomUUID();
+
+    await connection.query(
+      `
+        INSERT INTO notifications (
+          id,
+          tenant_id,
+          user_id,
+          notification_type,
+          title,
+          message,
+          entity_type,
+          entity_id,
+          priority,
+          action_url,
+          metadata
+        )
+        VALUES (
+          ?, ?, ?, ?, ?, ?,
+          ?, ?, ?, ?, ?
+        )
+      `,
+      [
+        id,
+        tenantId,
+        userId,
+        "platform_notification",
+        title,
+        message,
+        entityType,
+        entityId,
+        priority,
+        actionUrl,
+        metadata
+          ? JSON.stringify(metadata)
+          : null,
+      ]
+    );
+
+    return id;
+  };
+
+  const findTenantPlatformNotificationById =
+  async ({
+    notificationId,
+    tenantId,
+    connection = db,
+  }) => {
+    const [rows] =
+      await connection.query(
+        `
+          SELECT *
+          FROM notifications
+          WHERE id = ?
+            AND tenant_id = ?
+            AND notification_type =
+              'platform_notification'
+          LIMIT 1
+        `,
+        [
+          notificationId,
+          tenantId,
+        ]
+      );
+
+    return rows[0] || null;
+  };
+
+const emitTenantPlatformNotification =
+  async ({
+    tenantId,
+    userId,
+    notificationId,
+  }) => {
+    const notification =
+      await findTenantPlatformNotificationById({
+        notificationId,
+        tenantId,
+      });
+
+    if (!notification) {
+      return;
+    }
+
+    emitToUser(
+      userId,
+      "notification:new",
+      notification
+    );
+  };
+
 module.exports = {
+  db,
   listNotifications,
   findNotificationById,
   createNotification,
@@ -261,4 +460,9 @@ module.exports = {
   markAllRead,
   countUnread,
   listActiveSubscriptionReviewers,
+  findActiveTenantStaff,
+  listActiveTenantIds,
+  createTenantPlatformNotification,
+  findTenantPlatformNotificationById,
+  emitTenantPlatformNotification,
 };

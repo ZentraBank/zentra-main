@@ -610,7 +610,7 @@ const deleteTemplate =
       });
 
     const connection =
-      await repo.db.getConnection();
+      await repo.db.pool.getConnection();
 
     const created = [];
 
@@ -762,8 +762,111 @@ const deleteTemplate =
         created.length,
     };
   };
+/*
+|--------------------------------------------------------------------------
+| Browser push subscriptions
+|--------------------------------------------------------------------------
+*/
 
-  
+const savePushSubscription =
+  async ({
+    auth,
+    body,
+    userAgent = null,
+  }) => {
+    if (
+      !auth?.tenantId ||
+      !auth?.userId
+    ) {
+      throw httpError(
+        401,
+        "Authenticated tenant user is required"
+      );
+    }
+
+    const endpoint =
+      body?.endpoint;
+
+    const p256dh =
+      body?.keys?.p256dh;
+
+    const authSecret =
+      body?.keys?.auth;
+
+    if (
+      !endpoint ||
+      !p256dh ||
+      !authSecret
+    ) {
+      throw httpError(
+        422,
+        "Invalid push subscription"
+      );
+    }
+
+    const subscription =
+      await repo
+        .upsertPushSubscription({
+          tenantId:
+            auth.tenantId,
+
+          userId:
+            auth.userId,
+
+          endpoint,
+          p256dh,
+          authSecret,
+          userAgent,
+        });
+
+    if (!subscription) {
+      throw httpError(
+        500,
+        "Unable to save push subscription"
+      );
+    }
+
+    return subscription;
+  };
+ const removePushSubscription =
+  async ({
+    auth,
+    body,
+  }) => {
+    if (
+      !auth?.tenantId ||
+      !auth?.userId
+    ) {
+      throw httpError(
+        401,
+        "Authenticated tenant user is required"
+      );
+    }
+
+    await repo
+      .deactivatePushSubscription({
+        tenantId:
+          auth.tenantId,
+
+        userId:
+          auth.userId,
+
+        endpoint:
+          body.endpoint,
+      });
+
+    /*
+     * Keep this idempotent.
+     *
+     * A browser may attempt to unregister
+     * a subscription that has already
+     * expired or been deactivated.
+     */
+    return {
+      removed: true,
+    };
+  };
+
 module.exports = {
   listMine,
   unreadCount,
@@ -783,4 +886,8 @@ module.exports = {
   getBillingPeriod,
 
   createTenantNotificationsWithQuota,
+  savePushSubscription,
+  replaceTemplateVariables,
+  removePushSubscription,
+  
 };

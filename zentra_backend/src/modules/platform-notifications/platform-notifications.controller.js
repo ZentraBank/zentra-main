@@ -52,6 +52,24 @@ module.exports = {
     )
   ),
 
+  sendToTenants: asyncHandler(
+  async (req, res) =>
+    sendSuccess(
+      res,
+      {
+        message:
+          "Notification sent to tenant administrators successfully.",
+
+        data:
+          await service.sendToTenants({
+            auth: req.auth,
+            body: req.body,
+          }),
+      },
+      201
+    )
+),
+
   markRead: asyncHandler(async (req, res) =>
     sendSuccess(res, {
       message:

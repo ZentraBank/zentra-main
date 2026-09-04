@@ -185,6 +185,45 @@ const sendToClients =
     );
   });
 
+  const savePushSubscription =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.savePushSubscription({
+        auth: req.auth,
+        body: req.body,
+
+        userAgent:
+          req.get("user-agent") ||
+          null,
+      });
+
+    return sendSuccess(
+      res,
+      {
+        message:
+          "Push subscription saved successfully",
+        data,
+      },
+      201
+    );
+  });
+
+
+const removePushSubscription =
+  asyncHandler(async (req, res) => {
+    const data =
+      await service.removePushSubscription({
+        auth: req.auth,
+        body: req.body,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Push subscription removed successfully",
+      data,
+    });
+  });
+
 module.exports = {
   listMine,
   unreadCount,
@@ -196,5 +235,7 @@ module.exports = {
   listTemplates,
   updateTemplate,
   deleteTemplate,
-  sendToClients
+  sendToClients,
+  savePushSubscription,
+  removePushSubscription,
 };

@@ -18,6 +18,11 @@ import {
   notificationService,
 } from "@/services/notification.service";
 
+import {
+  connectSocket,
+} from "@/lib/socket";
+
+
 export default function Topbar() {
   const tenant =
     useTenantStore(
@@ -71,6 +76,43 @@ export default function Topbar() {
       );
     };
   }, [loadUnreadCount]);
+
+  useEffect(() => {
+  let activeSocket:
+    ReturnType<
+      typeof connectSocket
+    > | null = null;
+
+  const handleNewNotification =
+    () => {
+      void loadUnreadCount();
+    };
+
+  try {
+    activeSocket =
+      connectSocket();
+
+    activeSocket.on(
+      "notification:new",
+      handleNewNotification,
+    );
+  } catch {
+    /*
+     * Realtime is an enhancement.
+     * The 15-second polling remains
+     * available as fallback.
+     */
+  }
+
+  return () => {
+    if (activeSocket) {
+      activeSocket.off(
+        "notification:new",
+        handleNewNotification,
+      );
+    }
+  };
+}, [loadUnreadCount]);
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-gray-200 bg-black px-5">
