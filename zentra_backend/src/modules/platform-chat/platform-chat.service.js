@@ -8,6 +8,13 @@ const subscriptionService =
     "../subscriptions/subscriptions.service"
   );
 
+  const {
+  emitToTenant,
+  emitToPlatform,
+  emitToPlatformChatConversation,
+} = require(
+  "../../realtime/socket"
+);
 
 const httpError = (
   statusCode,
@@ -389,10 +396,11 @@ const sendTenantMessage =
       tenantId,
     });
 
-    await ensureTenantUser({
-      tenantId,
-      userId,
-    });
+    const tenantUser =
+      await ensureTenantUser({
+        tenantId,
+        userId,
+      });
 
     const conversation =
       await getOrCreateTenantConversation({
@@ -415,18 +423,85 @@ const sendTenantMessage =
       );
     }
 
-    return repo.createMessage({
-      conversationId:
-        conversation.id,
+    const createdMessage =
+      await repo.createMessage({
+        conversationId:
+          conversation.id,
 
-      senderType:
-        "tenant_user",
+        senderType:
+          "tenant_user",
 
-      senderId:
-        userId,
+        senderId:
+          userId,
 
-      message,
-    });
+        message,
+      });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Realtime: active conversation
+    |--------------------------------------------------------------------------
+    */
+
+    emitToPlatformChatConversation(
+      conversation.id,
+      "platform-chat:message:new",
+      {
+        conversationId:
+          conversation.id,
+
+        tenantId,
+
+        message:
+          createdMessage,
+      }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Realtime: platform inbox
+    |--------------------------------------------------------------------------
+    |
+    | This lets Superadmin receive a new-message
+    | event even if they have not opened this
+    | specific conversation room.
+    |
+    */
+
+    emitToPlatform(
+      "platform-chat:inbox:update",
+      {
+        conversationId:
+          conversation.id,
+
+        tenantId,
+
+        sender: {
+          id:
+            tenantUser.id,
+
+          name:
+            [
+              tenantUser.first_name,
+              tenantUser.middle_name,
+              tenantUser.last_name,
+            ]
+              .filter(Boolean)
+              .join(" "),
+
+          roleCode:
+            tenantUser.role_code,
+        },
+
+        message:
+          createdMessage,
+      }
+    );
+
+
+    return createdMessage;
   };
 
 
@@ -702,9 +777,10 @@ const sendPlatformMessage =
     conversationId,
     body,
   }) => {
-    await ensurePlatformUser({
-      platformUserId,
-    });
+    const platformUser =
+      await ensurePlatformUser({
+        platformUserId,
+      });
 
     const conversation =
       await repo
@@ -735,17 +811,83 @@ const sendPlatformMessage =
       );
     }
 
-    return repo.createMessage({
+    const createdMessage =
+      await repo.createMessage({
+        conversationId,
+
+        senderType:
+          "platform_user",
+
+        senderId:
+          platformUserId,
+
+        message,
+      });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Realtime: active conversation
+    |--------------------------------------------------------------------------
+    */
+
+    emitToPlatformChatConversation(
       conversationId,
+      "platform-chat:message:new",
+      {
+        conversationId,
 
-      senderType:
-        "platform_user",
+        tenantId:
+          conversation.tenant_id,
 
-      senderId:
-        platformUserId,
+        message:
+          createdMessage,
+      }
+    );
 
-      message,
-    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Realtime: tenant
+    |--------------------------------------------------------------------------
+    |
+    | Tenant staff receive this even when they
+    | are not currently inside the conversation.
+    |
+    */
+
+    emitToTenant(
+      conversation.tenant_id,
+      "platform-chat:inbox:update",
+      {
+        conversationId,
+
+        tenantId:
+          conversation.tenant_id,
+
+        sender: {
+          id:
+            platformUser.id,
+
+          name:
+            [
+              platformUser.first_name,
+              platformUser.last_name,
+            ]
+              .filter(Boolean)
+              .join(" "),
+
+          roleCode:
+            platformUser.role_code,
+        },
+
+        message:
+          createdMessage,
+      }
+    );
+
+
+    return createdMessage;
   };
 
 
@@ -872,4 +1014,6 @@ module.exports = {
   markPlatformConversationRead,
   updatePlatformConversationStatus,
   getPlatformUnreadCount,
+  
+
 };

@@ -215,7 +215,7 @@ export function CreateAdministratorForm() {
   return (
     <form
       onSubmit={submit}
-      className="space-y-6"
+      className="space-y-6 text-gray-900"
     >
       <div className="grid gap-5 md:grid-cols-2">
         <input
@@ -229,7 +229,7 @@ export function CreateAdministratorForm() {
           }
           placeholder="First name"
           required
-          className="h-12 rounded-xl border border-white/10 bg-white/5 px-4"
+          className="h-12 rounded-xl border border-gray-300 bg-white px-4 text-gray-900 placeholder-gray-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
         />
 
         <input
@@ -243,7 +243,7 @@ export function CreateAdministratorForm() {
           }
           placeholder="Last name"
           required
-          className="h-12 rounded-xl border border-white/10 bg-white/5 px-4"
+          className="h-12 rounded-xl border border-gray-300 bg-white px-4 text-gray-900 placeholder-gray-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
         />
 
         <input
@@ -258,7 +258,7 @@ export function CreateAdministratorForm() {
           }
           placeholder="Email address"
           required
-          className="h-12 rounded-xl border border-white/10 bg-white/5 px-4"
+          className="h-12 rounded-xl border border-gray-300 bg-white px-4 text-gray-900 placeholder-gray-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
         />
 
         <input
@@ -274,7 +274,7 @@ export function CreateAdministratorForm() {
           placeholder="Temporary password"
           minLength={12}
           required
-          className="h-12 rounded-xl border border-white/10 bg-white/5 px-4"
+          className="h-12 rounded-xl border border-gray-300 bg-white px-4 text-gray-900 placeholder-gray-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
         />
 
         <select
@@ -287,7 +287,7 @@ export function CreateAdministratorForm() {
                   .value as PlatformAdministratorRole,
             }))
           }
-          className="h-12 rounded-xl border border-white/10 bg-neutral-900 px-4"
+          className="h-12 rounded-xl border border-gray-300 bg-white px-4 text-gray-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
         >
           <option value="platform_support">
             Platform Support
@@ -306,11 +306,11 @@ export function CreateAdministratorForm() {
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold">
+            <h2 className="text-lg font-semibold text-gray-900">
               Permissions
             </h2>
 
-            <p className="mt-1 text-sm text-white/50">
+            <p className="mt-1 text-sm text-gray-600">
               Select what this administrator
               is allowed to access and manage.
             </p>
@@ -322,7 +322,7 @@ export function CreateAdministratorForm() {
                 <button
                   type="button"
                   onClick={selectAllPermissions}
-                  className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
                 >
                   Select all
                 </button>
@@ -330,7 +330,7 @@ export function CreateAdministratorForm() {
                 <button
                   type="button"
                   onClick={clearAllPermissions}
-                  className="rounded-lg border border-white/10 px-3 py-2 text-xs font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
+                  className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
                 >
                   Clear all
                 </button>
@@ -339,17 +339,17 @@ export function CreateAdministratorForm() {
         </div>
 
         {isLoadingPermissions ? (
-          <div className="rounded-xl border border-white/10 bg-white/5 p-5 text-sm text-white/60">
+          <div className="rounded-xl border border-gray-300 bg-white p-5 text-sm text-gray-500 shadow-sm">
             Loading permissions…
           </div>
         ) : availablePermissions.length === 0 ? (
-          <div className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-5">
-            <p className="font-medium text-amber-200">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+            <p className="font-medium text-amber-800">
               No platform permissions are
               available.
             </p>
 
-            <p className="mt-1 text-sm text-amber-100/60">
+            <p className="mt-1 text-sm text-amber-700">
               The platform permission catalogue
               must be seeded before an
               administrator can be created.
@@ -385,18 +385,18 @@ export function CreateAdministratorForm() {
                 return (
                   <section
                     key={moduleName}
-                    className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]"
+                    className="overflow-hidden rounded-xl border border-gray-300 bg-white shadow-sm"
                   >
-                    <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                    <div className="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
                       <div>
-                        <h3 className="font-medium capitalize">
+                        <h3 className="font-semibold capitalize text-gray-900">
                           {moduleName.replace(
                             /_/g,
                             " "
                           )}
                         </h3>
 
-                        <p className="mt-0.5 text-xs text-white/40">
+                        <p className="mt-0.5 text-xs text-gray-500">
                           {selectedCount} of{" "}
                           {
                             modulePermissions.length
@@ -412,7 +412,7 @@ export function CreateAdministratorForm() {
                             modulePermissions
                           )
                         }
-                        className="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-white/70 transition hover:bg-white/5 hover:text-white"
+                        className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
                       >
                         {allSelected
                           ? "Clear module"
@@ -433,7 +433,7 @@ export function CreateAdministratorForm() {
                               key={
                                 permission.id
                               }
-                              className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-white/5 p-3 transition hover:bg-white/[0.08]"
+                              className="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 bg-white p-3 transition hover:bg-gray-50"
                             >
                               <input
                                 type="checkbox"
@@ -445,24 +445,24 @@ export function CreateAdministratorForm() {
                                     permission.code
                                   )
                                 }
-                                className="mt-1"
+                                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                               />
 
                               <div className="min-w-0">
-                                <p className="text-sm font-medium">
+                                <p className="text-sm font-semibold text-gray-900">
                                   {
                                     permission.name
                                   }
                                 </p>
 
-                                <p className="mt-0.5 break-all text-xs text-white/45">
+                                <p className="mt-0.5 break-all font-mono text-xs text-gray-500">
                                   {
                                     permission.code
                                   }
                                 </p>
 
                                 {permission.description && (
-                                  <p className="mt-1 text-xs leading-5 text-white/50">
+                                  <p className="mt-1 text-xs leading-5 text-gray-600">
                                     {
                                       permission.description
                                     }
@@ -483,7 +483,7 @@ export function CreateAdministratorForm() {
 
         {!isLoadingPermissions &&
           availablePermissions.length > 0 && (
-            <p className="text-sm text-white/50">
+            <p className="text-sm font-medium text-gray-700">
               {permissions.length} permission
               {permissions.length === 1
                 ? ""
@@ -494,7 +494,7 @@ export function CreateAdministratorForm() {
       </div>
 
       {error && (
-        <p className="text-sm text-red-300">
+        <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
           {error}
         </p>
       )}
@@ -507,7 +507,7 @@ export function CreateAdministratorForm() {
           availablePermissions.length === 0 ||
           permissions.length === 0
         }
-        className="rounded-xl bg-white px-6 py-3 font-semibold text-black disabled:cursor-not-allowed disabled:opacity-60"
+        className="rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting
           ? "Creating administrator…"

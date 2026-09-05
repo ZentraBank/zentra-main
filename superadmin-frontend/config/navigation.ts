@@ -12,6 +12,7 @@ import {
   UserRoundCog,
   Users,
   WalletCards,
+  MessageCircle,
 } from "lucide-react";
 
 export const navigation = [
@@ -25,7 +26,7 @@ export const navigation = [
   { label: "Payment Proofs", href: "/payment-proofs", icon: FileCheck2 },
   { label: "Notifications", href: "/notifications", icon: Bell },
   { label: "Audit Logs", href: "/audit-logs", icon: Activity },
-  { label: "Security", href: "/security", icon: ShieldCheck },
+  { label: "Chat", href: "/chat", icon: MessageCircle },
   { label: "System Health", href: "/system-health", icon: HeartPulse },
   { label: "System Settings", href: "/system-settings", icon: Settings },
 ] as const;

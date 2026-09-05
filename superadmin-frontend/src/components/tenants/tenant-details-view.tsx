@@ -549,7 +549,7 @@ currentPlan ? (
   </div>
 ) : (
   <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-5">
-    <p className="font-semibold text-amber-200">
+    <p className="font-semibold text-red-500">
       No active subscription
     </p>
 

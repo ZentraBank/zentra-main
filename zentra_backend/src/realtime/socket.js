@@ -2,6 +2,12 @@ const {
   Server,
 } = require("socket.io");
 
+const jwt =
+  require("jsonwebtoken");
+
+const env =
+  require("../config/env");
+
 const {
   verifyAccessToken,
 } = require("../utils/jwt");
@@ -16,11 +22,17 @@ const chatRepository =
     "../modules/chat/chat.repository"
   );
 
+const platformChatRepository =
+  require(
+    "../modules/platform-chat/platform-chat.repository"
+  );
+
 let io = null;
+
 
 /*
 |--------------------------------------------------------------------------
-| Helpers
+| Rooms
 |--------------------------------------------------------------------------
 */
 
@@ -28,6 +40,11 @@ const conversationRoom = (
   conversationId
 ) =>
   `conversation:${conversationId}`;
+
+const platformChatRoom = (
+  conversationId
+) =>
+  `platform-chat:${conversationId}`;
 
 const userRoom = (
   userId
@@ -39,9 +56,73 @@ const tenantRoom = (
 ) =>
   `tenant:${tenantId}`;
 
+const platformUserRoom = (
+  userId
+) =>
+  `platform-user:${userId}`;
+
+const platformRoom =
+  () => "platform";
+
+
 /*
 |--------------------------------------------------------------------------
-| Verify access to a conversation
+| Token helpers
+|--------------------------------------------------------------------------
+*/
+
+const verifyPlatformAccessToken =
+  (token) => {
+    const payload =
+      jwt.verify(
+        token,
+        env.jwt.accessSecret,
+        {
+          issuer:
+            env.appName,
+
+          audience:
+            "zentrabank-platform",
+        }
+      );
+
+    if (
+      payload.tokenType !==
+      "access"
+    ) {
+      const error =
+        new Error(
+          "The supplied token is not an access token"
+        );
+
+      error.name =
+        "JsonWebTokenError";
+
+      throw error;
+    }
+
+    if (
+      payload.scope !==
+      "platform"
+    ) {
+      const error =
+        new Error(
+          "The supplied token is not a platform access token"
+        );
+
+      error.name =
+        "JsonWebTokenError";
+
+      throw error;
+    }
+
+    return payload;
+  };
+
+
+/*
+|--------------------------------------------------------------------------
+| Normal tenant/client chat access
 |--------------------------------------------------------------------------
 */
 
@@ -50,6 +131,13 @@ const canAccessConversation =
     socket,
     conversationId,
   }) => {
+    if (
+      socket.auth.authType !==
+      "tenant"
+    ) {
+      return false;
+    }
+
     const {
       userId,
       tenantId,
@@ -58,18 +146,19 @@ const canAccessConversation =
       socket.auth;
 
     const conversation =
-      await chatRepository.findConversationById({
-        tenantId,
-        conversationId,
-      });
+      await chatRepository
+        .findConversationById({
+          tenantId,
+          conversationId,
+        });
 
     if (!conversation) {
       return false;
     }
 
     /*
-     * A client may only join their
-     * own conversation.
+     * Client users can only join
+     * their own conversation.
      */
     if (
       roleCode === "client"
@@ -81,18 +170,79 @@ const canAccessConversation =
     }
 
     /*
-     * Tenant-side authenticated
-     * members can join conversations
-     * belonging to their tenant.
-     *
-     * Route permissions still control
-     * who can read/send via the API.
+     * Tenant staff can join normal
+     * conversations belonging to
+     * their tenant.
      */
     return (
       conversation.tenant_id ===
       tenantId
     );
   };
+
+
+/*
+|--------------------------------------------------------------------------
+| Platform chat access
+|--------------------------------------------------------------------------
+*/
+
+const canAccessPlatformChat =
+  async ({
+    socket,
+    conversationId,
+  }) => {
+    const conversation =
+      await platformChatRepository
+        .findConversationById({
+          conversationId,
+        });
+
+    if (!conversation) {
+      return false;
+    }
+
+    /*
+     * Zentra platform staff.
+     *
+     * The socket must have the same read
+     * permission used by the HTTP routes.
+     */
+    if (
+      socket.auth.authType ===
+      "platform"
+    ) {
+      return (
+        socket.auth.permissions
+          ?.includes(
+            "platform.chat.read"
+          ) === true
+      );
+    }
+
+    /*
+     * Tenant staff.
+     *
+     * The platform conversation must belong
+     * to the authenticated tenant.
+     */
+    if (
+      socket.auth.authType ===
+      "tenant"
+    ) {
+      return (
+        conversation.tenant_id ===
+        socket.auth.tenantId &&
+        socket.auth.roleCode !==
+          "client" &&
+        socket.auth.roleCode !==
+          "customer"
+      );
+    }
+
+    return false;
+  };
+
 
 /*
 |--------------------------------------------------------------------------
@@ -101,7 +251,7 @@ const canAccessConversation =
 */
 
 const initialiseSocket = (
-  httpServer,
+  httpServer
 ) => {
   io = new Server(
     httpServer,
@@ -113,10 +263,13 @@ const initialiseSocket = (
     }
   );
 
+
   /*
-   * Authenticate every socket before
-   * allowing it to connect.
-   */
+  |--------------------------------------------------------------------------
+  | Authentication
+  |--------------------------------------------------------------------------
+  */
+
   io.use(
     async (
       socket,
@@ -134,6 +287,101 @@ const initialiseSocket = (
             )
           );
         }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Determine token audience
+        |--------------------------------------------------------------------------
+        |
+        | jwt.decode() is only used to decide which
+        | strict verifier to call.
+        |
+        | Authentication itself is still performed
+        | by jwt.verify().
+        |
+        */
+
+        const decoded =
+          jwt.decode(
+            token,
+            {
+              complete: true,
+            }
+          );
+
+        const audience =
+          decoded?.payload?.aud;
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Platform authentication
+        |--------------------------------------------------------------------------
+        */
+
+        if (
+          audience ===
+          "zentrabank-platform"
+        ) {
+          const payload =
+            verifyPlatformAccessToken(
+              token
+            );
+
+          if (!payload?.sub) {
+            return next(
+              new Error(
+                "Invalid platform access token"
+              )
+            );
+          }
+
+          const platformUser =
+            await platformChatRepository
+              .findActivePlatformUser({
+                platformUserId:
+                  payload.sub,
+              });
+
+          if (!platformUser) {
+            return next(
+              new Error(
+                "Active platform user required"
+              )
+            );
+          }
+
+          socket.auth = {
+            authType:
+              "platform",
+
+            userId:
+              platformUser.id,
+
+            tenantId:
+              null,
+
+            roleCode:
+              platformUser.role_code,
+
+            permissions:
+              Array.isArray(
+                payload.permissions
+              )
+                ? payload.permissions
+                : [],
+          };
+
+          return next();
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Tenant/client authentication
+        |--------------------------------------------------------------------------
+        */
 
         const payload =
           verifyAccessToken(
@@ -185,6 +433,9 @@ const initialiseSocket = (
         }
 
         socket.auth = {
+          authType:
+            "tenant",
+
           userId:
             context.id,
 
@@ -193,6 +444,13 @@ const initialiseSocket = (
 
           roleCode:
             context.role_code,
+
+          permissions:
+            Array.isArray(
+              payload.permissions
+            )
+              ? payload.permissions
+              : [],
         };
 
         return next();
@@ -207,6 +465,7 @@ const initialiseSocket = (
     }
   );
 
+
   /*
   |--------------------------------------------------------------------------
   | Connection
@@ -219,37 +478,56 @@ const initialiseSocket = (
       socket
     ) => {
       const {
+        authType,
         userId,
         tenantId,
         roleCode,
       } =
         socket.auth;
 
-      /*
-       * Private user room.
-       */
-      socket.join(
-        userRoom(
-          userId
-        )
-      );
-
-      /*
-       * Tenant-wide room.
-       */
-      socket.join(
-        tenantRoom(
-          tenantId
-        )
-      );
-
-      console.log(
-        `Realtime connected: ${userId} (${roleCode})`
-      );
 
       /*
       |--------------------------------------------------------------------------
-      | Join chat conversation
+      | Join identity rooms
+      |--------------------------------------------------------------------------
+      */
+
+      if (
+        authType ===
+        "platform"
+      ) {
+        socket.join(
+          platformUserRoom(
+            userId
+          )
+        );
+
+        socket.join(
+          platformRoom()
+        );
+      } else {
+        socket.join(
+          userRoom(
+            userId
+          )
+        );
+
+        socket.join(
+          tenantRoom(
+            tenantId
+          )
+        );
+      }
+
+
+      console.log(
+        `Realtime connected: ${userId} (${authType}:${roleCode})`
+      );
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | Normal tenant/client conversation join
       |--------------------------------------------------------------------------
       */
 
@@ -263,12 +541,10 @@ const initialiseSocket = (
             const conversationId =
               String(
                 payload.conversationId ||
-                ""
+                  ""
               ).trim();
 
-            if (
-              !conversationId
-            ) {
+            if (!conversationId) {
               throw new Error(
                 "Conversation ID is required"
               );
@@ -297,9 +573,7 @@ const initialiseSocket = (
               "function"
             ) {
               callback({
-                success:
-                  true,
-
+                success: true,
                 conversationId,
               });
             }
@@ -309,8 +583,7 @@ const initialiseSocket = (
               "function"
             ) {
               callback({
-                success:
-                  false,
+                success: false,
 
                 message:
                   error?.message ||
@@ -332,9 +605,10 @@ const initialiseSocket = (
         }
       );
 
+
       /*
       |--------------------------------------------------------------------------
-      | Leave chat conversation
+      | Normal conversation leave
       |--------------------------------------------------------------------------
       */
 
@@ -347,12 +621,10 @@ const initialiseSocket = (
           const conversationId =
             String(
               payload.conversationId ||
-              ""
+                ""
             ).trim();
 
-          if (
-            conversationId
-          ) {
+          if (conversationId) {
             socket.leave(
               conversationRoom(
                 conversationId
@@ -365,18 +637,17 @@ const initialiseSocket = (
             "function"
           ) {
             callback({
-              success:
-                true,
-
+              success: true,
               conversationId,
             });
           }
         }
       );
 
+
       /*
       |--------------------------------------------------------------------------
-      | Typing
+      | Normal chat typing
       |--------------------------------------------------------------------------
       */
 
@@ -389,12 +660,10 @@ const initialiseSocket = (
             const conversationId =
               String(
                 payload.conversationId ||
-                ""
+                  ""
               ).trim();
 
-            if (
-              !conversationId
-            ) {
+            if (!conversationId) {
               return;
             }
 
@@ -418,9 +687,7 @@ const initialiseSocket = (
                 "chat:typing:start",
                 {
                   conversationId,
-
                   userId,
-
                   roleCode,
                 }
               );
@@ -433,6 +700,7 @@ const initialiseSocket = (
         }
       );
 
+
       socket.on(
         "chat:typing:stop",
         async (
@@ -442,12 +710,10 @@ const initialiseSocket = (
             const conversationId =
               String(
                 payload.conversationId ||
-                ""
+                  ""
               ).trim();
 
-            if (
-              !conversationId
-            ) {
+            if (!conversationId) {
               return;
             }
 
@@ -471,9 +737,7 @@ const initialiseSocket = (
                 "chat:typing:stop",
                 {
                   conversationId,
-
                   userId,
-
                   roleCode,
                 }
               );
@@ -486,6 +750,235 @@ const initialiseSocket = (
         }
       );
 
+
+      /*
+      |--------------------------------------------------------------------------
+      | Platform chat join
+      |--------------------------------------------------------------------------
+      */
+
+      socket.on(
+        "platform-chat:conversation:join",
+        async (
+          payload = {},
+          callback
+        ) => {
+          try {
+            const conversationId =
+              String(
+                payload.conversationId ||
+                  ""
+              ).trim();
+
+            if (!conversationId) {
+              throw new Error(
+                "Conversation ID is required"
+              );
+            }
+
+            const allowed =
+              await canAccessPlatformChat({
+                socket,
+                conversationId,
+              });
+
+            if (!allowed) {
+              throw new Error(
+                "You do not have access to this platform conversation"
+              );
+            }
+
+            socket.join(
+              platformChatRoom(
+                conversationId
+              )
+            );
+
+            if (
+              typeof callback ===
+              "function"
+            ) {
+              callback({
+                success: true,
+                conversationId,
+              });
+            }
+          } catch (error) {
+            if (
+              typeof callback ===
+              "function"
+            ) {
+              callback({
+                success: false,
+
+                message:
+                  error?.message ||
+                  "Unable to join platform conversation",
+              });
+
+              return;
+            }
+
+            socket.emit(
+              "platform-chat:error",
+              {
+                message:
+                  error?.message ||
+                  "Unable to join platform conversation",
+              }
+            );
+          }
+        }
+      );
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | Platform chat leave
+      |--------------------------------------------------------------------------
+      */
+
+      socket.on(
+        "platform-chat:conversation:leave",
+        (
+          payload = {},
+          callback
+        ) => {
+          const conversationId =
+            String(
+              payload.conversationId ||
+                ""
+            ).trim();
+
+          if (conversationId) {
+            socket.leave(
+              platformChatRoom(
+                conversationId
+              )
+            );
+          }
+
+          if (
+            typeof callback ===
+            "function"
+          ) {
+            callback({
+              success: true,
+              conversationId,
+            });
+          }
+        }
+      );
+
+
+      /*
+      |--------------------------------------------------------------------------
+      | Platform chat typing
+      |--------------------------------------------------------------------------
+      */
+
+      socket.on(
+        "platform-chat:typing:start",
+        async (
+          payload = {}
+        ) => {
+          try {
+            const conversationId =
+              String(
+                payload.conversationId ||
+                  ""
+              ).trim();
+
+            if (!conversationId) {
+              return;
+            }
+
+            const allowed =
+              await canAccessPlatformChat({
+                socket,
+                conversationId,
+              });
+
+            if (!allowed) {
+              return;
+            }
+
+            socket
+              .to(
+                platformChatRoom(
+                  conversationId
+                )
+              )
+              .emit(
+                "platform-chat:typing:start",
+                {
+                  conversationId,
+                  userId,
+                  authType,
+                  roleCode,
+                }
+              );
+          } catch (error) {
+            console.error(
+              "[Platform Chat] Typing start failed:",
+              error.message
+            );
+          }
+        }
+      );
+
+
+      socket.on(
+        "platform-chat:typing:stop",
+        async (
+          payload = {}
+        ) => {
+          try {
+            const conversationId =
+              String(
+                payload.conversationId ||
+                  ""
+              ).trim();
+
+            if (!conversationId) {
+              return;
+            }
+
+            const allowed =
+              await canAccessPlatformChat({
+                socket,
+                conversationId,
+              });
+
+            if (!allowed) {
+              return;
+            }
+
+            socket
+              .to(
+                platformChatRoom(
+                  conversationId
+                )
+              )
+              .emit(
+                "platform-chat:typing:stop",
+                {
+                  conversationId,
+                  userId,
+                  authType,
+                  roleCode,
+                }
+              );
+          } catch (error) {
+            console.error(
+              "[Platform Chat] Typing stop failed:",
+              error.message
+            );
+          }
+        }
+      );
+
+
       /*
       |--------------------------------------------------------------------------
       | Disconnect
@@ -496,7 +989,7 @@ const initialiseSocket = (
         "disconnect",
         () => {
           console.log(
-            `Realtime disconnected: ${userId}`
+            `Realtime disconnected: ${userId} (${authType})`
           );
         }
       );
@@ -505,6 +998,7 @@ const initialiseSocket = (
 
   return io;
 };
+
 
 /*
 |--------------------------------------------------------------------------
@@ -523,9 +1017,10 @@ const getIo =
     return io;
   };
 
+
 /*
 |--------------------------------------------------------------------------
-| Emitters
+| Existing emitters
 |--------------------------------------------------------------------------
 */
 
@@ -551,6 +1046,7 @@ const emitToUser =
       );
   };
 
+
 const emitToTenant =
   (
     tenantId,
@@ -572,6 +1068,7 @@ const emitToTenant =
         payload
       );
   };
+
 
 const emitToConversation =
   (
@@ -595,6 +1092,79 @@ const emitToConversation =
       );
   };
 
+
+/*
+|--------------------------------------------------------------------------
+| Platform emitters
+|--------------------------------------------------------------------------
+*/
+
+const emitToPlatform =
+  (
+    event,
+    payload
+  ) => {
+    if (!io) {
+      return;
+    }
+
+    io
+      .to(
+        platformRoom()
+      )
+      .emit(
+        event,
+        payload
+      );
+  };
+
+
+const emitToPlatformUser =
+  (
+    userId,
+    event,
+    payload
+  ) => {
+    if (!io) {
+      return;
+    }
+
+    io
+      .to(
+        platformUserRoom(
+          userId
+        )
+      )
+      .emit(
+        event,
+        payload
+      );
+  };
+
+
+const emitToPlatformChatConversation =
+  (
+    conversationId,
+    event,
+    payload
+  ) => {
+    if (!io) {
+      return;
+    }
+
+    io
+      .to(
+        platformChatRoom(
+          conversationId
+        )
+      )
+      .emit(
+        event,
+        payload
+      );
+  };
+
+
 /*
 |--------------------------------------------------------------------------
 | Exports
@@ -609,4 +1179,8 @@ module.exports = {
   emitToUser,
   emitToTenant,
   emitToConversation,
+
+  emitToPlatform,
+  emitToPlatformUser,
+  emitToPlatformChatConversation,
 };

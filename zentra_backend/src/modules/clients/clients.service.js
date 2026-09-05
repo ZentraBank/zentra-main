@@ -1,5 +1,9 @@
 const bcrypt = require("bcryptjs");
-const { randomBytes } = require("crypto");
+const {
+  randomBytes,
+  createHash,
+  randomUUID,
+} = require("crypto");
 
 const authRepo = require("../auth/auth.repository");
 const accountsRepo = require("../accounts/accounts.repository");
@@ -30,6 +34,32 @@ const httpError = (
 
 const generateTemporaryPassword = () =>
   `Zb${randomBytes(6).toString("hex")}7`;
+
+const generateInviteCode = () => {
+  const raw = randomBytes(5)
+    .toString("hex")
+    .toUpperCase();
+
+  return `ZB-${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 10)}`;
+};
+
+const hashInviteCode = (code) =>
+  createHash("sha256")
+    .update(code)
+    .digest("hex");
+
+const buildInviteHint = (code) => {
+  const parts = code.split("-");
+
+  return `${parts[0]}-••••-${parts.at(-1)}`;
+};
+
+const normalizeInviteEmail = (
+  email
+) =>
+  email
+    ? email.trim().toLowerCase()
+    : null;
 
 const splitAccountName = ({
   firstName,
@@ -429,6 +459,222 @@ const resetPassword = async ({
   };
 };
 
+const createInvite = async ({
+  tenantId,
+  createdByUserId,
+  body,
+}) => {
+  const email =
+    normalizeInviteEmail(
+      body.email
+    );
+
+  const maxUses =
+    Number(
+      body.maxUses || 1
+    );
+
+  if (
+    !Number.isInteger(maxUses) ||
+    maxUses < 1 ||
+    maxUses > 1000
+  ) {
+    throw httpError(
+      422,
+      "Invite max uses must be between 1 and 1000"
+    );
+  }
+
+  let expiresAt = null;
+
+  if (body.expiresAt) {
+    const parsed =
+      new Date(body.expiresAt);
+
+    if (
+      Number.isNaN(
+        parsed.getTime()
+      )
+    ) {
+      throw httpError(
+        422,
+        "Invite expiry date is invalid"
+      );
+    }
+
+    if (
+      parsed.getTime() <=
+      Date.now()
+    ) {
+      throw httpError(
+        422,
+        "Invite expiry date must be in the future"
+      );
+    }
+
+    expiresAt =
+      parsed;
+  } else {
+    expiresAt =
+      new Date(
+        Date.now() +
+          7 *
+            24 *
+            60 *
+            60 *
+            1000
+      );
+  }
+
+  let inviteCode;
+  let codeHash;
+
+  for (
+    let attempt = 0;
+    attempt < 10;
+    attempt += 1
+  ) {
+    inviteCode =
+      generateInviteCode();
+
+    codeHash =
+      hashInviteCode(
+        inviteCode
+      );
+
+    const existing =
+      await repo.findInviteByCodeHash({
+        codeHash,
+      });
+
+    if (!existing) {
+      break;
+    }
+
+    inviteCode = null;
+    codeHash = null;
+  }
+
+  if (
+    !inviteCode ||
+    !codeHash
+  ) {
+    throw httpError(
+      500,
+      "Unable to generate a unique invite code"
+    );
+  }
+
+  const invite =
+    await repo.createInvite({
+      id: randomUUID(),
+
+      tenantId,
+
+      createdByUserId,
+
+      codeHash,
+
+      codeHint:
+        buildInviteHint(
+          inviteCode
+        ),
+
+      email,
+
+      maxUses,
+
+      expiresAt,
+    });
+
+  if (!invite) {
+    throw httpError(
+      500,
+      "Client invite was created but could not be loaded"
+    );
+  }
+
+  return {
+    ...invite,
+
+    code:
+      inviteCode,
+  };
+};
+
+const listInvites = async ({
+  tenantId,
+}) => {
+  return repo.listInvitesByTenant({
+    tenantId,
+  });
+};
+
+const revokeInvite = async ({
+  tenantId,
+  inviteId,
+}) => {
+  const invite =
+    await repo.findInviteById({
+      tenantId,
+      inviteId,
+    });
+
+  if (!invite) {
+    throw httpError(
+      404,
+      "Client invite not found"
+    );
+  }
+
+  if (
+    invite.status ===
+    "revoked"
+  ) {
+    throw httpError(
+      409,
+      "Client invite has already been revoked"
+    );
+  }
+
+  if (
+    invite.status ===
+    "expired"
+  ) {
+    throw httpError(
+      409,
+      "Expired client invites cannot be revoked"
+    );
+  }
+
+  if (
+    invite.status ===
+    "used"
+  ) {
+    throw httpError(
+      409,
+      "Used client invites cannot be revoked"
+    );
+  }
+
+  const revoked =
+    await repo.revokeInvite({
+      tenantId,
+      inviteId,
+    });
+
+  if (!revoked) {
+    throw httpError(
+      409,
+      "Client invite can no longer be revoked"
+    );
+  }
+
+  return repo.findInviteById({
+    tenantId,
+    inviteId,
+  });
+};
 
 module.exports = {
   create,
@@ -437,4 +683,7 @@ module.exports = {
   uploadAvatar,
   getAvatar,
   resetPassword,
+  createInvite,
+  listInvites,
+  revokeInvite,
 };

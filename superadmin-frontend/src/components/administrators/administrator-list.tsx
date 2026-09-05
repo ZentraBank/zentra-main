@@ -69,8 +69,8 @@ export function AdministratorList() {
   }, [load]);
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 md:grid-cols-[1fr_220px_220px]">
+    <div className="space-y-5 text-gray-900">
+      <div className="grid gap-3 rounded-2xl border border-gray-300 bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_220px]">
         <input
           value={search}
           onChange={(event) => {
@@ -78,7 +78,7 @@ export function AdministratorList() {
             setPage(1);
           }}
           placeholder="Search name or email"
-          className="h-11 rounded-xl border border-white/10 bg-black/20 px-4 text-sm outline-none"
+          className="h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
         />
 
         <select
@@ -91,7 +91,7 @@ export function AdministratorList() {
             );
             setPage(1);
           }}
-          className="h-11 rounded-xl border border-white/10 bg-neutral-900  !text-white focus:border-white/30 px-4 text-sm"
+          className="h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
         >
           <option value="">All roles</option>
           <option value="platform_superadmin">
@@ -115,7 +115,7 @@ export function AdministratorList() {
             );
             setPage(1);
           }}
-          className="h-11 rounded-xl border border-white/10 bg-neutral-900 text-white! focus:border-white/30 px-4 text-sm"
+          className="h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
         >
           <option value="">All statuses</option>
           <option value="pending">Pending</option>
@@ -130,16 +130,16 @@ export function AdministratorList() {
       </div>
 
       {error && (
-        <p className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
+        <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
           {error}
         </p>
       )}
 
-      <div className="overflow-hidden rounded-2xl border border-white/10">
+      <div className="overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-white/10">
-            <thead className="bg-white/5">
-              <tr className="text-left text-xs uppercase text-neutral-400">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr className="text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
                 <th className="px-5 py-4">
                   Administrator
                 </th>
@@ -155,12 +155,12 @@ export function AdministratorList() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-gray-200 bg-white">
               {isLoading ? (
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-5 py-10 text-center text-sm text-neutral-500"
+                    className="px-5 py-10 text-center text-sm text-gray-500"
                   >
                     Loading administrators…
                   </td>
@@ -169,38 +169,38 @@ export function AdministratorList() {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-5 py-10 text-center text-sm text-neutral-500"
+                    className="px-5 py-10 text-center text-sm text-gray-500"
                   >
                     No administrators found.
                   </td>
                 </tr>
               ) : (
                 rows.map((user) => (
-                  <tr key={user.id}>
+                  <tr key={user.id} className="hover:bg-gray-50">
                     <td className="px-5 py-4">
-                      <p className="font-medium">
+                      <p className="font-semibold text-gray-900">
                         {user.first_name}{" "}
                         {user.last_name}
                       </p>
-                      <p className="mt-1 text-xs text-neutral-500">
+                      <p className="mt-1 text-xs text-gray-500">
                         {user.email}
                       </p>
                     </td>
 
-                    <td className="px-5 py-4 text-sm text-neutral-300">
+                    <td className="px-5 py-4 text-sm text-gray-700">
                       {user.role_code
                         .replace("platform_", "")
                         .replace("_", " ")}
                     </td>
 
-                    <td className="px-5 py-4 text-sm capitalize">
+                    <td className="px-5 py-4 text-sm capitalize text-gray-600">
                       {user.status}
                     </td>
 
                     <td className="px-5 py-4 text-right">
                       <Link
                         href={`/administrators/${user.id}`}
-                        className="text-sm font-medium hover:underline"
+                        className="text-sm font-medium text-blue-600 underline-offset-4 hover:text-blue-800 hover:underline"
                       >
                         Manage
                       </Link>
@@ -213,7 +213,7 @@ export function AdministratorList() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-1">
         <button
           type="button"
           disabled={page <= 1}
@@ -222,12 +222,12 @@ export function AdministratorList() {
               Math.max(1, value - 1)
             )
           }
-          className="rounded-lg border border-white/10 px-4 py-2 text-sm disabled:opacity-40"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-40"
         >
           Previous
         </button>
 
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm font-medium text-gray-700">
           Page {page} of {totalPages}
         </p>
 
@@ -239,7 +239,7 @@ export function AdministratorList() {
               Math.min(totalPages, value + 1)
             )
           }
-          className="rounded-lg border border-white/10 px-4 py-2 text-sm disabled:opacity-40"
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-40"
         >
           Next
         </button>

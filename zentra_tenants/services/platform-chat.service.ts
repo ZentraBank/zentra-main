@@ -1,52 +1,93 @@
 import { api } from "@/lib/api";
 
+
 export type PlatformChatConversation = {
   id: string;
-  tenantId?: string;
-  status: "open" | "closed";
-  createdAt?: string;
-  updatedAt?: string;
-  lastMessageAt?: string | null;
+
+  tenant_id: string;
+
+  status:
+    | "open"
+    | "closed";
+
+  created_at: string;
+
+  updated_at: string;
+
+  last_message_at?:
+    | string
+    | null;
+
+  unread_count?: number;
 };
+
 
 export type PlatformChatMessage = {
   id: string;
-  conversationId: string;
-  senderType:
+
+  conversation_id: string;
+
+  sender_type:
     | "tenant_user"
     | "platform_user";
-  senderId: string;
-  senderName?: string | null;
-  senderEmail?: string | null;
+
+  sender_id: string;
+
+  sender_name?:
+    | string
+    | null;
+
+  sender_email?:
+    | string
+    | null;
+
   message: string;
-  createdAt: string;
+
+  created_at: string;
 };
+
 
 export type PlatformChatMessagesResponse = {
   conversation:
-    | PlatformChatConversation
-    | null;
-  messages: PlatformChatMessage[];
-  pagination?: {
+    PlatformChatConversation;
+
+  messages:
+    PlatformChatMessage[];
+
+  pagination: {
     page: number;
+
     pageSize: number;
+
     total: number;
+
     totalPages: number;
   };
 };
+
 
 export type PlatformChatUnreadResponse = {
   unreadCount: number;
 };
 
+
 type ApiResponse<T> = {
   success: boolean;
+
   message: string;
+
   data: T;
 };
 
+
+/*
+|--------------------------------------------------------------------------
+| Conversation
+|--------------------------------------------------------------------------
+*/
+
 const getConversation =
-  async () => {
+  async (): Promise<PlatformChatConversation> => {
     const response =
       await api.get<
         ApiResponse<PlatformChatConversation>
@@ -57,6 +98,13 @@ const getConversation =
     return response.data.data;
   };
 
+
+/*
+|--------------------------------------------------------------------------
+| Messages
+|--------------------------------------------------------------------------
+*/
+
 const listMessages =
   async ({
     page = 1,
@@ -64,7 +112,7 @@ const listMessages =
   }: {
     page?: number;
     pageSize?: number;
-  } = {}) => {
+  } = {}): Promise<PlatformChatMessagesResponse> => {
     const response =
       await api.get<
         ApiResponse<PlatformChatMessagesResponse>
@@ -81,22 +129,31 @@ const listMessages =
     return response.data.data;
   };
 
+
 const sendMessage =
   async (
     message: string,
-  ) => {
+  ): Promise<PlatformChatMessage> => {
     const response =
       await api.post<
         ApiResponse<PlatformChatMessage>
       >(
         "/platform-chat/messages",
         {
-          message,
+          message:
+            message.trim(),
         },
       );
 
     return response.data.data;
   };
+
+
+/*
+|--------------------------------------------------------------------------
+| Read state
+|--------------------------------------------------------------------------
+*/
 
 const markAsRead =
   async () => {
@@ -111,8 +168,15 @@ const markAsRead =
     return response.data.data;
   };
 
+
+/*
+|--------------------------------------------------------------------------
+| Unread count
+|--------------------------------------------------------------------------
+*/
+
 const getUnreadCount =
-  async () => {
+  async (): Promise<PlatformChatUnreadResponse> => {
     const response =
       await api.get<
         ApiResponse<PlatformChatUnreadResponse>
@@ -122,6 +186,7 @@ const getUnreadCount =
 
     return response.data.data;
   };
+
 
 export const platformChatService = {
   getConversation,

@@ -44,13 +44,56 @@ const customerNavItems = [
 ];
 
 const adminNavItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Users", href: "/clients", icon: Users },
-  { label: "Accounts", href: "/admin/accounts", icon: Wallet },
-  { label: "Transactions", href: "/transactions", icon: ArrowLeftRight },
-  { label: "Chats", href: "/admin/chat", icon: MessageCircle },
-  { label: "Audit Logs", href: "#", icon: ShieldCheck },
-  { label: "Subscriptions", href: "/subscribe", icon: CreditCard },
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Users",
+    href: "/clients",
+    icon: Users,
+  },
+  {
+    label: "Accounts",
+    href: "/admin/accounts",
+    icon: Wallet,
+  },
+  {
+    label: "Transactions",
+    href: "/transactions",
+    icon: ArrowLeftRight,
+  },
+
+  /*
+   * Tenant ↔ client conversations
+   */
+  {
+    label: "Chats",
+    href: "/admin/chat",
+    icon: MessageCircle,
+  },
+
+  /*
+   * Tenant ↔ ZentraBank platform support
+   */
+  {
+    label: "Zentra Support",
+    href: "/admin/platform-chat",
+    icon: MessageCircle,
+    feature: "platform_chat",
+  },
+
+  {
+    label: "Audit Logs",
+    href: "#",
+    icon: ShieldCheck,
+  },
+  {
+    label: "Subscriptions",
+    href: "/subscribe",
+    icon: CreditCard,
+  },
 ];
 
 export default function Sidebar() {

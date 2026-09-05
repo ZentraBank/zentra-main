@@ -80,19 +80,19 @@ const statusStyles: Record<
   string
 > = {
   pending_payment:
-    "border-amber-400/20 bg-amber-400/10 text-amber-300",
+    "border-amber-300 bg-amber-50 text-amber-800",
 
   payment_submitted:
-    "border-blue-400/20 bg-blue-400/10 text-blue-300",
+    "border-blue-300 bg-blue-50 text-blue-800",
 
   approved:
-    "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+    "border-emerald-300 bg-emerald-50 text-emerald-800",
 
   rejected:
-    "border-red-400/20 bg-red-400/10 text-red-300",
+    "border-red-300 bg-red-50 text-red-800",
 
   cancelled:
-    "border-neutral-400/20 bg-neutral-400/10 text-neutral-300",
+    "border-gray-300 bg-gray-100 text-gray-800",
 };
 
 const statusLabels: Record<
@@ -381,12 +381,12 @@ export default function PaymentProofList() {
 
   return (
     <>
-      <section className="space-y-5">
-        <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 lg:flex-row lg:items-center">
+      <section className="space-y-5 text-gray-900">
+        <div className="flex flex-col gap-3 rounded-2xl border border-gray-300 bg-white p-4 shadow-sm lg:flex-row lg:items-center">
           <div className="relative flex-1">
             <Search
               size={18}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
             />
 
             <input
@@ -399,7 +399,7 @@ export default function PaymentProofList() {
                 setPage(1);
               }}
               placeholder="Search tenant, email, plan or payment reference"
-              className="h-11 w-full rounded-xl border border-white/10 bg-black/20 pl-11 pr-4 text-sm outline-none transition focus:border-white/30"
+              className="h-11 w-full rounded-xl border border-gray-300 bg-white pl-11 pr-4 text-sm text-gray-900 placeholder-gray-400 outline-none transition focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
             />
           </div>
 
@@ -415,7 +415,7 @@ export default function PaymentProofList() {
 
               setPage(1);
             }}
-            className="h-11 rounded-xl border border-white/10 bg-neutral-900 px-4 text-sm text-white outline-none focus:border-white/30"
+            className="h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm text-gray-900 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
           >
             <option value="">
               All statuses
@@ -444,22 +444,22 @@ export default function PaymentProofList() {
         </div>
 
         {error && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
             {error}
           </div>
         )}
 
         {success && (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
             {success}
           </div>
         )}
 
-        <div className="overflow-hidden rounded-2xl border border-white/10">
+        <div className="overflow-hidden rounded-2xl border border-gray-300 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-white/10">
-              <thead className="bg-white/5">
-                <tr className="text-left text-xs uppercase tracking-wide text-neutral-400">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
                   <th className="px-5 py-4">
                     Submitted by
                   </th>
@@ -490,17 +490,17 @@ export default function PaymentProofList() {
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-white/10">
+              <tbody className="divide-y divide-gray-200 bg-white">
                 {isLoading ? (
                   <tr>
                     <td
                       colSpan={7}
-                      className="px-5 py-12 text-center text-sm text-neutral-500"
+                      className="px-5 py-12 text-center text-sm text-gray-500"
                     >
                       <div className="flex items-center justify-center gap-2">
                         <Loader2
                           size={18}
-                          className="animate-spin"
+                          className="animate-spin text-gray-600"
                         />
 
                         Loading payment proofs…
@@ -514,12 +514,12 @@ export default function PaymentProofList() {
                       colSpan={7}
                       className="px-5 py-12 text-center"
                     >
-                      <p className="font-medium text-neutral-300">
+                      <p className="font-semibold text-gray-900">
                         No payment
                         proofs found.
                       </p>
 
-                      <p className="mt-1 text-sm text-neutral-500">
+                      <p className="mt-1 text-sm text-gray-500">
                         Submitted
                         payment evidence
                         will appear here
@@ -539,17 +539,17 @@ export default function PaymentProofList() {
                           key={
                             request.id
                           }
-                          className="bg-black/10 transition hover:bg-white/[0.03]"
+                          className="transition hover:bg-gray-50"
                         >
                           <td className="px-5 py-4">
-                            <p className="text-sm font-medium">
+                            <p className="text-sm font-semibold text-gray-900">
                               {
                                 request.user_email
                               }
                             </p>
 
                             {request.payment_proof_original_name && (
-                              <p className="mt-1 max-w-[220px] truncate text-xs text-neutral-500">
+                              <p className="mt-1 max-w-[220px] truncate text-xs text-gray-500">
                                 {
                                   request.payment_proof_original_name
                                 }
@@ -566,13 +566,13 @@ export default function PaymentProofList() {
                           </td>
 
                           <td className="px-5 py-4">
-                            <p className="text-sm font-medium">
+                            <p className="text-sm font-semibold text-gray-900">
                               {
                                 request.tenant_name
                               }
                             </p>
 
-                            <p className="mt-1 text-xs text-neutral-500">
+                            <p className="mt-1 text-xs text-gray-500">
                               {
                                 request.tenant_slug
                               }
@@ -580,27 +580,27 @@ export default function PaymentProofList() {
                           </td>
 
                           <td className="px-5 py-4">
-                            <p className="text-sm font-medium">
+                            <p className="text-sm font-semibold text-gray-900">
                               {
                                 request.plan_name
                               }
                             </p>
 
-                            <p className="mt-1 text-xs uppercase tracking-wide text-neutral-500">
+                            <p className="mt-1 text-xs uppercase tracking-wide text-gray-500">
                               {
                                 request.plan_billing_interval
                               }
                             </p>
                           </td>
 
-                          <td className="px-5 py-4 text-sm text-neutral-300">
+                          <td className="px-5 py-4 text-sm font-medium text-gray-700">
                             {moneyFormatter(
                               request.plan_price,
                               request.plan_currency
                             )}
                           </td>
 
-                          <td className="px-5 py-4 text-sm text-neutral-400">
+                          <td className="px-5 py-4 text-sm text-gray-600">
                             {dateFormatter.format(
                               new Date(
                                 request.updated_at ||
@@ -641,7 +641,7 @@ export default function PaymentProofList() {
                                       request
                                     )
                                   }
-                                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                                  className="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   {openingProofId ===
                                   request.id ? (
@@ -676,7 +676,7 @@ export default function PaymentProofList() {
                                         request
                                       )
                                     }
-                                    className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-500 px-3 text-xs font-semibold text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex h-9 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                                   >
                                     {approvingId ===
                                     request.id ? (
@@ -704,7 +704,7 @@ export default function PaymentProofList() {
                                         request
                                       )
                                     }
-                                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/20"
+                                    className="inline-flex h-9 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-100"
                                   >
                                     <XCircle
                                       size={
@@ -728,7 +728,7 @@ export default function PaymentProofList() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-1">
           <button
             type="button"
             disabled={page <= 1}
@@ -740,14 +740,14 @@ export default function PaymentProofList() {
                 )
               )
             }
-            className="rounded-lg border border-white/10 px-4 py-2 text-sm transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Previous
           </button>
 
-          <p className="text-sm text-neutral-500">
-            Page {page} of{" "}
-            {totalPages}
+          <p className="text-sm font-medium text-gray-700">
+            Page <span className="text-gray-900">{page}</span> of{" "}
+            <span className="text-gray-900">{totalPages}</span>
           </p>
 
           <button
@@ -763,7 +763,7 @@ export default function PaymentProofList() {
                 )
               )
             }
-            className="rounded-lg border border-white/10 px-4 py-2 text-sm transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Next
           </button>
@@ -771,22 +771,22 @@ export default function PaymentProofList() {
       </section>
 
       {rejectingRequest && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#10182b] p-6 shadow-2xl">
-            <h2 className="text-xl font-semibold text-white">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-semibold text-gray-900">
               Reject payment proof
             </h2>
 
-            <p className="mt-2 text-sm leading-6 text-neutral-400">
+            <p className="mt-2 text-sm leading-6 text-gray-600">
               You are rejecting the
               payment submitted by{" "}
-              <span className="font-medium text-white">
+              <span className="font-semibold text-gray-900">
                 {
                   rejectingRequest.tenant_name
                 }
               </span>{" "}
               for the{" "}
-              <span className="font-medium text-white">
+              <span className="font-semibold text-gray-900">
                 {
                   rejectingRequest.plan_name
                 }
@@ -795,7 +795,7 @@ export default function PaymentProofList() {
             </p>
 
             <label className="mt-6 block">
-              <span className="text-sm font-medium text-neutral-300">
+              <span className="text-sm font-medium text-gray-700">
                 Reason for rejection
               </span>
 
@@ -814,7 +814,7 @@ export default function PaymentProofList() {
                 rows={5}
                 maxLength={500}
                 placeholder="For example: payment amount could not be verified."
-                className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-white/30"
+                className="mt-2 w-full resize-none rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </label>
 
@@ -827,7 +827,7 @@ export default function PaymentProofList() {
                 onClick={
                   closeRejectModal
                 }
-                className="h-10 rounded-lg border border-white/10 px-4 text-sm font-semibold text-neutral-300 transition hover:bg-white/5 disabled:opacity-50"
+                className="h-10 rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -842,7 +842,7 @@ export default function PaymentProofList() {
                 onClick={() =>
                   void handleReject()
                 }
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-red-500 px-4 text-sm font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-lg bg-red-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isRejecting && (
                   <Loader2

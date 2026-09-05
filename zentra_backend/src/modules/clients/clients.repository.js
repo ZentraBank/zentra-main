@@ -307,6 +307,280 @@ const findAllTenantClients =
 
     return rows;
   };
+const createInvite = async ({
+  id,
+  tenantId,
+  createdByUserId,
+  codeHash,
+  codeHint,
+  email,
+  maxUses,
+  expiresAt,
+}) => {
+  await db.query(
+    `
+      INSERT INTO client_invites (
+        id,
+        tenant_id,
+        created_by_user_id,
+        code_hash,
+        code_hint,
+        email,
+        max_uses,
+        uses_count,
+        expires_at,
+        created_at,
+        updated_at
+      )
+      VALUES (
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        ?,
+        0,
+        ?,
+        NOW(),
+        NOW()
+      )
+    `,
+    [
+      id,
+      tenantId,
+      createdByUserId,
+      codeHash,
+      codeHint,
+      email,
+      maxUses,
+      expiresAt,
+    ]
+  );
+
+  return findInviteById({
+    tenantId,
+    inviteId: id,
+  });
+};
+
+const findInviteById = async ({
+  tenantId,
+  inviteId,
+}) => {
+  const [rows] = await db.query(
+    `
+      SELECT
+        ci.id,
+        ci.tenant_id,
+        ci.created_by_user_id,
+        ci.code_hint,
+        ci.email,
+        ci.max_uses,
+        ci.uses_count,
+        ci.expires_at,
+        ci.revoked_at,
+        ci.last_used_at,
+        ci.created_at,
+        ci.updated_at,
+
+        CASE
+          WHEN ci.revoked_at IS NOT NULL
+            THEN 'revoked'
+
+          WHEN ci.expires_at IS NOT NULL
+            AND ci.expires_at <= NOW()
+            THEN 'expired'
+
+          WHEN ci.uses_count >= ci.max_uses
+            THEN 'used'
+
+          ELSE 'active'
+        END AS status
+
+      FROM client_invites ci
+
+      WHERE ci.id = ?
+        AND ci.tenant_id = ?
+
+      LIMIT 1
+    `,
+    [
+      inviteId,
+      tenantId,
+    ]
+  );
+
+  return rows[0] || null;
+};
+
+const findInviteByCodeHash = async ({
+  codeHash,
+}) => {
+  const [rows] = await db.query(
+    `
+      SELECT
+        ci.id,
+        ci.tenant_id,
+        ci.created_by_user_id,
+        ci.code_hash,
+        ci.code_hint,
+        ci.email,
+        ci.max_uses,
+        ci.uses_count,
+        ci.expires_at,
+        ci.revoked_at,
+        ci.last_used_at,
+        ci.created_at,
+        ci.updated_at,
+
+        CASE
+          WHEN ci.revoked_at IS NOT NULL
+            THEN 'revoked'
+
+          WHEN ci.expires_at IS NOT NULL
+            AND ci.expires_at <= NOW()
+            THEN 'expired'
+
+          WHEN ci.uses_count >= ci.max_uses
+            THEN 'used'
+
+          ELSE 'active'
+        END AS status
+
+      FROM client_invites ci
+
+      WHERE ci.code_hash = ?
+
+      LIMIT 1
+    `,
+    [
+      codeHash,
+    ]
+  );
+
+  return rows[0] || null;
+};
+
+const listInvitesByTenant = async ({
+  tenantId,
+}) => {
+  const [rows] = await db.query(
+    `
+      SELECT
+        ci.id,
+        ci.tenant_id,
+        ci.created_by_user_id,
+        ci.code_hint,
+        ci.email,
+        ci.max_uses,
+        ci.uses_count,
+        ci.expires_at,
+        ci.revoked_at,
+        ci.last_used_at,
+        ci.created_at,
+        ci.updated_at,
+
+        CONCAT_WS(
+          ' ',
+          creator.first_name,
+          creator.middle_name,
+          creator.last_name
+        ) AS created_by_name,
+
+        creator.email AS created_by_email,
+
+        CASE
+          WHEN ci.revoked_at IS NOT NULL
+            THEN 'revoked'
+
+          WHEN ci.expires_at IS NOT NULL
+            AND ci.expires_at <= NOW()
+            THEN 'expired'
+
+          WHEN ci.uses_count >= ci.max_uses
+            THEN 'used'
+
+          ELSE 'active'
+        END AS status
+
+      FROM client_invites ci
+
+      LEFT JOIN users creator
+        ON creator.id =
+          ci.created_by_user_id
+
+      WHERE ci.tenant_id = ?
+
+      ORDER BY
+        ci.created_at DESC
+    `,
+    [
+      tenantId,
+    ]
+  );
+
+  return rows;
+};
+
+const revokeInvite = async ({
+  tenantId,
+  inviteId,
+}) => {
+  const [result] = await db.query(
+    `
+      UPDATE client_invites
+
+      SET revoked_at = NOW(),
+          updated_at = NOW()
+
+      WHERE id = ?
+        AND tenant_id = ?
+        AND revoked_at IS NULL
+        AND uses_count < max_uses
+        AND (
+          expires_at IS NULL
+          OR expires_at > NOW()
+        )
+    `,
+    [
+      inviteId,
+      tenantId,
+    ]
+  );
+
+  return result.affectedRows > 0;
+};
+
+const consumeInvite = async ({
+  inviteId,
+}) => {
+  const [result] = await db.query(
+    `
+      UPDATE client_invites
+
+      SET uses_count =
+            uses_count + 1,
+          last_used_at =
+            NOW(),
+          updated_at =
+            NOW()
+
+      WHERE id = ?
+        AND revoked_at IS NULL
+        AND uses_count < max_uses
+        AND (
+          expires_at IS NULL
+          OR expires_at > NOW()
+        )
+    `,
+    [
+      inviteId,
+    ]
+  );
+
+  return result.affectedRows > 0;
+};
 
 module.exports = {
   listByTenant,
@@ -316,4 +590,10 @@ module.exports = {
   findTenantClientById,
   findTenantClientsByIds,
   findAllTenantClients,
+  createInvite,
+  findInviteById,
+  findInviteByCodeHash,
+  listInvitesByTenant,
+  revokeInvite,
+  consumeInvite,
 };

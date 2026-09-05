@@ -70,14 +70,6 @@ setUnreadCount(
 
 useEffect(() => {
   void load();
-
-  const interval = window.setInterval(() => {
-    void load();
-  }, 5000);
-
-  return () => {
-    window.clearInterval(interval);
-  };
 }, [load]);
 
   const markRead = async (
