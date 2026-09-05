@@ -59,16 +59,50 @@ export default function ServicesPage() {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    Promise.all([
-  getTenantAccounts(),
-  getTenantTransfers({
-    page: 1,
-    pageSize: 5,
-  }),
-])
-      .catch((requestError) => setError(getApiErrorMessage(requestError)));
-  }, []);
+useEffect(() => {
+  let cancelled = false;
+
+  const loadDashboard = async () => {
+    setError("");
+
+    try {
+      const [
+        accountResult,
+        transferResult,
+      ] = await Promise.all([
+        getTenantAccounts(),
+
+        getTenantTransfers({
+          page: 1,
+          pageSize: 5,
+        }),
+      ]);
+
+      if (cancelled) {
+        return;
+      }
+
+      setAccounts(accountResult);
+      setTransfers(transferResult);
+    } catch (requestError) {
+      if (cancelled) {
+        return;
+      }
+
+      setError(
+        getApiErrorMessage(
+          requestError,
+        ),
+      );
+    }
+  };
+
+  void loadDashboard();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   const balances = useMemo(() => {
     const totals = new Map<string, number>();

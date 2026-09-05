@@ -1,8 +1,13 @@
 const bcrypt = require("bcryptjs");
-const { randomInt, randomUUID } = require("crypto");
+const {
+  createHash,
+  randomInt,
+  randomUUID,
+} = require("crypto");
 
 const env = require("../../config/env");
 const authRepo = require("./auth.repository");
+const clientsRepo = require("../clients/clients.repository");
 const emailService = require("../../services/email.service");
 
 const {
@@ -611,6 +616,7 @@ const codeExpiry = () =>
 
 const requestRegistration = async ({
   tenantId,
+  inviteCode,
   firstName,
   middleName,
   lastName,
@@ -618,12 +624,116 @@ const requestRegistration = async ({
   phone,
   password,
 }) => {
+  /*
+  |--------------------------------------------------------------------------
+  | Validate tenant context
+  |--------------------------------------------------------------------------
+  */
+
   if (!tenantId) {
     throw createHttpError(
       400,
       "Tenant is required"
     );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Validate invitation code
+  |--------------------------------------------------------------------------
+  */
+
+  const normalizedInviteCode =
+    String(inviteCode || "")
+      .trim()
+      .toUpperCase();
+
+  if (!normalizedInviteCode) {
+    throw createHttpError(
+      400,
+      "Invitation code is required"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Resolve invite
+  |--------------------------------------------------------------------------
+  */
+
+  const inviteCodeHash =
+    createHash("sha256")
+      .update(normalizedInviteCode)
+      .digest("hex");
+
+  const invite =
+    await clientsRepo.findInviteByCodeHash({
+      codeHash:
+        inviteCodeHash,
+    });
+
+  if (!invite) {
+    throw createHttpError(
+      400,
+      "Invitation code is invalid"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Validate invite status
+  |--------------------------------------------------------------------------
+  */
+
+  if (invite.status === "revoked") {
+    throw createHttpError(
+      400,
+      "This invitation has been revoked"
+    );
+  }
+
+  if (invite.status === "expired") {
+    throw createHttpError(
+      400,
+      "This invitation has expired"
+    );
+  }
+
+  if (invite.status === "used") {
+    throw createHttpError(
+      400,
+      "This invitation has already been used"
+    );
+  }
+
+  if (invite.status !== "active") {
+    throw createHttpError(
+      400,
+      "This invitation is no longer available"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Make sure invite belongs to resolved tenant
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    String(invite.tenant_id) !==
+    String(tenantId)
+  ) {
+    throw createHttpError(
+      403,
+      "This invitation does not belong to this bank"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Validate email
+  |--------------------------------------------------------------------------
+  */
 
   if (!email) {
     throw createHttpError(
@@ -637,6 +747,31 @@ const requestRegistration = async ({
       .trim()
       .toLowerCase();
 
+  /*
+  |--------------------------------------------------------------------------
+  | Enforce email-bound invitation
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    invite.email &&
+    invite.email
+      .trim()
+      .toLowerCase() !==
+      normalizedEmail
+  ) {
+    throw createHttpError(
+      400,
+      "This invitation was issued to a different email address"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Prevent duplicate account
+  |--------------------------------------------------------------------------
+  */
+
   const existing =
     await authRepo.findAnyUserByEmail(
       normalizedEmail
@@ -649,9 +784,15 @@ const requestRegistration = async ({
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Resolve customer role from invite tenant
+  |--------------------------------------------------------------------------
+  */
+
   const role =
     await authRepo.findCustomerRole(
-      tenantId
+      invite.tenant_id
     );
 
   if (!role) {
@@ -675,7 +816,7 @@ const requestRegistration = async ({
 
   /*
   |--------------------------------------------------------------------------
-  | Store hashed OTP
+  | Store hashed OTP + registration payload
   |--------------------------------------------------------------------------
   */
 
@@ -683,7 +824,8 @@ const requestRegistration = async ({
     id:
       randomUUID(),
 
-    tenantId,
+    tenantId:
+      invite.tenant_id,
 
     purpose:
       "registration",
@@ -700,6 +842,9 @@ const requestRegistration = async ({
     expiresAt,
 
     payloadJson: {
+      inviteId:
+        invite.id,
+
       firstName,
 
       middleName:
@@ -726,43 +871,41 @@ const requestRegistration = async ({
 
   /*
   |--------------------------------------------------------------------------
-  | Send OTP email
+  | Development registration OTP
   |--------------------------------------------------------------------------
   */
 
-  try {
-    await emailService.sendRegistrationOtp({
-      email:
-        normalizedEmail,
+  console.log(
+    "\n========================================"
+  );
 
-      code,
+  console.log(
+    "[DEV] REGISTRATION OTP"
+  );
 
-      expiresInMinutes:
-        OTP_EXPIRY_MINUTES,
-    });
-  } catch (error) {
-    console.error(
-      "[AUTH] Registration OTP email failed",
-      {
-        email:
-          normalizedEmail,
+  console.log(
+    `Email: ${normalizedEmail}`
+  );
 
-        error:
-          error.message,
-      }
-    );
+  console.log(
+    `OTP: ${code}`
+  );
 
-    throw createHttpError(
-      503,
-      "Unable to send verification email. Please try again."
-    );
-  }
+  console.log(
+    `Invite ID: ${invite.id}`
+  );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Do NOT return OTP to frontend
-  |--------------------------------------------------------------------------
-  */
+  console.log(
+    `Tenant ID: ${invite.tenant_id}`
+  );
+
+  console.log(
+    `Expires in: ${OTP_EXPIRY_MINUTES} minutes`
+  );
+
+  console.log(
+    "========================================\n"
+  );
 
   return {
     email:
@@ -772,7 +915,7 @@ const requestRegistration = async ({
       OTP_EXPIRY_SECONDS,
 
     message:
-      "Verification code sent to your email address",
+      "Verification code generated",
   };
 };
 
@@ -787,34 +930,44 @@ const verifyRegistration = async ({
   email,
   code,
 }) => {
+  if (!email || !code) {
+    throw createHttpError(
+      400,
+      "Email and verification code are required"
+    );
+  }
+
   const normalizedEmail =
-    email
-      .trim()
-      .toLowerCase();
+    email.trim().toLowerCase();
+
+  /*
+  |--------------------------------------------------------------------------
+  | Find registration verification
+  |--------------------------------------------------------------------------
+  */
 
   const record =
-    await authRepo.findActiveVerificationCode(
-      {
-        tenantId,
-
-        purpose:
-          "registration",
-
-        destination:
-          normalizedEmail,
-      }
-    );
+    await authRepo.findActiveVerificationCode({
+      tenantId,
+      purpose: "registration",
+      destination: normalizedEmail,
+    });
 
   if (
     !record ||
-    record.attempts >=
-      MAX_OTP_ATTEMPTS
+    record.attempts >= MAX_OTP_ATTEMPTS
   ) {
     throw createHttpError(
       400,
       "Verification code is invalid or expired"
     );
   }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Verify OTP
+  |--------------------------------------------------------------------------
+  */
 
   const codeIsValid =
     await bcrypt.compare(
@@ -844,6 +997,93 @@ const verifyRegistration = async ({
     );
   }
 
+  /*
+  |--------------------------------------------------------------------------
+  | Require invite binding
+  |--------------------------------------------------------------------------
+  */
+
+  if (!payload.inviteId) {
+    throw createHttpError(
+      400,
+      "Registration invitation is unavailable. Please start registration again."
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Revalidate invitation
+  |--------------------------------------------------------------------------
+  |
+  | tenantId here identifies the registration/OTP context.
+  | findInviteById also requires the invite to belong to that same tenant.
+  |
+  */
+
+  const invite =
+    await clientsRepo.findInviteById({
+      tenantId,
+      inviteId: payload.inviteId,
+    });
+
+  if (!invite) {
+    throw createHttpError(
+      400,
+      "Registration invitation is invalid"
+    );
+  }
+
+  if (invite.status === "revoked") {
+    throw createHttpError(
+      400,
+      "This invitation has been revoked"
+    );
+  }
+
+  if (invite.status === "expired") {
+    throw createHttpError(
+      400,
+      "This invitation has expired"
+    );
+  }
+
+  if (invite.status === "used") {
+    throw createHttpError(
+      400,
+      "This invitation has already been used"
+    );
+  }
+
+  if (invite.status !== "active") {
+    throw createHttpError(
+      400,
+      "This invitation is no longer available"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Enforce email-bound invite again
+  |--------------------------------------------------------------------------
+  */
+
+  if (
+    invite.email &&
+    invite.email.trim().toLowerCase() !==
+      normalizedEmail
+  ) {
+    throw createHttpError(
+      400,
+      "This invitation was issued to a different email address"
+    );
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Existing account check
+  |--------------------------------------------------------------------------
+  */
+
   const existing =
     await authRepo.findAnyUserByEmail(
       normalizedEmail
@@ -856,30 +1096,103 @@ const verifyRegistration = async ({
     );
   }
 
-  await authRepo.createRegisteredCustomer({
-    tenantId,
+  /*
+  |--------------------------------------------------------------------------
+  | Re-resolve customer role
+  |--------------------------------------------------------------------------
+  |
+  | Do not trust roleId stored in the OTP payload as the final authority.
+  | Resolve it again from the invite's tenant.
+  |
+  */
 
-    roleId:
-      payload.roleId,
+  const role =
+    await authRepo.findCustomerRole(
+      invite.tenant_id
+    );
 
-    firstName:
-      payload.firstName,
+  if (!role) {
+    throw createHttpError(
+      500,
+      "Customer role is not configured for this tenant"
+    );
+  }
 
-    middleName:
-      payload.middleName,
+  /*
+  |--------------------------------------------------------------------------
+  | Consume invitation
+  |--------------------------------------------------------------------------
+  |
+  | This conditional UPDATE acts as the final availability claim.
+  |
+  */
 
-    lastName:
-      payload.lastName,
+  const inviteConsumed =
+    await clientsRepo.consumeInvite({
+      inviteId: invite.id,
+    });
 
-    email:
-      normalizedEmail,
+  if (!inviteConsumed) {
+    throw createHttpError(
+      409,
+      "This invitation is no longer available"
+    );
+  }
 
-    phone:
-      payload.phone,
+  /*
+  |--------------------------------------------------------------------------
+  | Create customer
+  |--------------------------------------------------------------------------
+  */
 
-    passwordHash:
-      payload.passwordHash,
-  });
+  try {
+    await authRepo.createRegisteredCustomer({
+      tenantId:
+        invite.tenant_id,
+
+      roleId:
+        role.id,
+
+      firstName:
+        payload.firstName,
+
+      middleName:
+        payload.middleName,
+
+      lastName:
+        payload.lastName,
+
+      email:
+        normalizedEmail,
+
+      phone:
+        payload.phone,
+
+      passwordHash:
+        payload.passwordHash,
+    });
+  } catch (error) {
+    /*
+    |--------------------------------------------------------------------------
+    | Important
+    |--------------------------------------------------------------------------
+    |
+    | We cannot safely undo uses_count here because another request could
+    | potentially have interacted with a reusable invite.
+    |
+    | A later refactor will move invite consumption + customer creation into
+    | one database transaction.
+    |
+    */
+
+    throw error;
+  }
+
+  /*
+  |--------------------------------------------------------------------------
+  | Consume OTP
+  |--------------------------------------------------------------------------
+  */
 
   await authRepo.consumeVerificationCode(
     record.id
@@ -888,6 +1201,9 @@ const verifyRegistration = async ({
   return {
     email:
       normalizedEmail,
+
+    tenantId:
+      invite.tenant_id,
   };
 };
 

@@ -71,6 +71,21 @@ const permissions = [
     code: "accounts.manage_balance",
     name: "Manage account balances",
   },
+  {
+  module: "accounts",
+  code: "accounts.read_own",
+  name: "Read own accounts",
+},
+{
+  module: "accounts",
+  code: "accounts.read_tenant",
+  name: "Read tenant accounts",
+},
+{
+  module: "accounts",
+  code: "accounts.manage_tenant",
+  name: "Manage tenant accounts",
+},
 
   {
     module: "transactions",
@@ -93,6 +108,32 @@ const permissions = [
     name: "Approve transactions",
   },
 
+  /*
+|--------------------------------------------------------------------------
+| Transfers
+|--------------------------------------------------------------------------
+*/
+
+  {
+  module: "transfers",
+  code: "transfers.create",
+  name: "Create transfers",
+},
+{
+  module: "transfers",
+  code: "transfers.read_own",
+  name: "Read own transfers",
+},
+{
+  module: "transfers",
+  code: "transfers.read_tenant",
+  name: "Read tenant transfers",
+},
+{
+  module: "transfers",
+  code: "transfers.update_tenant",
+  name: "Update tenant transfers",
+},  
   {
     module: "notifications",
     code: "notifications.read",
@@ -585,17 +626,23 @@ const seedRolePermissions = async (
     "chat.respond",
   ];
 
-  const customerPermissionCodes = [
-    "accounts.read",
-    "transactions.read",
-    "transactions.create",
-    "notifications.read",
-    "subscriptions.read",
-    "cards.read",
-    "donations.read",
-    "chat.read",
-    "chat.respond",
-  ];
+ const customerPermissionCodes = [
+  "accounts.read",
+  "accounts.read_own",
+
+  "transactions.read",
+  "transactions.create",
+
+  "transfers.create",
+  "transfers.read_own",
+
+  "notifications.read",
+  "subscriptions.read",
+  "cards.read",
+  "donations.read",
+  "chat.read",
+  "chat.respond",
+];
 
   await assignPermissions(
     connection,

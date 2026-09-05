@@ -8,9 +8,24 @@ export type SocialProvider = "google" | "facebook";
 export type CodeResponse = { email: string; expiresIn: number; developmentCode?: string };
 
 export const authService = {
-  register(payload: { firstName: string; middleName?: string; lastName: string; email: string; phone?: string; password: string }): Promise<CodeResponse> {
-    return apiRequest<CodeResponse>("/auth/register", { method: "POST", skipAuth: true, body: JSON.stringify(payload) });
-  },
+  register(payload: {
+  inviteCode: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  password: string;
+}): Promise<CodeResponse> {
+  return apiRequest<CodeResponse>(
+    "/auth/register",
+    {
+      method: "POST",
+      skipAuth: true,
+      body: JSON.stringify(payload),
+    },
+  );
+},
 
   verifyRegistration(email: string, code: string): Promise<{ email: string }> {
     return apiRequest("/auth/register/verify", { method: "POST", skipAuth: true, body: JSON.stringify({ email, code }) });

@@ -96,6 +96,64 @@ const resetPassword = asyncHandler(async (req, res) => {
   });
 });
 
+const createInvite = asyncHandler(
+  async (req, res) => {
+    const data =
+      await service.createInvite({
+        tenantId:
+          req.auth.tenantId,
+
+        createdByUserId:
+          req.auth.userId,
+
+        body:
+          req.body,
+      });
+
+    return sendSuccess(res, {
+      statusCode: 201,
+      message:
+        "Client invite created successfully",
+      data,
+    });
+  }
+);
+
+const listInvites = asyncHandler(
+  async (req, res) => {
+    const data =
+      await service.listInvites({
+        tenantId:
+          req.auth.tenantId,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Client invites retrieved successfully",
+      data,
+    });
+  }
+);
+
+const revokeInvite = asyncHandler(
+  async (req, res) => {
+    const data =
+      await service.revokeInvite({
+        tenantId:
+          req.auth.tenantId,
+
+        inviteId:
+          req.params.inviteId,
+      });
+
+    return sendSuccess(res, {
+      message:
+        "Client invite revoked successfully",
+      data,
+    });
+  }
+);
+
 module.exports = {
   create,
   list,
@@ -103,4 +161,7 @@ module.exports = {
   uploadAvatar,
   getAvatar,
   resetPassword,
+  createInvite,
+  listInvites,
+  revokeInvite,
 };

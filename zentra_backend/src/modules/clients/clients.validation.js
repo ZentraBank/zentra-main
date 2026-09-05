@@ -158,8 +158,43 @@ const resetPasswordSchema = {
   }).required(),
 };
 
+const createClientInviteSchema = {
+  body: Joi.object({
+    email: Joi.string()
+      .trim()
+      .lowercase()
+      .email()
+      .allow("", null)
+      .optional(),
+
+    maxUses: Joi.number()
+      .integer()
+      .min(1)
+      .max(1000)
+      .default(1),
+
+    expiresAt: Joi.date()
+      .iso()
+      .greater("now")
+      .allow(null)
+      .optional(),
+  }).required(),
+};
+
+const clientInviteIdSchema = {
+  params: Joi.object({
+    inviteId: Joi.string()
+      .guid({
+        version: ["uuidv4"],
+      })
+      .required(),
+  }).required(),
+};
+
 module.exports = {
   createClientSchema,
   clientIdSchema,
   resetPasswordSchema,
+  createClientInviteSchema,
+  clientInviteIdSchema,
 };

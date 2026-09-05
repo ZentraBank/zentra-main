@@ -95,6 +95,41 @@ export type UploadClientAvatarResult = {
   };
 };
 
+export type ClientInviteStatus =
+  | "active"
+  | "used"
+  | "expired"
+  | "revoked";
+
+export type ClientInvite = {
+  id: string;
+  tenant_id: string;
+  created_by_user_id: string;
+  code_hint: string;
+  email?: string | null;
+  max_uses: number;
+  uses_count: number;
+  expires_at?: string | null;
+  revoked_at?: string | null;
+  last_used_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  status: ClientInviteStatus;
+  created_by_name?: string | null;
+  created_by_email?: string | null;
+};
+
+export type CreateClientInviteInput = {
+  email?: string | null;
+  maxUses?: number;
+  expiresAt?: string | null;
+};
+
+export type CreatedClientInvite =
+  ClientInvite & {
+    code: string;
+  };
+
 export async function resetClientPassword(
   clientId: string,
   password: string,
@@ -143,6 +178,35 @@ export async function getClient(
   return response.data.data;
 }
 
+export async function createClientInvite(
+  input: CreateClientInviteInput,
+) {
+  const response = await api.post<{
+    data: CreatedClientInvite;
+  }>("/clients/invites", input);
+
+  return response.data.data;
+}
+
+export async function listClientInvites() {
+  const response = await api.get<{
+    data: ClientInvite[];
+  }>("/clients/invites");
+
+  return response.data.data;
+}
+
+export async function revokeClientInvite(
+  inviteId: string,
+) {
+  const response = await api.patch<{
+    data: ClientInvite;
+  }>(
+    `/clients/invites/${inviteId}/revoke`,
+  );
+
+  return response.data.data;
+}
 
 export async function uploadClientAvatar(
   clientId: string,

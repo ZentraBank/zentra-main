@@ -71,15 +71,27 @@ const resetPassword = asyncHandler(async (req, res) => {
 });
 
 const changePassword = asyncHandler(async (req, res) => {
-  await authService.changePassword({ userId: req.auth.userId, tenantId: req.auth.tenantId, ...req.body });
-res.cookie(
-  getRefreshCookieName(req),
-  result.refreshToken,
-  getRefreshCookieOptions(
-    result.refreshTokenExpiresAt
-  )
-);
-  return sendSuccess(res, { message: "Password changed successfully. Please log in again.", data: null });
+  await authService.changePassword({
+    userId: req.auth.userId,
+    tenantId: req.auth.tenantId,
+    ...req.body,
+  });
+
+  res.clearCookie(
+    getRefreshCookieName(req),
+    {
+      httpOnly: true,
+      secure: env.cookies.secure,
+      sameSite: env.cookies.sameSite,
+      path: `${env.apiPrefix}/auth`,
+    }
+  );
+
+  return sendSuccess(res, {
+    message:
+      "Password changed successfully. Please log in again.",
+    data: null,
+  });
 });
 
 const login = asyncHandler(async (req, res) => {

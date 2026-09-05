@@ -40,6 +40,30 @@ router.get(
   controller.list
 );
 
+// ==============================
+// Client invitations
+// ==============================
+
+router.get(
+  "/invites",
+  requireAllPermissions("users.read"),
+  controller.listInvites
+);
+
+router.post(
+  "/invites",
+  validate(schemas.createClientInviteSchema),
+  requireAllPermissions("users.create"),
+  controller.createInvite
+);
+
+router.patch(
+  "/invites/:inviteId/revoke",
+  validate(schemas.clientInviteIdSchema),
+  requireAllPermissions("users.update"),
+  controller.revokeInvite
+);
+
 
 router.get(
   "/:clientId",

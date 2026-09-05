@@ -26,6 +26,24 @@ const loginSchema = {
 
 const registerSchema = {
   body: Joi.object({
+    inviteCode: Joi.string()
+      .trim()
+      .uppercase()
+      .pattern(
+        /^ZB-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{2}$/
+      )
+      .required()
+      .messages({
+        "any.required":
+          "Invitation code is required",
+
+        "string.empty":
+          "Invitation code is required",
+
+        "string.pattern.base":
+          "Invitation code is invalid",
+      }),
+
     firstName: Joi.string()
       .trim()
       .min(2)

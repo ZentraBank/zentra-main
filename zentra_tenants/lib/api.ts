@@ -89,6 +89,13 @@ api.interceptors.request.use(
       TENANT_SLUG,
     );
 
+    console.log(
+  "API REQUEST:",
+  config.url,
+  "HAS TOKEN:",
+  Boolean(accessToken),
+);
+
     if (accessToken) {
       config.headers.set(
         "Authorization",

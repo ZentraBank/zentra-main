@@ -199,224 +199,588 @@ const createTenantSystemRoles = async ({
   tenantId,
 }) => {
  const permissions = [
-  /*
-  |--------------------------------------------------------------------------
-  | Tenant administration
-  |--------------------------------------------------------------------------
-  */
+ /*
+|--------------------------------------------------------------------------
+| Tenant Administration
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Tenant Settings Read",
-    "tenant.settings.read",
-    "tenant",
-  ],
-  [
-    "Tenant Settings Manage",
-    "tenant.settings.manage",
-    "tenant",
-  ],
-  [
-    "Tenant Domains Read",
-    "tenant.domains.read",
-    "tenant",
-  ],
-  [
-    "Tenant Domains Manage",
-    "tenant.domains.manage",
-    "tenant",
-  ],
+[
+  "Tenant Settings Read",
+  "tenant.settings.read",
+  "tenant",
+],
+[
+  "Tenant Settings Manage",
+  "tenant.settings.manage",
+  "tenant",
+],
+[
+  "Tenant Domains Read",
+  "tenant.domains.read",
+  "tenant",
+],
+[
+  "Tenant Domains Manage",
+  "tenant.domains.manage",
+  "tenant",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Accounts
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| Accounts
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Accounts Read",
-    "accounts.read",
-    "accounts",
-  ],
-  [
-    "Accounts Create",
-    "accounts.create",
-    "accounts",
-  ],
-  [
-    "Accounts Manage",
-    "accounts.manage",
-    "accounts",
-  ],
+[
+  "Accounts Read",
+  "accounts.read",
+  "accounts",
+],
+[
+  "Accounts Read Own",
+  "accounts.read_own",
+  "accounts",
+],
+[
+  "Accounts Read Tenant",
+  "accounts.read_tenant",
+  "accounts",
+],
+[
+  "Accounts Create",
+  "accounts.create",
+  "accounts",
+],
+[
+  "Accounts Manage",
+  "accounts.manage",
+  "accounts",
+],
+[
+  "Accounts Manage Tenant",
+  "accounts.manage_tenant",
+  "accounts",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Transfers
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| Transfers
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Transfers Read",
-    "transfers.read",
-    "transfers",
-  ],
-  [
-    "Transfers Create",
-    "transfers.create",
-    "transfers",
-  ],
-  [
-    "Transfers Approve",
-    "transfers.approve",
-    "transfers",
-  ],
+[
+  "Transfers Read",
+  "transfers.read",
+  "transfers",
+],
+[
+  "Transfers Read Own",
+  "transfers.read_own",
+  "transfers",
+],
+[
+  "Transfers Read Tenant",
+  "transfers.read_tenant",
+  "transfers",
+],
+[
+  "Transfers Create",
+  "transfers.create",
+  "transfers",
+],
+[
+  "Transfers Update Tenant",
+  "transfers.update_tenant",
+  "transfers",
+],
+[
+  "Transfers Approve",
+  "transfers.approve",
+  "transfers",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Cards
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| Transactions
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Cards Read",
-    "cards.read",
-    "cards",
-  ],
-  [
-    "Cards Create",
-    "cards.create",
-    "cards",
-  ],
-  [
-    "Cards Manage",
-    "cards.manage",
-    "cards",
-  ],
+[
+  "Transactions Read",
+  "transactions.read",
+  "transactions",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Subscriptions
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| Beneficiaries
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Subscriptions Read",
-    "subscriptions.read",
-    "subscriptions",
-  ],
-  [
-    "Subscriptions Manage",
-    "subscriptions.manage",
-    "subscriptions",
-  ],
+[
+  "Beneficiaries Read",
+  "beneficiaries.read",
+  "beneficiaries",
+],
+[
+  "Beneficiaries Create",
+  "beneficiaries.create",
+  "beneficiaries",
+],
+[
+  "Beneficiaries Manage",
+  "beneficiaries.manage",
+  "beneficiaries",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Users
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| KYC
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Users Read",
-    "users.read",
-    "users",
-  ],
-  [
-    "Users Manage",
-    "users.manage",
-    "users",
-  ],
+[
+  "KYC Read",
+  "kyc.read",
+  "kyc",
+],
+[
+  "KYC Write",
+  "kyc.write",
+  "kyc",
+],
+[
+  "KYC Submit",
+  "kyc.submit",
+  "kyc",
+],
+[
+  "KYC Review",
+  "kyc.review",
+  "kyc",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Notifications
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| Cards
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Notifications Read",
-    "notifications.read",
-    "notifications",
-  ],
-  [
-    "Notifications Manage",
-    "notifications.manage",
-    "notifications",
-  ],
+[
+  "Cards Read",
+  "cards.read",
+  "cards",
+],
+[
+  "Cards Create",
+  "cards.create",
+  "cards",
+],
+[
+  "Cards Request",
+  "cards.request",
+  "cards",
+],
+[
+  "Cards Update Own",
+  "cards.update_own",
+  "cards",
+],
+[
+  "Cards Manage",
+  "cards.manage",
+  "cards",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Donations
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| Subscriptions
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Donations Read",
-    "donations.read",
-    "donations",
-  ],
-  [
-    "Donations Create",
-    "donations.create",
-    "donations",
-  ],
-  [
-    "Donations Approve",
-    "donations.approve",
-    "donations",
-  ],
+[
+  "Subscriptions Read",
+  "subscriptions.read",
+  "subscriptions",
+],
+[
+  "Subscriptions Manage",
+  "subscriptions.manage",
+  "subscriptions",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Investments
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| Users
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Investments Read",
-    "investments.read",
-    "investments",
-  ],
-  [
-    "Investments Create",
-    "investments.create",
-    "investments",
-  ],
-  [
-    "Investments Approve",
-    "investments.approve",
-    "investments",
-  ],
+[
+  "Users Read",
+  "users.read",
+  "users",
+],
+[
+  "Users Create",
+  "users.create",
+  "users",
+],
+[
+  "Users Update",
+  "users.update",
+  "users",
+],
+[
+  "Users Suspend",
+  "users.suspend",
+  "users",
+],
+[
+  "Users Manage",
+  "users.manage",
+  "users",
+],
 
-  /*
-  |--------------------------------------------------------------------------
-  | Audit logs
-  |--------------------------------------------------------------------------
-  */
+/*
+|--------------------------------------------------------------------------
+| Notifications
+|--------------------------------------------------------------------------
+*/
 
-  [
-    "Audit Logs Read",
-    "audit_logs.read",
-    "audit",
-  ],
-];
+[
+  "Notifications Read",
+  "notifications.read",
+  "notifications",
+],
+[
+  "Notifications Manage",
+  "notifications.manage",
+  "notifications",
+],
+
+/*
+|--------------------------------------------------------------------------
+| Donations
+|--------------------------------------------------------------------------
+*/
+
+[
+  "Donations Read",
+  "donations.read",
+  "donations",
+],
+[
+  "Donations Create",
+  "donations.create",
+  "donations",
+],
+[
+  "Donations Approve",
+  "donations.approve",
+  "donations",
+],
+[
+  "Donation Donors Read",
+  "donations.donors.read",
+  "donations",
+],
+[
+  "Donation Donors Create",
+  "donations.donors.create",
+  "donations",
+],
+[
+  "Donation Donors Manage",
+  "donations.donors.manage",
+  "donations",
+],
+[
+  "Donation Requests Create",
+  "donations.requests.create",
+  "donations",
+],
+[
+  "Donation Requests Read",
+  "donations.requests.read",
+  "donations",
+],
+[
+  "Donation Requests Review",
+  "donations.requests.review",
+  "donations",
+],
+[
+  "Donation Redemptions Create",
+  "donations.redemptions.create",
+  "donations",
+],
+[
+  "Donation Redemptions Verify",
+  "donations.redemptions.verify",
+  "donations",
+],
+[
+  "Donation Redemptions Complete",
+  "donations.redemptions.complete",
+  "donations",
+],
+
+/*
+|--------------------------------------------------------------------------
+| Investments
+|--------------------------------------------------------------------------
+*/
+
+[
+  "Investments Read",
+  "investments.read",
+  "investments",
+],
+[
+  "Investments Create",
+  "investments.create",
+  "investments",
+],
+[
+  "Investments Approve",
+  "investments.approve",
+  "investments",
+],
+[
+  "Investment Products Read",
+  "investments.products.read",
+  "investments",
+],
+[
+  "Investment Products Manage",
+  "investments.products.manage",
+  "investments",
+],
+[
+  "Investments Withdraw",
+  "investments.withdraw",
+  "investments",
+],
+[
+  "Investment Withdrawals Review",
+  "investments.withdrawals.review",
+  "investments",
+],
+[
+  "Investment Withdrawals Complete",
+  "investments.withdrawals.complete",
+  "investments",
+],
+
+/*
+|--------------------------------------------------------------------------
+| Gifts
+|--------------------------------------------------------------------------
+*/
+
+[
+  "Gifts Read",
+  "gifts.read",
+  "gifts",
+],
+[
+  "Gifts Create",
+  "gifts.create",
+  "gifts",
+],
+[
+  "Gifts Manage",
+  "gifts.manage",
+  "gifts",
+],
+
+/*
+|--------------------------------------------------------------------------
+| Next of Kin
+|--------------------------------------------------------------------------
+*/
+
+[
+  "Next of Kin Claims Read",
+  "next_of_kin.claims.read",
+  "next_of_kin",
+],
+[
+  "Next of Kin Claims Create",
+  "next_of_kin.claims.create",
+  "next_of_kin",
+],
+[
+  "Next of Kin Claims Review",
+  "next_of_kin.claims.review",
+  "next_of_kin",
+],
+
+/*
+|--------------------------------------------------------------------------
+| Client Chat
+|--------------------------------------------------------------------------
+*/
+
+[
+  "Chat Read",
+  "chat.read",
+  "chat",
+],
+[
+  "Chat Send",
+  "chat.send",
+  "chat",
+],
+[
+  "Chat Manage",
+  "chat.manage",
+  "chat",
+],
+
+/*
+|--------------------------------------------------------------------------
+| Audit Logs
+|--------------------------------------------------------------------------
+*/
+
+[
+  "Audit Logs Read",
+  "audit_logs.read",
+  "audit",
+],
+ ];
 
   const roles = [
-    {
-      name: "Customer",
-      code: "customer",
-      permissions: [
-        "accounts.read",
-        "transfers.read",
-        "transfers.create",
-        "cards.read",
-        "subscriptions.read",
-        "notifications.read",
-        "donations.read",
-        "donations.create",
-        "investments.read",
-        "investments.create",
-      ],
-    },
+   {
+  name: "Customer",
+  code: "customer",
+  permissions: [
+    /*
+    |--------------------------------------------------------------------------
+    | Accounts
+    |--------------------------------------------------------------------------
+    */
+
+    "accounts.read",
+    "accounts.create",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Transfers
+    |--------------------------------------------------------------------------
+    */
+
+    "transfers.create",
+    "transfers.read_own",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Transactions
+    |--------------------------------------------------------------------------
+    */
+
+    "transactions.read",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Beneficiaries
+    |--------------------------------------------------------------------------
+    */
+
+    "beneficiaries.read",
+    "beneficiaries.create",
+    "beneficiaries.manage",
+
+    /*
+    |--------------------------------------------------------------------------
+    | KYC
+    |--------------------------------------------------------------------------
+    */
+
+    "kyc.read",
+    "kyc.write",
+    "kyc.submit",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cards
+    |--------------------------------------------------------------------------
+    */
+
+    "cards.read",
+    "cards.request",
+    "cards.create",
+    "cards.update_own",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Subscriptions
+    |--------------------------------------------------------------------------
+    */
+
+    "subscriptions.read",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    */
+
+    "notifications.read",
+    "notifications.manage",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Donations
+    |--------------------------------------------------------------------------
+    */
+
+    "donations.donors.read",
+    "donations.requests.create",
+    "donations.requests.read",
+    "donations.redemptions.create",
+    "donations.redemptions.verify",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Investments
+    |--------------------------------------------------------------------------
+    */
+
+    "investments.products.read",
+    "investments.create",
+    "investments.read",
+    "investments.withdraw",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Gifts
+    |--------------------------------------------------------------------------
+    */
+
+    "gifts.read",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Next of Kin
+    |--------------------------------------------------------------------------
+    */
+
+    "next_of_kin.claims.create",
+    "next_of_kin.claims.read",
+
+    /*
+    |--------------------------------------------------------------------------
+    | Client Chat
+    |--------------------------------------------------------------------------
+    */
+
+    "chat.read",
+    "chat.send",
+  ],
+},
     {
       name: "Support Agent",
       code: "support_agent",
