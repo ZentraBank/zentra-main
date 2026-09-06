@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
+
 import type {
   AccountActivity,
 } from "@/services/account.service";
+
 import {
   kycService,
 } from "@/services/kyc.service";
@@ -12,6 +14,7 @@ import {
 import type {
   KycProfile,
 } from "@/types/kyc";
+
 import {
   useMemo,
   useState,
@@ -58,10 +61,6 @@ import {
 import {
   formatMoney,
 } from "@/lib/formatters";
-
-import type {
-  ClientTransfer,
-} from "@/types/transfer";
 
 import type {
   ClientNotification,
@@ -206,13 +205,24 @@ type AccountFormState = {
 };
 
 export default function DashboardPage() {
-  const [selectedAccountId, setSelectedAccountId] = useState("");
-  const [kyc, setKyc] =
-  useState<KycProfile | null>(null);
+  const [
+    selectedAccountId,
+    setSelectedAccountId,
+  ] = useState("");
 
-const [kycLoading, setKycLoading] =
-  useState(true);
-  
+  const [
+    kyc,
+    setKyc,
+  ] =
+    useState<KycProfile | null>(
+      null,
+    );
+
+  const [
+    kycLoading,
+    setKycLoading,
+  ] = useState(true);
+
   const [
     showMoreServices,
     setShowMoreServices,
@@ -241,96 +251,62 @@ const [kycLoading, setKycLoading] =
   const [
     accountForm,
     setAccountForm,
-  ] = useState<AccountFormState>({
-    accountName: "",
-    accountType: "savings",
-    currency: "GBP",
-  });
+  ] =
+    useState<AccountFormState>({
+      accountName: "",
+      accountType: "savings",
+      currency: "GBP",
+    });
 
-    const [showBalance, setShowBalance] = useState(true);
+  const [
+    showBalance,
+    setShowBalance,
+  ] = useState(true);
+
   const user =
     useAuthStore(
       (state) => state.user,
     );
 
   const {
-  accounts,
-  transfers,
-  activity,
-  cards,
-  notifications,
-  unreadNotificationCount,
-  cardPurchaseRequests,
-  isLoading,
-  error,
-  reload,
-} = useClientOverview();
+    accounts,
+    activity,
+    cards,
+    notifications,
+    unreadNotificationCount,
+    cardPurchaseRequests,
+    isLoading,
+    error,
+    reload,
+  } = useClientOverview();
 
-  const activeAccounts =
+  const selectedAccount =
     useMemo(
       () =>
-        accounts.filter(
+        accounts.find(
           (account) =>
-            account.status ===
-            "active",
-        ),
-      [accounts],
+            account.id ===
+            selectedAccountId,
+        ) ||
+        accounts[0] ||
+        null,
+      [
+        accounts,
+        selectedAccountId,
+      ],
     );
 
-  const selectedAccount = useMemo(
-  () =>
-    accounts.find(
-      (account) =>
-        account.id === selectedAccountId,
-    ) ||
-    accounts[0] ||
-    null,
-  [accounts, selectedAccountId],
-);
+  const selectedBalance =
+    selectedAccount
+      ? Number(
+          selectedAccount.balance ||
+            0,
+        )
+      : 0;
 
-const selectedBalance =
-  selectedAccount
-    ? Number(
-        selectedAccount.balance || 0,
-      )
-    : 0;
-
-const selectedCurrency =
-  selectedAccount?.currency ||
-  "GBP";
-
-  // const primaryCurrency =
-  //   activeAccounts[0]
-  //     ?.currency ??
-  //   accounts[0]
-  //     ?.currency ??
-  //   "GBP";
-
-  // const totalBalance =
-  //   useMemo(
-  //     () =>
-  //       accounts
-  //         .filter(
-  //           (account) =>
-  //             account.currency ===
-  //             primaryCurrency,
-  //         )
-  //         .reduce(
-  //           (
-  //             total,
-  //             account,
-  //           ) =>
-  //             total +
-  //             (Number(
-  //               account.balance,
-  //             ) || 0),
-  //           0,
-  //         ),
-  //     [
-  //       accounts,
-  //       primaryCurrency,
-  //     ],
-  //   );
+  const selectedCurrency =
+    selectedAccount?.currency ||
+    "GBP";
 
   const displayName =
     user?.full_name ||
@@ -346,10 +322,7 @@ const selectedCurrency =
 
   const cardSummary =
     useMemo(() => {
-      if (
-        cards.length >
-        0
-      ) {
+      if (cards.length > 0) {
         const activeCount =
           cards.filter(
             (card) =>
@@ -368,8 +341,7 @@ const selectedCurrency =
           title: `${
             cards.length
           } issued card${
-            cards.length ===
-            1
+            cards.length === 1
               ? ""
               : "s"
           }`,
@@ -384,9 +356,7 @@ const selectedCurrency =
         };
       }
 
-      if (
-        pendingCardRequest
-      ) {
+      if (pendingCardRequest) {
         return {
           title:
             "Card request pending",
@@ -416,8 +386,6 @@ const selectedCurrency =
       pendingCardRequest,
     ]);
 
-    
-
   const openCreateAccount =
     () => {
       setAccountError("");
@@ -428,8 +396,7 @@ const selectedCurrency =
           ...current,
 
           accountName:
-            current
-              .accountName ||
+            current.accountName ||
             `${
               user?.full_name ||
               "My"
@@ -437,36 +404,26 @@ const selectedCurrency =
         }),
       );
 
-      setOpenAccountModal(
-        true,
-      );
+      setOpenAccountModal(true);
     };
 
   const closeCreateAccount =
     () => {
-      if (
-        creatingAccount
-      ) {
+      if (creatingAccount) {
         return;
       }
 
-      setOpenAccountModal(
-        false,
-      );
-
+      setOpenAccountModal(false);
       setAccountError("");
     };
 
   const handleCreateAccount =
     async () => {
       const accountName =
-        accountForm
-          .accountName
-          .trim();
+        accountForm.accountName.trim();
 
       if (
-        accountName.length <
-        2
+        accountName.length < 2
       ) {
         setAccountError(
           "Account name must be at least 2 characters.",
@@ -475,10 +432,7 @@ const selectedCurrency =
         return;
       }
 
-      setCreatingAccount(
-        true,
-      );
-
+      setCreatingAccount(true);
       setAccountError("");
       setAccountSuccess("");
 
@@ -486,10 +440,8 @@ const selectedCurrency =
         await accountService.createMine(
           {
             accountName,
-
             accountType:
               accountForm.accountType,
-
             currency:
               accountForm.currency,
           },
@@ -497,14 +449,11 @@ const selectedCurrency =
 
         setAccountForm({
           accountName: "",
-          accountType:
-            "savings",
+          accountType: "savings",
           currency: "GBP",
         });
 
-        setOpenAccountModal(
-          false,
-        );
+        setOpenAccountModal(false);
 
         setAccountSuccess(
           "Your account was created successfully.",
@@ -521,57 +470,72 @@ const selectedCurrency =
           ),
         );
       } finally {
-        setCreatingAccount(
-          false,
-        );
+        setCreatingAccount(false);
       }
     };
 
-    useEffect(() => {
-  if (!accounts.length) return;
-
-  const stillExists = accounts.some(
-    (account) => account.id === selectedAccountId,
-  );
-
-  if (!selectedAccountId || !stillExists) {
-    setSelectedAccountId(accounts[0].id);
-  }
-}, [accounts, selectedAccountId]);
-
-useEffect(() => {
-  let active = true;
-
-  const loadKyc = async () => {
-    try {
-      const result =
-        await kycService.getMine();
-
-      if (!active) return;
-
-      setKyc(result);
-    } catch (error) {
-      console.error(
-        "Unable to load KYC status:",
-        error,
-      );
-    } finally {
-      if (active) {
-        setKycLoading(false);
-      }
+  useEffect(() => {
+    if (!accounts.length) {
+      return;
     }
-  };
 
-  void loadKyc();
+    const stillExists =
+      accounts.some(
+        (account) =>
+          account.id ===
+          selectedAccountId,
+      );
 
-  return () => {
-    active = false;
-  };
-}, []);
+    if (
+      !selectedAccountId ||
+      !stillExists
+    ) {
+      setSelectedAccountId(
+        accounts[0].id,
+      );
+    }
+  }, [
+    accounts,
+    selectedAccountId,
+  ]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadKyc =
+      async () => {
+        try {
+          const result =
+            await kycService.getMine();
+
+          if (!active) {
+            return;
+          }
+
+          setKyc(result);
+        } catch (error) {
+          console.error(
+            "Unable to load KYC status:",
+            error,
+          );
+        } finally {
+          if (active) {
+            setKycLoading(false);
+          }
+        }
+      };
+
+    void loadKyc();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#E7EBF0] pb-[92px] text-[#333] md:pb-10">
-      <section className="mx-auto w-full max-w-[390px] px-5 pt-12 md:max-w-[1180px] md:px-8 md:pt-8 xl:max-w-[1320px]">
+      {/* CHANGED: wider desktop dashboard */}
+      <section className="mx-auto w-full max-w-[390px] px-5 pt-12 md:max-w-[1280px] md:px-8 md:pt-8 xl:max-w-[1500px]">
         <header className="flex items-center justify-between rounded-[12px] md:rounded-[18px] md:bg-white/55 md:px-5 md:py-4 md:shadow-sm md:backdrop-blur-sm">
           <Link
             href="/profile"
@@ -580,9 +544,7 @@ useEffect(() => {
             <div className="relative h-11 w-11 overflow-hidden rounded-full border border-white bg-[#B7D8FF] shadow-sm md:h-12 md:w-12">
               <Image
                 src="/images/profile-avatar.png"
-                alt={
-                  displayName
-                }
+                alt={displayName}
                 fill
                 className="object-cover"
               />
@@ -595,16 +557,18 @@ useEffect(() => {
 
               <p className="font-lato text-[12px] font-medium md:text-[13px]">
                 <span className="capitalize text-[#333333]">
-                 {selectedAccount?.account_type || "Client"}
+                  {selectedAccount
+                    ?.account_type ||
+                    "Client"}
                 </span>{" "}
 
                 <span className="text-[#2B945D]">
-                {kycLoading
-                  ? "Checking KYC..."
-                  : formatKycStatus(
-                      kyc?.status,
-                    )}
-              </span>
+                  {kycLoading
+                    ? "Checking KYC..."
+                    : formatKycStatus(
+                        kyc?.status,
+                      )}
+                </span>
               </p>
             </div>
           </Link>
@@ -615,9 +579,7 @@ useEffect(() => {
               aria-label="Notifications"
               className="relative"
             >
-              <Bell
-                size={18}
-              />
+              <Bell size={18} />
 
               {unreadNotificationCount >
                 0 && (
@@ -634,9 +596,7 @@ useEffect(() => {
               href="/settings"
               aria-label="Settings"
             >
-              <Settings
-                size={18}
-              />
+              <Settings size={18} />
             </Link>
           </div>
         </header>
@@ -647,148 +607,155 @@ useEffect(() => {
           </div>
         ) : null}
 
-<section className="mt-4 rounded-[9px] bg-[#2F9158] px-3 py-3 text-white shadow-sm md:mt-6 md:rounded-[18px] md:px-7 md:py-6 md:shadow-md">
-  <div className="flex items-center justify-between">
-    <button
-      type="button"
-      onClick={() =>
-        setShowBalance(
-          !showBalance,
-        )
-      }
-      className="flex items-center gap-2 text-[12px] transition-opacity hover:opacity-80 md:text-[14px]"
-    >
-      <span>Balance</span>
+        <section className="mt-4 rounded-[9px] bg-[#2F9158] px-3 py-3 text-white shadow-sm md:mt-6 md:rounded-[18px] md:px-7 md:py-6 md:shadow-md">
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() =>
+                setShowBalance(
+                  !showBalance,
+                )
+              }
+              className="flex items-center gap-2 text-[12px] transition-opacity hover:opacity-80 md:text-[14px]"
+            >
+              <span>Balance</span>
 
-      {showBalance ? (
-        <Eye size={16} />
-      ) : (
-        <EyeOff size={16} />
-      )}
-    </button>
+              {showBalance ? (
+                <Eye size={16} />
+              ) : (
+                <EyeOff size={16} />
+              )}
+            </button>
 
-    {accounts.length > 0 && (
-      <button
-        type="button"
-        onClick={
-          openCreateAccount
-        }
-        className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-white/25 md:text-[12px]"
-      >
-        <Plus size={14} />
-        Add account
-      </button>
-    )}
-  </div>
-
-  <div className="mt-2 flex items-end justify-between">
-    <h2 className="text-[30px] font-semibold tracking-wide md:text-[42px]">
-      {isLoading
-        ? "Loading…"
-        : showBalance
-          ? formatMoney(
-              selectedBalance,
-              selectedCurrency,
-            )
-          : "*********"}
-    </h2>
-  </div>
-
-  {accounts.length > 1 && (
-    <div className="mt-3">
-      <label className="mb-1 block text-[10px] text-white/60 md:text-[12px]">
-        Select account
-      </label>
-
-      <div className="relative">
-        <select
-          title="Select account"
-          value={
-            selectedAccount?.id ||
-            ""
-          }
-          onChange={(event) =>
-            setSelectedAccountId(
-              event.target.value,
-            )
-          }
-          className="h-[38px] w-full appearance-none rounded-[8px] border border-white/20 bg-white/15 px-3 pr-9 text-[11px] font-semibold text-white outline-none backdrop-blur md:max-w-[320px] md:text-[13px]"
-        >
-          {accounts.map(
-            (account) => (
-              <option
-                key={
-                  account.id
+            {accounts.length >
+              0 && (
+              <button
+                type="button"
+                onClick={
+                  openCreateAccount
                 }
-                value={
-                  account.id
-                }
-                className="text-black"
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur transition hover:bg-white/25 md:text-[12px]"
               >
-                {
-                  account.account_name
-                }{" "}
-                ·{" "}
-                {
-                  account.account_type
-                }{" "}
-                ·{" "}
-                {
-                  account.account_number
-                }
-              </option>
-            ),
+                <Plus size={14} />
+                Add account
+              </button>
+            )}
+          </div>
+
+          <div className="mt-2 flex items-end justify-between">
+            <h2 className="text-[30px] font-semibold tracking-wide md:text-[42px]">
+              {isLoading
+                ? "Loading…"
+                : showBalance
+                  ? formatMoney(
+                      selectedBalance,
+                      selectedCurrency,
+                    )
+                  : "*********"}
+            </h2>
+          </div>
+
+          {accounts.length >
+            1 && (
+            <div className="mt-3">
+              <label className="mb-1 block text-[10px] text-white/60 md:text-[12px]">
+                Select account
+              </label>
+
+              <div className="relative">
+                <select
+                  title="Select account"
+                  value={
+                    selectedAccount?.id ||
+                    ""
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setSelectedAccountId(
+                      event.target
+                        .value,
+                    )
+                  }
+                  className="h-[38px] w-full appearance-none rounded-[8px] border border-white/20 bg-white/15 px-3 pr-9 text-[11px] font-semibold text-white outline-none backdrop-blur md:max-w-[320px] md:text-[13px]"
+                >
+                  {accounts.map(
+                    (account) => (
+                      <option
+                        key={
+                          account.id
+                        }
+                        value={
+                          account.id
+                        }
+                        className="text-black"
+                      >
+                        {
+                          account.account_name
+                        }{" "}
+                        ·{" "}
+                        {
+                          account.account_type
+                        }{" "}
+                        ·{" "}
+                        {
+                          account.account_number
+                        }
+                      </option>
+                    ),
+                  )}
+                </select>
+
+                <ChevronDown
+                  size={15}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/80"
+                />
+              </div>
+            </div>
           )}
-        </select>
 
-        <ChevronDown
-          size={15}
-          className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/80 md:hidden"
-        />
-      </div>
-    </div>
-  )}
+          {!isLoading &&
+          selectedAccount ? (
+            <div className="mt-3 flex items-end justify-between gap-4 border-t border-white/15 pt-3">
+              <div>
+                <p className="text-[10px] text-white/60 md:text-[12px]">
+                  Account number
+                </p>
 
-  {!isLoading &&
-  selectedAccount ? (
-    <div className="mt-3 flex items-end justify-between gap-4 border-t border-white/15 pt-3">
-      <div>
-        <p className="text-[10px] text-white/60 md:text-[12px]">
-          Account number
-        </p>
+                <p className="mt-0.5 text-[13px] font-semibold tracking-[0.08em] text-white md:text-[15px]">
+                  {
+                    selectedAccount.account_number
+                  }
+                </p>
+              </div>
 
-        <p className="mt-0.5 text-[13px] font-semibold tracking-[0.08em] text-white md:text-[15px]">
-          {
-            selectedAccount.account_number
-          }
-        </p>
-      </div>
+              <div className="text-right">
+                <p className="text-[10px] text-white/60 md:text-[12px]">
+                  Account type
+                </p>
 
-      <div className="text-right">
-        <p className="text-[10px] text-white/60 md:text-[12px]">
-          Account type
-        </p>
+                <p className="mt-0.5 text-[12px] font-semibold capitalize text-white md:text-[14px]">
+                  {
+                    selectedAccount.account_type
+                  }
+                </p>
+              </div>
+            </div>
+          ) : null}
 
-        <p className="mt-0.5 text-[12px] font-semibold capitalize text-white md:text-[14px]">
-          {
-            selectedAccount.account_type
-          }
-        </p>
-      </div>
-    </div>
-  ) : null}
-
-  {!isLoading &&
-  accounts.length > 0 ? (
-    <p className="mt-2 text-[11px] text-white/70 md:text-[13px]">
-      {accounts.length} account
-      {accounts.length === 1
-        ? ""
-        : "s"}{" "}
-      connected
-    </p>
-  ) : null}
-</section>
+          {!isLoading &&
+          accounts.length >
+            0 ? (
+            <p className="mt-2 text-[11px] text-white/70 md:text-[13px]">
+              {accounts.length} account
+              {accounts.length ===
+              1
+                ? ""
+                : "s"}{" "}
+              connected
+            </p>
+          ) : null}
+        </section>
 
         {!isLoading &&
         accounts.length ===
@@ -796,9 +763,7 @@ useEffect(() => {
           <section className="mt-4 rounded-[10px] border border-[#2458E8]/20 bg-white p-4 shadow-sm md:mt-6 md:flex md:items-center md:justify-between md:rounded-[18px] md:px-6 md:py-5">
             <div className="flex items-start gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-[#E8F0FF] text-[#2458E8]">
-                <Wallet
-                  size={21}
-                />
+                <Wallet size={21} />
               </span>
 
               <div>
@@ -905,7 +870,9 @@ useEffect(() => {
                 </p>
 
                 <p className="truncate text-[14px] font-bold">
-                  {cardSummary.title}
+                  {
+                    cardSummary.title
+                  }
                 </p>
 
                 <p className="truncate text-[11px] text-black/45">
@@ -943,9 +910,7 @@ useEffect(() => {
         <section className="mt-2 space-y-2 font-lato md:grid md:grid-cols-3 md:gap-4 md:space-y-0">
           {error ? (
             <div className="rounded-[7px] border border-red-200 bg-red-50 px-3 py-3 text-[12px] text-red-700">
-              <p>
-                {error}
-              </p>
+              <p>{error}</p>
 
               <button
                 type="button"
@@ -971,10 +936,7 @@ useEffect(() => {
             </div>
           ) : (
             activity
-              .slice(
-                0,
-                3,
-              )
+              .slice(0, 3)
               .map(
                 (
                   activity,
@@ -1042,10 +1004,7 @@ useEffect(() => {
             </div>
           ) : (
             notifications
-              .slice(
-                0,
-                3,
-              )
+              .slice(0, 3)
               .map(
                 (
                   notification,
@@ -1063,10 +1022,16 @@ useEffect(() => {
           )}
         </section>
 
-        <section className="mt-8 md:mt-10 md:rounded-[18px] md:bg-white/60 md:p-5 md:shadow-sm">
+        {/* CHANGED: slightly larger desktop chart card */}
+        <section className="mt-8 md:mt-10 md:rounded-[18px] md:bg-white/60 md:p-6 md:shadow-sm">
           <svg
             viewBox="0 0 330 150"
-            className="h-[150px] w-full md:h-[220px]"
+
+            // CHANGED:
+            // expands chart vertically on desktop
+            // without duplicating the chart.
+            preserveAspectRatio="none"
+            className="h-[150px] w-full md:h-[300px] lg:h-[360px]"
           >
             {[
               0,
@@ -1079,20 +1044,16 @@ useEffect(() => {
             ].map(
               (y) => (
                 <line
-                  key={
-                    y
-                  }
+                  key={y}
                   x1="30"
                   x2="320"
                   y1={
                     20 +
-                    y *
-                      20
+                    y * 20
                   }
                   y2={
                     20 +
-                    y *
-                      20
+                    y * 20
                   }
                   stroke="#cbd2da"
                   strokeWidth="1"
@@ -1114,18 +1075,14 @@ useEffect(() => {
             ].map(
               (x) => (
                 <line
-                  key={
-                    x
-                  }
+                  key={x}
                   x1={
                     30 +
-                    x *
-                      32
+                    x * 32
                   }
                   x2={
                     30 +
-                    x *
-                      32
+                    x * 32
                   }
                   y1="20"
                   y2="140"
@@ -1146,12 +1103,8 @@ useEffect(() => {
                 index,
               ) => (
                 <polyline
-                  key={
-                    index
-                  }
-                  points={
-                    points
-                  }
+                  key={index}
+                  points={points}
                   fill="none"
                   strokeWidth="1.2"
                   stroke={
@@ -1160,9 +1113,7 @@ useEffect(() => {
                       "#FF6EA8",
                       "#7E39FF",
                       "#3E53D9",
-                    ][
-                      index
-                    ]
+                    ][index]
                   }
                 />
               ),
@@ -1189,17 +1140,10 @@ useEffect(() => {
           </div>
 
           <div className="mt-3 flex gap-3 overflow-x-auto pb-3 scrollbar-hide md:grid md:grid-cols-4 md:gap-5 md:overflow-visible">
-            {[
-              1,
-              2,
-              3,
-              4,
-            ].map(
+            {[1, 2, 3, 4].map(
               (item) => (
                 <AdvertCard
-                  key={
-                    item
-                  }
+                  key={item}
                 />
               ),
             )}
@@ -1287,9 +1231,7 @@ function CreateAccountModal({
 
         <div className="flex items-center gap-3 pr-10">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] bg-[#E8F0FF] text-[#2458E8]">
-            <Wallet
-              size={21}
-            />
+            <Wallet size={21} />
           </span>
 
           <div>
@@ -1320,14 +1262,11 @@ function CreateAccountModal({
                 event,
               ) =>
                 setForm(
-                  (
-                    current,
-                  ) => ({
+                  (current) => ({
                     ...current,
 
                     accountName:
-                      event
-                        .target
+                      event.target
                         .value,
                   }),
                 )
@@ -1351,14 +1290,11 @@ function CreateAccountModal({
                 event,
               ) =>
                 setForm(
-                  (
-                    current,
-                  ) => ({
+                  (current) => ({
                     ...current,
 
                     accountType:
-                      event
-                        .target
+                      event.target
                         .value as AccountType,
                   }),
                 )
@@ -1393,14 +1329,11 @@ function CreateAccountModal({
                 event,
               ) =>
                 setForm(
-                  (
-                    current,
-                  ) => ({
+                  (current) => ({
                     ...current,
 
                     currency:
-                      event
-                        .target
+                      event.target
                         .value,
                   }),
                 )
@@ -1706,31 +1639,21 @@ function LiveUpdateCard({
   notification: ClientNotification;
 }) {
   const Icon =
-    notification
-      .notification_type
-      ?.includes(
-        "card",
-      )
+    notification.notification_type
+      ?.includes("card")
       ? CreditCard
-      : notification
-            .notification_type
-            ?.includes(
-              "transfer",
-            )
+      : notification.notification_type
+            ?.includes("transfer")
         ? SendHorizontal
-        : notification
-              .notification_type
-              ?.includes(
-                "donation",
-              )
+        : notification.notification_type
+              ?.includes("donation")
           ? Gift
           : Info;
 
   return (
     <Link
       href={
-        notification
-          .action_url ||
+        notification.action_url ||
         "/notifications"
       }
       className="flex w-full items-center gap-3 rounded-[10px] border border-black/10 bg-[#F3F6FA] px-3 py-2 text-left shadow-sm md:min-h-[86px] md:rounded-[14px] md:bg-white md:px-4 md:py-3"

@@ -31,7 +31,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[430px] -translate-x-1/2 items-center justify-between border-t border-[#16884F] bg-white/80 px-3 py-2 shadow-[0_-8px_25px_rgba(0,0,0,0.25)] backdrop-blur-md">
+    <nav className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[430px] -translate-x-1/2 items-center justify-between border-t border-[#16884F] bg-white/80 px-3 py-2 shadow-[0_-8px_25px_rgba(0,0,0,0.25)] backdrop-blur-md lg:hidden">
       {navItems.map((item) => {
         const active =
           pathname === item.href || pathname.startsWith(`${item.href}/`);

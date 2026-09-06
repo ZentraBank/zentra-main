@@ -15,7 +15,6 @@ import {
   useState,
 } from "react";
 
-import AppShell from "@/components/layout/AppShell";
 import {
   getCurrentTenant,
   updateCurrentTenant,
@@ -182,7 +181,7 @@ export default function BrandingSettingsPage() {
   };
 
   return (
-    <AppShell>
+    <div className="mx-auto max-w-7xl px-4 py-8 text-neutral-900 md:px-8">
       <main className="min-h-[calc(100svh-80px)] rounded-3xl bg-black px-5 py-6 text-white md:px-8">
         <div className="mx-auto max-w-4xl">
           <Link
@@ -443,7 +442,7 @@ export default function BrandingSettingsPage() {
           )}
         </div>
       </main>
-    </AppShell>
+    </div>
   );
 }
 

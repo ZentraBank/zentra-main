@@ -21,6 +21,7 @@ import {
   useState,
 } from "react";
 
+import AppShell from "@/components/layout/AppShell";
 import {
   kycService,
   type TenantKycApplication,
@@ -323,318 +324,320 @@ export default function TenantKycPage() {
     };
 
   return (
-    <main className="min-h-screen bg-[#E7EBF0] px-4 pb-12 pt-10 text-[#2F3640] lg:px-8">
-      <section className="mx-auto max-w-[1180px]">
-        <header className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/dashboard"
-              className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-sm"
-              aria-label="Back"
-            >
-              <ArrowLeft
-                size={19}
-              />
-            </Link>
-
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2458E8]">
-                Compliance
-              </p>
-
-              <h1 className="mt-1 text-[26px] font-black tracking-[-0.02em] lg:text-[34px]">
-                KYC Applications
-              </h1>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              void load()
-            }
-            disabled={loading}
-            className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#2458E8] shadow-sm disabled:opacity-50"
-            aria-label="Refresh KYC applications"
-          >
-            <RefreshCw
-              size={17}
-              className={
-                loading
-                  ? "animate-spin"
-                  : ""
-              }
-            />
-          </button>
-        </header>
-
-        {(error ||
-          message) && (
-          <div
-            className={`mt-5 rounded-2xl px-4 py-3 text-sm ${
-              error
-                ? "border border-red-200 bg-red-50 text-red-700"
-                : "border border-green-200 bg-green-50 text-green-700"
-            }`}
-          >
-            {error ||
-              message}
-          </div>
-        )}
-
-        <section className="mt-7 grid gap-5 lg:grid-cols-3">
-          <SummaryCard
-            label="Submitted"
-            value={
-              tab ===
-              "submitted"
-                ? applications.length
-                : "—"
-            }
-            icon={
-              <FileText
-                size={20}
-              />
-            }
-          />
-
-          <SummaryCard
-            label="Under review"
-            value={
-              tab ===
-              "under_review"
-                ? applications.length
-                : "—"
-            }
-            icon={
-              <ShieldCheck
-                size={20}
-              />
-            }
-          />
-
-          <SummaryCard
-            label="Current queue"
-            value={
-              applications.length
-            }
-            icon={
-              <UserRoundCheck
-                size={20}
-              />
-            }
-          />
-        </section>
-
-        <section className="mt-6 rounded-[28px] bg-white p-5 shadow-sm lg:p-7">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="grid grid-cols-2 rounded-xl bg-[#EEF2F6] p-1">
-              <TabButton
-                active={
-                  tab ===
-                  "submitted"
-                }
-                label="Submitted"
-                onClick={() =>
-                  setTab(
-                    "submitted",
-                  )
-                }
-              />
-
-              <TabButton
-                active={
-                  tab ===
-                  "under_review"
-                }
-                label="Under review"
-                onClick={() =>
-                  setTab(
-                    "under_review",
-                  )
-                }
-              />
-            </div>
-
-            <label className="relative block w-full lg:max-w-[320px]">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-black/30"
-              />
-
-              <input
-                value={
-                  search
-                }
-                onChange={(
-                  event,
-                ) =>
-                  setSearch(
-                    event.target.value,
-                  )
-                }
-                placeholder="Search applicant, email or ID"
-                className="h-11 w-full rounded-xl border border-black/10 bg-[#F8FAFC] pl-10 pr-4 text-sm outline-none focus:border-[#2458E8]"
-              />
-            </label>
-          </div>
-
-          {loading ? (
-            <div className="grid min-h-[360px] place-items-center">
-              <div className="text-center">
-                <Loader2
-                  size={28}
-                  className="mx-auto animate-spin text-[#2458E8]"
+    <AppShell>
+      <main className="relative min-h-[calc(100svh-80px)] overflow-x-hidden rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_18%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.13),transparent_16%)] bg-black px-4 py-8 text-[#2F3640] md:px-8">
+        <div className="mx-auto max-w-[1180px]">
+          <header className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Link
+                href="/dashboard"
+                className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-sm transition hover:bg-neutral-100"
+                aria-label="Back"
+              >
+                <ArrowLeft
+                  size={19}
                 />
+              </Link>
 
-                <p className="mt-3 text-sm text-black/40">
-                  Loading KYC applications...
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#2458E8]">
+                  Compliance
                 </p>
+
+                <h1 className="mt-1 text-[26px] font-black tracking-[-0.02em] text-white lg:text-[34px]">
+                  KYC Applications
+                </h1>
               </div>
             </div>
-          ) : filteredApplications.length ===
-            0 ? (
-            <EmptyState
-              label={
-                tab ===
-                "submitted"
-                  ? "No submitted KYC applications"
-                  : "No applications under review"
+
+            <button
+              type="button"
+              onClick={() =>
+                void load()
               }
-            />
-          ) : (
-            <div className="mt-6 space-y-3">
-              {filteredApplications.map(
-                (
-                  application,
-                ) => (
-                  <ApplicationRow
-                    key={
-                      application.id
-                    }
-                    application={
-                      application
-                    }
-                    onOpen={() =>
-                      void openApplication(
-                        application,
-                      )
-                    }
-                  />
-                ),
-              )}
+              disabled={loading}
+              className="grid h-11 w-11 place-items-center rounded-full bg-white text-[#2458E8] shadow-sm transition hover:bg-neutral-100 disabled:opacity-50"
+              aria-label="Refresh KYC applications"
+            >
+              <RefreshCw
+                size={17}
+                className={
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }
+              />
+            </button>
+          </header>
+
+          {(error ||
+            message) && (
+            <div
+              className={`mt-5 rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm ${
+                error
+                  ? "border-red-500/30 bg-red-950/70 text-red-100"
+                  : "border-emerald-500/30 bg-emerald-950/70 text-emerald-100"
+              }`}
+            >
+              {error ||
+                message}
             </div>
           )}
-        </section>
-      </section>
 
-      {(selected ||
-        detailsLoading) && (
-        <ApplicationOverlay
+          <section className="mt-7 grid gap-5 lg:grid-cols-3">
+            <SummaryCard
+              label="Submitted"
+              value={
+                tab ===
+                "submitted"
+                  ? applications.length
+                  : "—"
+              }
+              icon={
+                <FileText
+                  size={20}
+                />
+              }
+            />
+
+            <SummaryCard
+              label="Under review"
+              value={
+                tab ===
+                "under_review"
+                  ? applications.length
+                  : "—"
+              }
+              icon={
+                <ShieldCheck
+                  size={20}
+                />
+              }
+            />
+
+            <SummaryCard
+              label="Current queue"
+              value={
+                applications.length
+              }
+              icon={
+                <UserRoundCheck
+                  size={20}
+                />
+              }
+            />
+          </section>
+
+          <section className="mt-6 rounded-[28px] border border-white/10 bg-white p-5 shadow-xl lg:p-7">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid grid-cols-2 rounded-xl bg-[#EEF2F6] p-1">
+                <TabButton
+                  active={
+                    tab ===
+                    "submitted"
+                  }
+                  label="Submitted"
+                  onClick={() =>
+                    setTab(
+                      "submitted",
+                    )
+                  }
+                />
+
+                <TabButton
+                  active={
+                    tab ===
+                    "under_review"
+                  }
+                  label="Under review"
+                  onClick={() =>
+                    setTab(
+                      "under_review",
+                    )
+                  }
+                />
+              </div>
+
+              <label className="relative block w-full lg:max-w-[320px]">
+                <Search
+                  size={16}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-black/30"
+                />
+
+                <input
+                  value={
+                    search
+                  }
+                  onChange={(
+                    event,
+                  ) =>
+                    setSearch(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Search applicant, email or ID"
+                  className="h-11 w-full rounded-xl border border-black/10 bg-[#F8FAFC] pl-10 pr-4 text-sm outline-none transition focus:border-[#2458E8] focus:bg-white"
+                />
+              </label>
+            </div>
+
+            {loading ? (
+              <div className="grid min-h-[360px] place-items-center">
+                <div className="text-center">
+                  <Loader2
+                    size={28}
+                    className="mx-auto animate-spin text-[#2458E8]"
+                  />
+
+                  <p className="mt-3 text-sm text-black/40">
+                    Loading KYC applications...
+                  </p>
+                </div>
+              </div>
+            ) : filteredApplications.length ===
+              0 ? (
+              <EmptyState
+                label={
+                  tab ===
+                  "submitted"
+                    ? "No submitted KYC applications"
+                    : "No applications under review"
+                }
+              />
+            ) : (
+              <div className="mt-6 space-y-3">
+                {filteredApplications.map(
+                  (
+                    application,
+                  ) => (
+                    <ApplicationRow
+                      key={
+                        application.id
+                      }
+                      application={
+                        application
+                      }
+                      onOpen={() =>
+                        void openApplication(
+                          application,
+                        )
+                      }
+                    />
+                  ),
+                )}
+              </div>
+            )}
+          </section>
+        </div>
+
+        {(selected ||
+          detailsLoading) && (
+          <ApplicationOverlay
+            application={
+              selected
+            }
+            loading={
+              detailsLoading
+            }
+            riskLevel={
+              riskLevel
+            }
+            setRiskLevel={
+              setRiskLevel
+            }
+            busy={
+              Boolean(
+                selected &&
+                  actionId ===
+                    selected.id,
+              )
+            }
+            onClose={() =>
+              setSelected(
+                null,
+              )
+            }
+            onMarkUnderReview={() => {
+              if (selected) {
+                void markUnderReview(
+                  selected,
+                );
+              }
+            }}
+            onApprove={() => {
+              if (selected) {
+                setReviewTarget(
+                  selected,
+                );
+              }
+            }}
+            onReject={() => {
+              if (selected) {
+                setRejectionTarget(
+                  selected,
+                );
+              }
+            }}
+          />
+        )}
+
+        <ApproveOverlay
           application={
-            selected
+            reviewTarget
           }
-          loading={
-            detailsLoading
+          busy={
+            Boolean(
+              reviewTarget &&
+                actionId ===
+                  reviewTarget.id,
+            )
           }
           riskLevel={
             riskLevel
           }
-          setRiskLevel={
-            setRiskLevel
-          }
-          busy={
-            Boolean(
-              selected &&
-                actionId ===
-                  selected.id,
-            )
-          }
           onClose={() =>
-            setSelected(
+            setReviewTarget(
               null,
             )
           }
-          onMarkUnderReview={() => {
-            if (selected) {
-              void markUnderReview(
-                selected,
-              );
-            }
-          }}
-          onApprove={() => {
-            if (selected) {
-              setReviewTarget(
-                selected,
-              );
-            }
-          }}
-          onReject={() => {
-            if (selected) {
-              setRejectionTarget(
-                selected,
+          onConfirm={() => {
+            if (reviewTarget) {
+              void approveApplication(
+                reviewTarget,
               );
             }
           }}
         />
-      )}
 
-      <ApproveOverlay
-        application={
-          reviewTarget
-        }
-        busy={
-          Boolean(
-            reviewTarget &&
-              actionId ===
-                reviewTarget.id,
-          )
-        }
-        riskLevel={
-          riskLevel
-        }
-        onClose={() =>
-          setReviewTarget(
-            null,
-          )
-        }
-        onConfirm={() => {
-          if (reviewTarget) {
-            void approveApplication(
-              reviewTarget,
-            );
+        <RejectOverlay
+          application={
+            rejectionTarget
           }
-        }}
-      />
-
-      <RejectOverlay
-        application={
-          rejectionTarget
-        }
-        busy={
-          Boolean(
-            rejectionTarget &&
-              actionId ===
-                rejectionTarget.id,
-          )
-        }
-        onClose={() =>
-          setRejectionTarget(
-            null,
-          )
-        }
-        onConfirm={(
-          reason,
-        ) => {
-          if (rejectionTarget) {
-            void rejectApplication(
-              rejectionTarget,
-              reason,
-            );
+          busy={
+            Boolean(
+              rejectionTarget &&
+                actionId ===
+                  rejectionTarget.id,
+            )
           }
-        }}
-      />
-    </main>
+          onClose={() =>
+            setRejectionTarget(
+              null,
+            )
+          }
+          onConfirm={(
+            reason,
+          ) => {
+            if (rejectionTarget) {
+              void rejectApplication(
+                rejectionTarget,
+                reason,
+              );
+            }
+          }}
+        />
+      </main>
+    </AppShell>
   );
 }
 
@@ -662,7 +665,7 @@ function ApplicationRow({
       onClick={
         onOpen
       }
-      className="flex w-full items-center gap-4 rounded-2xl border border-black/[0.06] bg-[#FAFCFF] p-4 text-left transition hover:border-[#2458E8]/30 hover:bg-[#F6F9FF]"
+      className="flex w-full items-center gap-4 rounded-2xl border border-black/[0.06] bg-[#FAFCFF] p-4 text-left transition hover:border-[#2458E8]/35 hover:bg-[#F6F9FF]"
     >
       <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#EAF0FF] font-black text-[#2458E8]">
         {initials(
@@ -672,7 +675,7 @@ function ApplicationRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="truncate font-black">
+          <h2 className="truncate font-black text-neutral-900">
             {fullName}
           </h2>
 
@@ -757,7 +760,7 @@ function ApplicationOverlay({
               KYC Review
             </p>
 
-            <h2 className="mt-1 text-xl font-black">
+            <h2 className="mt-1 text-xl font-black text-neutral-900">
               Application details
             </h2>
           </div>
@@ -767,7 +770,7 @@ function ApplicationOverlay({
             onClick={
               onClose
             }
-            className="grid h-9 w-9 place-items-center rounded-full bg-[#EEF2F6]"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[#EEF2F6] transition hover:bg-neutral-200"
           >
             <XCircle
               size={18}
@@ -968,7 +971,7 @@ function ApplicationOverlay({
                           value,
                         )
                       }
-                      className={`h-10 rounded-xl text-sm font-bold capitalize ${
+                      className={`h-10 rounded-xl text-sm font-bold capitalize transition ${
                         riskLevel ===
                         value
                           ? value ===
@@ -978,7 +981,7 @@ function ApplicationOverlay({
                                 "medium"
                               ? "bg-amber-500 text-white"
                               : "bg-red-600 text-white"
-                          : "bg-[#EEF2F6] text-black/55"
+                          : "bg-[#EEF2F6] text-black/55 hover:bg-neutral-200"
                       }`}
                     >
                       {value}
@@ -999,7 +1002,7 @@ function ApplicationOverlay({
                   disabled={
                     busy
                   }
-                  className="flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-500 font-bold text-white disabled:opacity-50"
+                  className="flex h-11 items-center justify-center gap-2 rounded-xl bg-amber-500 font-bold text-white transition hover:bg-amber-600 disabled:opacity-50"
                 >
                   {busy ? (
                     <Loader2
@@ -1024,7 +1027,7 @@ function ApplicationOverlay({
                 disabled={
                   busy
                 }
-                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-50 font-bold text-red-700 disabled:opacity-50"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-50 font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
               >
                 <XCircle
                   size={16}
@@ -1040,7 +1043,7 @@ function ApplicationOverlay({
                 disabled={
                   busy
                 }
-                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-green-600 font-bold text-white disabled:opacity-50"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-green-600 font-bold text-white transition hover:bg-green-700 disabled:opacity-50"
               >
                 <CheckCircle2
                   size={16}
@@ -1077,7 +1080,7 @@ function DocumentCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-black capitalize">
+          <p className="text-sm font-black capitalize text-neutral-900">
             {document.document_type.replaceAll(
               "_",
               " ",
@@ -1097,7 +1100,7 @@ function DocumentCard({
         }
         target="_blank"
         rel="noreferrer"
-        className="mt-4 flex h-9 items-center justify-center rounded-xl bg-[#2458E8] text-xs font-bold text-white"
+        className="mt-4 flex h-9 items-center justify-center rounded-xl bg-[#2458E8] text-xs font-bold text-white transition hover:bg-[#1d4ed8]"
       >
         {isPdf
           ? "Open PDF"
@@ -1131,14 +1134,14 @@ function ApproveOverlay({
 
   return (
     <div className="fixed inset-0 z-[140] grid place-items-center bg-black/70 px-4">
-      <section className="w-full max-w-md rounded-[24px] bg-white p-6">
+      <section className="w-full max-w-md rounded-[24px] bg-white p-6 shadow-2xl">
         <div className="grid h-12 w-12 place-items-center rounded-full bg-green-50 text-green-600">
           <CheckCircle2
             size={24}
           />
         </div>
 
-        <h2 className="mt-4 text-xl font-black">
+        <h2 className="mt-4 text-xl font-black text-neutral-900">
           Approve KYC?
         </h2>
 
@@ -1146,7 +1149,7 @@ function ApproveOverlay({
           This customer will become KYC verified and restricted features can use the approved KYC status.
         </p>
 
-        <div className="mt-4 rounded-xl bg-[#F7FAFC] p-3 text-sm">
+        <div className="mt-4 rounded-xl bg-[#F7FAFC] p-3 text-sm text-neutral-800">
           Risk level:{" "}
           <strong className="capitalize">
             {riskLevel}
@@ -1162,7 +1165,7 @@ function ApproveOverlay({
             disabled={
               busy
             }
-            className="h-11 rounded-xl bg-[#EEF2F6] font-bold"
+            className="h-11 rounded-xl bg-[#EEF2F6] font-bold text-neutral-700 transition hover:bg-neutral-200"
           >
             Cancel
           </button>
@@ -1175,7 +1178,7 @@ function ApproveOverlay({
             disabled={
               busy
             }
-            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-green-600 font-bold text-white disabled:opacity-50"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-green-600 font-bold text-white transition hover:bg-green-700 disabled:opacity-50"
           >
             {busy && (
               <Loader2
@@ -1227,14 +1230,14 @@ function RejectOverlay({
 
   return (
     <div className="fixed inset-0 z-[140] grid place-items-center bg-black/70 px-4">
-      <section className="w-full max-w-md rounded-[24px] bg-white p-6">
+      <section className="w-full max-w-md rounded-[24px] bg-white p-6 shadow-2xl">
         <div className="grid h-12 w-12 place-items-center rounded-full bg-red-50 text-red-600">
           <XCircle
             size={24}
           />
         </div>
 
-        <h2 className="mt-4 text-xl font-black">
+        <h2 className="mt-4 text-xl font-black text-neutral-900">
           Reject KYC
         </h2>
 
@@ -1255,7 +1258,7 @@ function RejectOverlay({
           }
           maxLength={1000}
           placeholder="Reason for rejection"
-          className="mt-5 min-h-[120px] w-full resize-none rounded-xl border border-black/10 p-3 text-sm outline-none focus:border-red-400"
+          className="mt-5 min-h-[120px] w-full resize-none rounded-xl border border-black/10 p-3 text-sm text-neutral-900 outline-none transition focus:border-red-400"
         />
 
         <div className="mt-6 grid grid-cols-2 gap-3">
@@ -1267,7 +1270,7 @@ function RejectOverlay({
             disabled={
               busy
             }
-            className="h-11 rounded-xl bg-[#EEF2F6] font-bold"
+            className="h-11 rounded-xl bg-[#EEF2F6] font-bold text-neutral-700 transition hover:bg-neutral-200"
           >
             Cancel
           </button>
@@ -1285,7 +1288,7 @@ function RejectOverlay({
                 .length ===
                 0
             }
-            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 font-bold text-white disabled:opacity-40"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 font-bold text-white transition hover:bg-red-700 disabled:opacity-40"
           >
             {busy && (
               <Loader2
@@ -1314,7 +1317,7 @@ function SummaryCard({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-white/10 bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <span className="text-sm text-black/45">
           {label}
@@ -1325,7 +1328,7 @@ function SummaryCard({
         </span>
       </div>
 
-      <p className="mt-4 text-3xl font-black">
+      <p className="mt-4 text-3xl font-black text-neutral-900">
         {value}
       </p>
     </div>
@@ -1350,7 +1353,7 @@ function TabButton({
       className={`h-10 rounded-lg px-5 text-sm font-bold transition ${
         active
           ? "bg-white text-[#2458E8] shadow-sm"
-          : "text-black/45"
+          : "text-black/45 hover:text-neutral-800"
       }`}
     >
       {label}
@@ -1364,11 +1367,11 @@ function InfoCard({
 }: {
   title: string;
   children:
-    React.ReactNode;
+    | React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl bg-white p-5 shadow-sm">
-      <h3 className="text-sm font-black">
+    <section className="rounded-2xl border border-black/5 bg-white p-5 shadow-sm">
+      <h3 className="text-sm font-black text-neutral-900">
         {title}
       </h3>
 
@@ -1392,7 +1395,7 @@ function InfoRow({
         {label}
       </span>
 
-      <span className="text-right font-bold capitalize">
+      <span className="text-right font-bold capitalize text-neutral-800">
         {value}
       </span>
     </div>
@@ -1407,17 +1410,17 @@ function StatusBadge({
   const style =
     status ===
     "submitted"
-      ? "bg-blue-50 text-blue-700"
+      ? "bg-blue-50 text-blue-700 border border-blue-200"
       : status ===
           "under_review"
-        ? "bg-amber-50 text-amber-700"
+        ? "bg-amber-50 text-amber-700 border border-amber-200"
         : status ===
             "approved"
-          ? "bg-green-50 text-green-700"
+          ? "bg-green-50 text-green-700 border border-green-200"
           : status ===
               "rejected"
-            ? "bg-red-50 text-red-700"
-            : "bg-gray-100 text-gray-600";
+            ? "bg-red-50 text-red-700 border border-red-200"
+            : "bg-gray-100 text-gray-600 border border-gray-200";
 
   return (
     <span
@@ -1444,7 +1447,7 @@ function EmptyState({
           className="mx-auto text-[#2458E8]/30"
         />
 
-        <p className="mt-4 font-black">
+        <p className="mt-4 font-black text-neutral-800">
           {label}
         </p>
 

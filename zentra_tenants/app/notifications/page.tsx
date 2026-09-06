@@ -21,8 +21,6 @@ import {
   WalletCards,
 } from "lucide-react";
 
-import AppShell from "@/components/layout/AppShell";
-
 import {
   notificationService,
   type TenantNotification,
@@ -51,29 +49,29 @@ export default function NotificationsPage() {
       TenantNotification[]
     >([]);
 
-const unreadCount =
-  useNotificationStore(
-    (state) =>
-      state.unreadCount,
-  );
+  const unreadCount =
+    useNotificationStore(
+      (state) =>
+        state.unreadCount,
+    );
 
-const setUnreadCount =
-  useNotificationStore(
-    (state) =>
-      state.setUnreadCount,
-  );
+  const setUnreadCount =
+    useNotificationStore(
+      (state) =>
+        state.setUnreadCount,
+    );
 
-const decrementUnreadCount =
-  useNotificationStore(
-    (state) =>
-      state.decrementUnreadCount,
-  );
+  const decrementUnreadCount =
+    useNotificationStore(
+      (state) =>
+        state.decrementUnreadCount,
+    );
 
-const clearUnreadCount =
-  useNotificationStore(
-    (state) =>
-      state.clearUnreadCount,
-  );
+  const clearUnreadCount =
+    useNotificationStore(
+      (state) =>
+        state.clearUnreadCount,
+    );
 
   const [
     loading,
@@ -96,24 +94,24 @@ const clearUnreadCount =
   ] = useState("");
 
   const [
-  pushStatus,
-  setPushStatus,
-] =
-  useState<BrowserPushStatus>(
-    "default",
-  );
+    pushStatus,
+    setPushStatus,
+  ] =
+    useState<BrowserPushStatus>(
+      "default",
+    );
 
-const [
-  pushBusy,
-  setPushBusy,
-] =
-  useState(false);
+  const [
+    pushBusy,
+    setPushBusy,
+  ] =
+    useState(false);
 
-const [
-  pushStatusLoaded,
-  setPushStatusLoaded,
-] =
-  useState(false);
+  const [
+    pushStatusLoaded,
+    setPushStatusLoaded,
+  ] =
+    useState(false);
 
   const load =
     useCallback(
@@ -162,44 +160,44 @@ const [
           }
         }
       },
-      [],
+      [setUnreadCount],
     );
 
-    useEffect(() => {
-  let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-  const loadPushStatus =
-    async () => {
-      try {
-        const status =
-          await getBrowserPushStatus();
+    const loadPushStatus =
+      async () => {
+        try {
+          const status =
+            await getBrowserPushStatus();
 
-        if (!cancelled) {
-          setPushStatus(
-            status,
-          );
+          if (!cancelled) {
+            setPushStatus(
+              status,
+            );
+          }
+        } catch {
+          if (!cancelled) {
+            setPushStatus(
+              "unsupported",
+            );
+          }
+        } finally {
+          if (!cancelled) {
+            setPushStatusLoaded(
+              true,
+            );
+          }
         }
-      } catch {
-        if (!cancelled) {
-          setPushStatus(
-            "unsupported",
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setPushStatusLoaded(
-            true,
-          );
-        }
-      }
+      };
+
+    void loadPushStatus();
+
+    return () => {
+      cancelled = true;
     };
-
-  void loadPushStatus();
-
-  return () => {
-    cancelled = true;
-  };
-}, []);
+  }, []);
 
   useEffect(() => {
     void load();
@@ -248,184 +246,185 @@ const [
       [notifications],
     );
 
-    const toggleBrowserPush =
-  async () => {
-    if (
-      pushBusy ||
-      pushStatus === "unsupported"
-    ) {
-      return;
-    }
-
-    setPushBusy(true);
-    setError("");
-
-    try {
+  const toggleBrowserPush =
+    async () => {
       if (
-        pushStatus ===
-        "subscribed"
+        pushBusy ||
+        pushStatus === "unsupported"
       ) {
-        await disableBrowserPush();
-
-        setPushStatus(
-          "unsubscribed",
-        );
-
         return;
       }
 
-      await enableBrowserPush();
+      setPushBusy(true);
+      setError("");
 
-      setPushStatus(
-        "subscribed",
-      );
-    } catch (
-      pushError
-    ) {
-      /*
-       * Re-read the browser state because
-       * the user may have denied the
-       * permission prompt.
-       */
       try {
-        const currentStatus =
-          await getBrowserPushStatus();
+        if (
+          pushStatus ===
+          "subscribed"
+        ) {
+          await disableBrowserPush();
+
+          setPushStatus(
+            "unsubscribed",
+          );
+
+          return;
+        }
+
+        await enableBrowserPush();
 
         setPushStatus(
-          currentStatus,
+          "subscribed",
         );
-      } catch {
-        // Preserve current status.
+      } catch (
+        pushError
+      ) {
+        /*
+         * Re-read the browser state because
+         * the user may have denied the
+         * permission prompt.
+         */
+        try {
+          const currentStatus =
+            await getBrowserPushStatus();
+
+          setPushStatus(
+            currentStatus,
+          );
+        } catch {
+          // Preserve current status.
+        }
+
+        setError(
+          pushError instanceof Error
+            ? pushError.message
+            : "Unable to update browser notifications.",
+        );
+      } finally {
+        setPushBusy(false);
+      }
+    };
+
+  const openNotification =
+    async (
+      notification:
+        TenantNotification,
+    ) => {
+      if (
+        busyId ===
+        notification.id
+      ) {
+        return;
       }
 
-      setError(
-        pushError instanceof Error
-          ? pushError.message
-          : "Unable to update browser notifications.",
+      setBusyId(
+        notification.id,
       );
-    } finally {
-      setPushBusy(false);
-    }
-  };
-const openNotification =
-  async (
-    notification:
-      TenantNotification,
-  ) => {
-    if (
-      busyId ===
-      notification.id
-    ) {
-      return;
-    }
 
-    setBusyId(
-      notification.id,
-    );
+      setError("");
 
-    setError("");
+      try {
+        if (
+          !notification.is_read
+        ) {
+          await notificationService.markRead(
+            notification.id,
+          );
 
-    try {
-      if (
-        !notification.is_read
+          setNotifications(
+            (current) =>
+              current.map(
+                (item) =>
+                  item.id ===
+                  notification.id
+                    ? {
+                        ...item,
+                        is_read:
+                          true,
+                      }
+                    : item,
+              ),
+          );
+
+          decrementUnreadCount();
+        }
+
+        const target =
+          getNotificationTarget(
+            notification,
+          );
+
+        if (target) {
+          router.push(target);
+        }
+      } catch (
+        requestError
       ) {
-        await notificationService.markRead(
-          notification.id,
+        setError(
+          getApiErrorMessage(
+            requestError,
+            "Unable to mark notification as read.",
+          ),
         );
+      } finally {
+        setBusyId("");
+      }
+    };
+
+  const markAllRead =
+    async () => {
+      if (
+        markingAll ||
+        unreadCount === 0
+      ) {
+        return;
+      }
+
+      setMarkingAll(true);
+      setError("");
+
+      try {
+        await notificationService.markAllRead();
 
         setNotifications(
           (current) =>
             current.map(
-              (item) =>
-                item.id ===
-                notification.id
-                  ? {
-                      ...item,
-                      is_read:
-                        true,
-                    }
-                  : item,
+              (item) => ({
+                ...item,
+                is_read: true,
+              }),
             ),
         );
 
-        decrementUnreadCount();
-      }
-
-      const target =
-        getNotificationTarget(
-          notification,
-        );
-
-      if (target) {
-        router.push(target);
-      }
-    } catch (
-      requestError
-    ) {
-      setError(
-        getApiErrorMessage(
-          requestError,
-          "Unable to mark notification as read.",
-        ),
-      );
-    } finally {
-      setBusyId("");
-    }
-  };
-
-const markAllRead =
-  async () => {
-    if (
-      markingAll ||
-      unreadCount === 0
-    ) {
-      return;
-    }
-
-    setMarkingAll(true);
-    setError("");
-
-    try {
-      await notificationService.markAllRead();
-
-      setNotifications(
-        (current) =>
-          current.map(
-            (item) => ({
-              ...item,
-              is_read: true,
-            }),
+        clearUnreadCount();
+      } catch (
+        requestError
+      ) {
+        setError(
+          getApiErrorMessage(
+            requestError,
+            "Unable to mark notifications as read.",
           ),
-      );
-
-      clearUnreadCount();
-    } catch (
-      requestError
-    ) {
-      setError(
-        getApiErrorMessage(
-          requestError,
-          "Unable to mark notifications as read.",
-        ),
-      );
-    } finally {
-      setMarkingAll(false);
-    }
-  };
+        );
+      } finally {
+        setMarkingAll(false);
+      }
+    };
 
   return (
-    <AppShell>
+    <div className="mx-auto max-w-7xl px-4 py-8 text-neutral-900 md:px-8">
       <div className="mx-auto w-full max-w-6xl pb-10">
 
         {/* HEADER */}
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
               Notifications
             </h1>
 
-            <p className="text-sm text-gray-500">
+            <p className="mt-1 text-sm text-neutral-500">
               Track platform announcements,
               account activity, transactions,
               card requests and other updates.
@@ -434,50 +433,50 @@ const markAllRead =
 
           <div className="flex flex-wrap gap-2">
             {pushStatusLoaded &&
-  pushStatus !==
-    "unsupported" && (
-    <button
-      type="button"
-      onClick={() =>
-        void toggleBrowserPush()
-      }
-      disabled={
-        pushBusy ||
-        pushStatus ===
-          "denied"
-      }
-      title={
-        pushStatus === "denied"
-          ? "Browser notifications are blocked in your browser settings."
-          : undefined
-      }
-      className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-    >
-      {pushBusy ? (
-        <Loader2
-          size={17}
-          className="animate-spin"
-        />
-      ) : pushStatus ===
-        "subscribed" ? (
-        <BellOff
-          size={17}
-        />
-      ) : (
-        <Bell
-          size={17}
-        />
-      )}
+              pushStatus !==
+                "unsupported" && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void toggleBrowserPush()
+                  }
+                  disabled={
+                    pushBusy ||
+                    pushStatus ===
+                      "denied"
+                  }
+                  title={
+                    pushStatus === "denied"
+                      ? "Browser notifications are blocked in your browser settings."
+                      : undefined
+                  }
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {pushBusy ? (
+                    <Loader2
+                      size={17}
+                      className="animate-spin"
+                    />
+                  ) : pushStatus ===
+                    "subscribed" ? (
+                    <BellOff
+                      size={17}
+                    />
+                  ) : (
+                    <Bell
+                      size={17}
+                    />
+                  )}
 
-      {pushStatus ===
-      "subscribed"
-        ? "Disable browser alerts"
-        : pushStatus ===
-            "denied"
-          ? "Browser alerts blocked"
-          : "Enable browser alerts"}
-    </button>
-  )}
+                  {pushStatus ===
+                  "subscribed"
+                    ? "Disable browser alerts"
+                    : pushStatus ===
+                        "denied"
+                      ? "Browser alerts blocked"
+                      : "Enable browser alerts"}
+                </button>
+              )}
             <button
               type="button"
               onClick={() =>
@@ -486,7 +485,7 @@ const markAllRead =
               disabled={
                 loading
               }
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 shadow-sm disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 text-sm font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-50"
             >
               <RefreshCw
                 size={17}
@@ -510,7 +509,7 @@ const markAllRead =
                 unreadCount ===
                   0
               }
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-tenant px-4 text-sm font-semibold text-white disabled:opacity-50"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-50"
             >
               {markingAll ? (
                 <Loader2
@@ -531,7 +530,7 @@ const markAllRead =
         {/* ERROR */}
 
         {error && (
-          <div className="mt-5 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 shadow-sm">
             {error}
           </div>
         )}
@@ -566,9 +565,9 @@ const markAllRead =
         {loading ? (
           <div className="grid min-h-[360px] place-items-center">
             <div className="text-center">
-              <Loader2 className="mx-auto animate-spin text-tenant" />
+              <Loader2 className="mx-auto animate-spin text-blue-600" />
 
-              <p className="mt-3 text-sm text-gray-400">
+              <p className="mt-3 text-sm text-neutral-500">
                 Loading
                 notifications…
               </p>
@@ -576,18 +575,18 @@ const markAllRead =
           </div>
         ) : notifications.length ===
           0 ? (
-          <div className="mt-6 grid min-h-[300px] place-items-center rounded-2xl border border-dashed border-gray-200 bg-white px-6 text-center">
+          <div className="mt-6 grid min-h-[300px] place-items-center rounded-2xl border border-dashed border-neutral-200 bg-white px-6 text-center shadow-sm">
             <div>
               <Bell
                 size={36}
-                className="mx-auto text-gray-300"
+                className="mx-auto text-neutral-300"
               />
 
-              <h2 className="mt-4 font-bold text-gray-700">
+              <h2 className="mt-4 font-bold text-neutral-800">
                 No notifications
               </h2>
 
-              <p className="mt-2 text-sm text-gray-400">
+              <p className="mt-2 text-sm text-neutral-500">
                 New card
                 requests and
                 account activity
@@ -615,14 +614,14 @@ const markAllRead =
                     busyId ===
                     item.id
                   }
-                  className={`block w-full rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+                  className={`block w-full rounded-2xl border bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
                     item.is_read
-                      ? "border-gray-200"
-                      : "border-tenant"
+                      ? "border-neutral-200"
+                      : "border-blue-600"
                   }`}
                 >
                   <div className="flex gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-tenant/10 text-tenant">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-blue-100 bg-blue-50 text-blue-600">
                       <NotificationIcon
                         notification={
                           item
@@ -634,19 +633,19 @@ const markAllRead =
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
-  <h2 className="font-bold text-gray-900">
-    {item.title}
-  </h2>
+                            <h2 className="font-bold text-neutral-900">
+                              {item.title}
+                            </h2>
 
-  {item.notification_type ===
-    "platform_notification" && (
-    <span className="rounded-full bg-tenant/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-tenant">
-      Zentra
-    </span>
-  )}
-</div>
+                            {item.notification_type ===
+                              "platform_notification" && (
+                              <span className="rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-600">
+                                Zentra
+                              </span>
+                            )}
+                          </div>
 
-                          <p className="mt-1 text-sm leading-5 text-gray-600">
+                          <p className="mt-1 text-sm leading-relaxed text-neutral-600">
                             {
                               item.message
                             }
@@ -654,27 +653,27 @@ const markAllRead =
                         </div>
 
                         {!item.is_read && (
-                          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-tenant" />
+                          <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-blue-600" />
                         )}
                       </div>
 
                       <div className="mt-3 flex items-center justify-between gap-3">
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-neutral-400">
                           {formatNotificationTime(
                             item.created_at,
                           )}
                         </p>
 
                         {(
-  item.priority === "high" ||
-  item.priority === "urgent"
-) && (
-  <span className="rounded-full bg-red-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-red-600">
-    {item.priority === "urgent"
-      ? "Urgent"
-      : "Priority"}
-  </span>
-)}
+                          item.priority === "high" ||
+                          item.priority === "urgent"
+                        ) && (
+                          <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-600">
+                            {item.priority === "urgent"
+                              ? "Urgent"
+                              : "Priority"}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -684,27 +683,12 @@ const markAllRead =
           </div>
         )}
       </div>
-    </AppShell>
+    </div>
   );
 }
 function getNotificationTarget(
   notification: TenantNotification,
 ): string | null {
-  /*
-   * Explicit notification action takes priority.
-   *
-   * Only allow internal application paths.
-   * Do not navigate directly to arbitrary
-   * external URLs supplied through a notification.
-   */
-  if (
-    notification.action_url &&
-    notification.action_url.startsWith("/") &&
-    !notification.action_url.startsWith("//")
-  ) {
-    return notification.action_url;
-  }
-
   // Card purchase requests
   if (
     notification.entity_type ===
@@ -724,6 +708,15 @@ function getNotificationTarget(
     )
   ) {
     return "/dashboard/card-lock";
+  }
+
+  // Explicit action URL for non-card notifications
+  if (
+    notification.action_url &&
+    notification.action_url.startsWith("/") &&
+    !notification.action_url.startsWith("//")
+  ) {
+    return notification.action_url;
   }
 
   // Transfers
@@ -753,12 +746,12 @@ function Summary({
   value: string;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-gray-500">
+    <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-400">
         {label}
       </p>
 
-      <h2 className="mt-2 text-2xl font-bold">
+      <h2 className="mt-2 text-2xl font-extrabold text-neutral-900">
         {value}
       </h2>
     </div>
@@ -775,16 +768,16 @@ function NotificationIcon({
     notification.notification_type ||
     "";
 
-    if (
-  type === "platform_notification"
-) {
-  return (
-    <Bell
-      size={20}
-      strokeWidth={2.4}
-    />
-  );
-}
+  if (
+    type === "platform_notification"
+  ) {
+    return (
+      <Bell
+        size={20}
+        strokeWidth={2.4}
+      />
+    );
+  }
 
   if (
     type.includes(

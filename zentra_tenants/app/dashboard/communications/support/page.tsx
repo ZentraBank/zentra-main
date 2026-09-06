@@ -296,7 +296,7 @@ export default function PlatformChatPage() {
         {/* Top Navigation & Header */}
         <div className="space-y-4">
           <Link
-            href="/dashboard"
+            href="/dashboard/communications"
             className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-600 transition hover:text-neutral-900"
           >
             <ArrowLeft className="h-4 w-4" />

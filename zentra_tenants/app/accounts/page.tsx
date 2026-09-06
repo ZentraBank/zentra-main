@@ -5,8 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/layout/AppShell";
 import { getApiErrorMessage } from "@/lib/api";
-// import { getMyAccounts } from "@/services/banking.service";
-import { getTenantAccounts} from "@/services/banking.service";
+import { getTenantAccounts } from "@/services/banking.service";
 import type { BankAccount } from "@/types/banking.types";
 import { ArrowRight, RefreshCw, Wallet } from "lucide-react";
 
@@ -51,100 +50,101 @@ export default function AccountsPage() {
 
   return (
     <AppShell>
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Accounts</h1>
-         <p className="text-sm text-white/70">
-  View and manage client accounts for this tenant.
-</p>
+      <div className="mx-auto max-w-7xl px-4 py-8 text-neutral-900 md:px-8">
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">Accounts</h1>
+            <p className="mt-1 text-sm text-neutral-500">
+              View and manage client accounts for this tenant.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadAccounts()}
+            disabled={loading}
+            className="inline-flex items-center justify-center rounded-xl border border-neutral-200 bg-white p-3 text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-50"
+            aria-label="Refresh accounts"
+          >
+            <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => void loadAccounts()}
-          disabled={loading}
-          className="rounded-xl border border-white/20 bg-black/30 p-3 text-white disabled:opacity-50"
-          aria-label="Refresh accounts"
-        >
-          <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
-        </button>
-      </div>
 
-      {error ? (
-        <div className="mb-5 rounded-2xl border border-red-500/40 bg-red-950/70 p-4 text-sm text-red-100">
-          {error}
-        </div>
-      ) : null}
+        {error ? (
+          <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">
+            {error}
+          </div>
+        ) : null}
 
-      {totals.length > 0 ? (
-        <div className="mb-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {totals.map(([currency, total]) => (
-            <div key={currency} className="rounded-2xl border border-white/15 bg-black/45 p-5 text-white backdrop-blur">
-              <p className="text-xs uppercase tracking-[0.2em] text-white/55">Total {currency} balance</p>
-              <p className="mt-2 text-2xl font-bold">{money(total, currency)}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
+        {totals.length > 0 ? (
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {totals.map(([currency, total]) => (
+              <div key={currency} className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-400">Total {currency} balance</p>
+                <p className="mt-2 text-3xl font-extrabold text-neutral-900">{money(total, currency)}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
-      {loading ? (
-        <div className="flex min-h-48 items-center justify-center rounded-2xl border border-white/15 bg-black/45 text-white">
-          <RefreshCw className="mr-3 animate-spin" size={20} /> Loading accounts…
-        </div>
-      ) : accounts.length === 0 ? (
-        <div className="rounded-2xl border border-white/15 bg-black/45 p-8 text-center text-white">
-          <Wallet className="mx-auto mb-3 text-white/60" size={34} />
-          <p className="font-semibold">
-  No client accounts have been created yet.
-</p>
-
-<p className="mt-1 text-sm text-white/60">
-  Accounts created for clients under this tenant will appear here.
-</p>
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {accounts.map((account) => (
-            <Link
-              key={account.id}
-              href={`/accounts/${account.id}`}
-              className="group rounded-2xl border border-white/15 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-tenant/10 text-tenant">
-                  <Wallet size={24} />
+        {loading ? (
+          <div className="flex min-h-48 items-center justify-center rounded-2xl border border-neutral-200 bg-white text-neutral-500 shadow-sm">
+            <RefreshCw className="mr-3 animate-spin text-blue-600" size={20} /> Loading accounts…
+          </div>
+        ) : accounts.length === 0 ? (
+          <div className="rounded-2xl border border-neutral-200 bg-white p-12 text-center text-neutral-500 shadow-sm">
+            <Wallet className="mx-auto mb-3 text-neutral-400" size={36} />
+            <p className="font-semibold text-neutral-800">
+              No client accounts have been created yet.
+            </p>
+            <p className="mt-1 text-sm text-neutral-500">
+              Accounts created for clients under this tenant will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {accounts.map((account) => (
+              <Link
+                key={account.id}
+                href={`/accounts/${account.id}`}
+                className="group rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+                    <Wallet size={24} />
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${account.status === "active" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-neutral-100 text-neutral-700 border border-neutral-200"}`}>
+                    {account.status}
+                  </span>
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${account.status === "active" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}`}>
-                  {account.status}
-                </span>
-              </div>
-              <div className="mt-5">
-              <p className="text-xs uppercase tracking-[0.16em] text-gray-400">
-                Client
-              </p>
+                <div className="mt-5">
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-400">
+                    Client
+                  </p>
 
-              <p className="mt-1 font-semibold text-gray-900">
-                {account.client_name || account.account_name}
-              </p>
+                  <p className="mt-1 font-bold text-neutral-900">
+                    {account.client_name || account.account_name}
+                  </p>
 
-              {account.client_email ? (
-                <p className="mt-0.5 text-xs text-gray-500">
-                  {account.client_email}
-                </p>
-              ) : null}
-            </div>
-              <p className="mt-5 text-sm text-gray-500">Available balance</p>
-              <h2 className="mt-1 text-3xl font-bold text-gray-900">{money(account.balance, account.currency)}</h2>
-              <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-                <div><p className="text-xs text-gray-500">Account number</p><p className="font-semibold">{account.account_number}</p></div>
-                <div><p className="text-xs text-gray-500">Account type</p><p className="font-semibold capitalize">{account.account_type}</p></div>
-              </div>
-              <div className="mt-5 flex items-center justify-end gap-2 text-sm font-semibold text-tenant">
-                View account <ArrowRight size={16} className="transition group-hover:translate-x-1" />
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+                  {account.client_email ? (
+                    <p className="mt-0.5 text-xs text-neutral-500">
+                      {account.client_email}
+                    </p>
+                  ) : null}
+                </div>
+                <p className="mt-5 text-xs font-medium uppercase tracking-wider text-neutral-400">Available balance</p>
+                <h2 className="mt-1 text-3xl font-extrabold text-neutral-900">{money(account.balance, account.currency)}</h2>
+                <div className="mt-6 grid grid-cols-2 gap-4 text-sm border-t border-neutral-100 pt-4">
+                  <div><p className="text-xs text-neutral-400 font-medium">Account number</p><p className="font-semibold font-mono text-neutral-800">{account.account_number}</p></div>
+                  <div><p className="text-xs text-neutral-400 font-medium">Account type</p><p className="font-semibold capitalize text-neutral-800">{account.account_type}</p></div>
+                </div>
+                <div className="mt-5 flex items-center justify-end gap-2 text-sm font-semibold text-blue-600">
+                  View account <ArrowRight size={16} className="transition group-hover:translate-x-1" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </AppShell>
   );
 }

@@ -203,6 +203,17 @@ export default function MyInvestmentDetailsPage() {
       [graphPoints],
     );
 
+  const desktopGraphPath =
+    useMemo(
+      () =>
+        buildSvgPath(
+          graphPoints,
+          900,
+          240,
+        ),
+      [graphPoints],
+    );
+
   const selectedDestination =
     useMemo(
       () =>
@@ -350,8 +361,9 @@ export default function MyInvestmentDetailsPage() {
     );
 
   return (
-    <main className="min-h-screen bg-[#13813d] px-5 pb-12 pt-10 text-white">
-      <section className="mx-auto w-full max-w-[430px]">
+    <main className="min-h-screen bg-[#13813d] px-5 pb-12 pt-10 text-white lg:flex lg:items-center lg:justify-center lg:px-12 lg:py-16">
+      {/* Mobile Layout Wrapper */}
+      <section className="mx-auto w-full max-w-[430px] lg:hidden">
         {/* Header */}
 
         <header className="relative flex items-center justify-center">
@@ -849,6 +861,326 @@ export default function MyInvestmentDetailsPage() {
           </section>
         )}
       </section>
+
+      {/* Desktop Layout Wrapper */}
+      <section className="hidden lg:mx-auto lg:flex lg:w-full lg:max-w-[1200px] lg:flex-col">
+        {/* Top Header Bar */}
+        <header className="relative mb-10 flex items-center justify-between rounded-[24px] border border-white/20 bg-white/10 px-8 py-6 backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/investment/my-investments"
+              className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#13813d] shadow-md transition hover:bg-white/90"
+            >
+              <ArrowLeft
+                size={20}
+              />
+            </Link>
+
+            <div>
+              <h1 className="font-heading text-[22px] font-black tracking-tight text-white">
+                Investment Portfolio Analytics & Management
+              </h1>
+              <p className="mt-0.5 text-xs text-white/80">
+                Monitor real-time value growth, track duration progress, and execute secure withdrawals.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() =>
+              void load()
+            }
+            className="grid h-11 w-11 place-items-center rounded-full bg-white/20 text-white shadow-sm transition hover:bg-white/30"
+            aria-label="Refresh investment details"
+          >
+            <RefreshCw
+              size={18}
+            />
+          </button>
+        </header>
+
+        {error && (
+          <div className="mb-8 rounded-[16px] bg-red-50 px-6 py-4 text-sm font-semibold text-red-700 shadow-md">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-8 flex items-center gap-3 rounded-[16px] bg-green-50 px-6 py-4 text-sm font-semibold text-green-700 shadow-md">
+            <CheckCircle2 size={20} className="shrink-0" />
+            {success}
+          </div>
+        )}
+
+        <div className="grid grid-cols-12 gap-10">
+          {/* Left Column: Growth Chart & Live Valuation */}
+          <div className="col-span-7 space-y-8">
+            <div className="overflow-hidden rounded-[32px] border border-white/20 bg-[#10291E] shadow-2xl">
+              <div className="p-8">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-white/40">
+                      Active Portfolio Asset
+                    </p>
+
+                    <h1 className="mt-1 text-3xl font-black text-white">
+                      {liveInvestment.product_name || "Investment"}
+                    </h1>
+                  </div>
+
+                  <StatusBadge status={liveInvestment.status} />
+                </div>
+
+                <div className="mt-8">
+                  <p className="text-xs font-bold uppercase tracking-wider text-white/40">
+                    Live Current Value
+                  </p>
+
+                  <p className="mt-2 text-5xl font-black tracking-tight text-[#71D49B]">
+                    {formatMoney(currentValue, liveInvestment.currency)}
+                  </p>
+
+                  <p className="mt-2 text-sm font-semibold text-[#71D49B]/80">
+                    +{formatMoney(accrued, liveInvestment.currency)} accrued growth to date
+                  </p>
+                </div>
+
+                {/* Desktop SVG Graph */}
+                <div className="relative mt-8 h-[240px] w-full">
+                  <svg
+                    viewBox="0 0 900 240"
+                    preserveAspectRatio="none"
+                    className="h-full w-full"
+                  >
+                    <defs>
+                      <linearGradient
+                        id="client-investment-detail-fill-desktop"
+                        x1="0"
+                        x2="0"
+                        y1="0"
+                        y2="1"
+                      >
+                        <stop offset="0%" stopColor="currentColor" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+
+                    {[60, 120, 180, 240].map((y) => (
+                      <line
+                        key={y}
+                        x1="0"
+                        x2="900"
+                        y1={y}
+                        y2={y}
+                        stroke="currentColor"
+                        strokeOpacity="0.08"
+                      />
+                    ))}
+
+                    <path
+                      d={`${desktopGraphPath} L 900 240 L 0 240 Z`}
+                      fill="url(#client-investment-detail-fill-desktop)"
+                      className="text-[#71D49B]"
+                    />
+
+                    <path
+                      d={desktopGraphPath}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="text-[#71D49B]"
+                    />
+                  </svg>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between text-xs font-semibold text-white/40">
+                  <span>{formatDateShort(liveInvestment.started_at)}</span>
+                  <span className="font-bold text-[#71D49B]">{formatNumber(progress)}% Completed</span>
+                  <span>{formatDateShort(liveInvestment.maturity_date)}</span>
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 bg-white/[0.03] px-8 py-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <DarkMetricDesktop
+                    label="Principal Invested"
+                    value={formatMoney(principal, liveInvestment.currency)}
+                  />
+                  <DarkMetricDesktop
+                    label="Accrued Growth"
+                    value={formatMoney(accrued, liveInvestment.currency)}
+                    positive
+                  />
+                  <DarkMetricDesktop
+                    label="Maturity Target"
+                    value={formatMoney(maturityAmount, liveInvestment.currency)}
+                    positive
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Investment Summary & Withdrawal Action */}
+          <div className="col-span-5 space-y-8">
+            <div className="rounded-[32px] border border-white/20 bg-white p-8 text-[#292929] shadow-2xl backdrop-blur-md">
+              <h2 className="text-xl font-black text-[#24302b]">
+                Investment Summary
+              </h2>
+
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <InfoCardDesktop
+                  icon={<TrendingUp size={18} />}
+                  label="Annual Rate"
+                  value={`${formatNumber(liveInvestment.annual_rate)}%`}
+                />
+                <InfoCardDesktop
+                  icon={<Clock3 size={18} />}
+                  label="Duration"
+                  value={formatDuration(liveInvestment.duration_days)}
+                />
+                <InfoCardDesktop
+                  icon={<CalendarDays size={18} />}
+                  label="Days Remaining"
+                  value={String(liveInvestment.days_remaining ?? 0)}
+                />
+                <InfoCardDesktop
+                  icon={<ShieldCheck size={18} />}
+                  label="Risk Profile"
+                  value={liveInvestment.risk_level ?? "—"}
+                />
+              </div>
+
+              <div className="mt-8">
+                <div className="flex justify-between text-xs font-bold text-black/50">
+                  <span>Progress Bar</span>
+                  <span>{formatNumber(progress)}%</span>
+                </div>
+
+                <div className="mt-2.5 h-3 overflow-hidden rounded-full bg-black/5">
+                  <div
+                    className="h-full rounded-full bg-[#16884B] transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, Math.max(0, progress))}%`,
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="mt-8 rounded-[20px] bg-[#F6F8F7] p-6 space-y-4">
+                <DetailDesktop label="Started Date" value={formatDateTime(liveInvestment.started_at)} />
+                <DetailDesktop label="Maturity Date" value={formatDateTime(liveInvestment.maturity_date)} />
+                <DetailDesktop label="Expected Return" value={formatMoney(liveInvestment.expected_return, liveInvestment.currency)} />
+                <DetailDesktop label="Payout Type" value={liveInvestment.payout_type?.replaceAll("_", " ") ?? "—"} />
+              </div>
+            </div>
+
+            {/* Withdrawal Section */}
+            {liveInvestment.status === "matured" && (
+              <form
+                onSubmit={handleWithdrawal}
+                className="rounded-[32px] border border-white/20 bg-white p-8 text-[#292929] shadow-2xl backdrop-blur-md"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="grid h-12 w-12 place-items-center rounded-[16px] bg-[#EEF3FF] text-[#1D4ED8]">
+                    <WalletCards size={22} />
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-black">
+                      Withdraw Investment
+                    </h2>
+                    <p className="mt-0.5 text-xs text-black/50">
+                      This investment has matured and is available for withdrawal.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 rounded-[18px] bg-[#F3F8F5] p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-black/40">
+                    Amount Available for Withdrawal
+                  </p>
+                  <p className="mt-1 text-3xl font-black text-[#16884B]">
+                    {formatMoney(liveInvestment.maturity_amount, liveInvestment.currency)}
+                  </p>
+                </div>
+
+                <div className="mt-6">
+                  <label className="text-xs font-bold uppercase tracking-wider text-black/60">
+                    Destination Account
+                  </label>
+
+                  <select
+                    value={destinationAccountId}
+                    onChange={(event) => setDestinationAccountId(event.target.value)}
+                    className="mt-2 h-[54px] w-full rounded-[14px] border border-black/10 bg-white px-5 text-xs font-semibold outline-none focus:border-[#1D4ED8]"
+                  >
+                    <option value="">Select account</option>
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.account_name} — ••••{account.account_number.slice(-4)} — {formatMoney(account.balance, account.currency)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={withdrawing || !selectedDestination}
+                  className="mt-6 flex h-[52px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1D4ED8] text-sm font-bold text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {withdrawing ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <WalletCards size={16} />
+                      Request Withdrawal
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+
+            {liveInvestment.status === "withdrawal_requested" && (
+              <section className="rounded-[24px] border border-amber-200 bg-amber-50 p-6 text-amber-800 shadow-xl">
+                <div className="flex items-start gap-4">
+                  <Clock3 size={22} className="mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-base font-black">
+                      Withdrawal Pending
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed">
+                      Your withdrawal request has been submitted and is currently awaiting review and processing.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {liveInvestment.status === "completed" && (
+              <section className="rounded-[24px] border border-green-200 bg-green-50 p-6 text-green-800 shadow-xl">
+                <div className="flex items-start gap-4">
+                  <CheckCircle2 size={22} className="mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-base font-black">
+                      Investment Completed
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed">
+                      This investment has been completed successfully and the withdrawal has been credited to your account.
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
@@ -1178,6 +1510,34 @@ function DarkMetric({
   );
 }
 
+function DarkMetricDesktop({
+  label,
+  value,
+  positive = false,
+}: {
+  label: string;
+  value: string;
+  positive?: boolean;
+}) {
+  return (
+    <div className="rounded-[16px] border border-white/10 bg-white/5 p-4">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+        {label}
+      </p>
+
+      <p
+        className={`mt-1 truncate text-base font-black ${
+          positive
+            ? "text-[#71D49B]"
+            : "text-white"
+        }`}
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function InfoCard({
   icon,
   label,
@@ -1207,6 +1567,31 @@ function InfoCard({
   );
 }
 
+function InfoCardDesktop({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[16px] bg-[#F6F8F7] p-4">
+      <div className="flex items-center gap-2 text-[#16884B]">
+        {icon}
+        <p className="text-[10px] font-bold uppercase tracking-wider text-black/50">
+          {label}
+        </p>
+      </div>
+
+      <p className="mt-2 truncate text-sm font-black capitalize text-[#24302b]">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function Detail({
   label,
   value,
@@ -1221,6 +1606,26 @@ function Detail({
       </p>
 
       <p className="max-w-[230px] text-right text-[10px] font-bold capitalize">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function DetailDesktop({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <p className="text-xs font-medium text-black/50">
+        {label}
+      </p>
+
+      <p className="text-xs font-black capitalize text-[#24302b]">
         {value}
       </p>
     </div>
@@ -1252,7 +1657,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.05em] ${
+      className={`rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.05em] ${
         styles[status] ??
         "bg-white/10 text-white/60"
       }`}

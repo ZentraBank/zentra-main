@@ -30,6 +30,7 @@ import {
   useState,
 } from "react";
 
+import AppShell from "@/components/layout/AppShell";
 import {
   donationService,
   type TenantDonor,
@@ -656,607 +657,599 @@ export default function DonationManagementPage() {
     };
 
   return (
-    <main className="relative min-h-screen overflow-hidden text-white">
-      <Image
-        src="/images/Background_1.png"
-        alt=""
-        fill
-        priority
-        className="object-cover"
-      />
+    <AppShell>
+      <main className="relative min-h-[calc(100svh-80px)] overflow-x-hidden rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_18%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.13),transparent_16%)] bg-black px-4 py-8 text-white md:px-8 lg:px-12">
+        <div className="mx-auto max-w-[1180px]">
 
-      <div className="absolute inset-0 bg-black/55" />
+          {/* TOP */}
 
-      <div className="relative z-10 mx-auto min-h-screen max-w-[1180px] px-4 pb-12 pt-10 md:px-10">
+          <div className="flex items-center justify-between">
+            <Link
+              href="/dashboard"
+              className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-white/20"
+            >
+              <ArrowLeft
+                size={20}
+              />
+            </Link>
 
-        {/* TOP */}
-
-        <div className="flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-white/20"
-          >
-            <ArrowLeft
-              size={20}
-            />
-          </Link>
-
-          <button
-            type="button"
-            onClick={
-              refresh
-            }
-            disabled={
-              loading
-            }
-            className="flex h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold transition hover:bg-white/20 disabled:opacity-50"
-          >
-            <RefreshCw
-              size={15}
-              className={
+            <button
+              type="button"
+              onClick={
+                refresh
+              }
+              disabled={
                 loading
-                  ? "animate-spin"
-                  : ""
+              }
+              className="flex h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold transition hover:bg-white/20 disabled:opacity-50"
+            >
+              <RefreshCw
+                size={15}
+                className={
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }
+              />
+
+              Refresh
+            </button>
+          </div>
+
+          {/* HERO */}
+
+          <section className="mt-8 grid items-center gap-8 lg:grid-cols-[1fr_360px]">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-bold backdrop-blur">
+                <Gift
+                  size={15}
+                />
+                Donation Management
+              </div>
+
+              <h1 className="mt-5 text-[42px] font-black leading-[0.92] tracking-[-1px] md:text-[68px]">
+                Funds
+                <br />
+                <span className="text-[#fde047]">
+                  Donations
+                </span>
+              </h1>
+
+              <p className="mt-5 max-w-[620px] text-sm leading-6 text-white/65 md:text-base">
+                Manage verified donors, review client donation requests and complete approved fund redemptions.
+              </p>
+
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href="/dashboard/donation/donor/register"
+                  className="flex h-12 items-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-500"
+                >
+                  <Users
+                    size={17}
+                  />
+                  Register Donor
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMainTab(
+                      "requests",
+                    )
+                  }
+                  className="flex h-12 items-center gap-2 rounded-xl bg-white/10 px-5 text-sm font-bold backdrop-blur transition hover:bg-white/15"
+                >
+                  <HandCoins
+                    size={17}
+                  />
+                  Review Requests
+                </button>
+              </div>
+            </div>
+
+            {/* SUMMARY */}
+
+            <div className="rounded-[28px] border border-white/10 bg-white/95 p-5 text-neutral-900 shadow-2xl">
+              <div className="grid grid-cols-3 gap-3">
+                <SummaryBox
+                  label="Active donors"
+                  value={String(
+                    donorStats.active,
+                  )}
+                />
+
+                <SummaryBox
+                  label="Requests"
+                  value={
+                    mainTab ===
+                    "requests"
+                      ? String(
+                          requests.length,
+                        )
+                      : "—"
+                  }
+                />
+
+                <SummaryBox
+                  label="Redemptions"
+                  value={
+                    mainTab ===
+                    "redemptions"
+                      ? String(
+                          redemptions.length,
+                        )
+                      : "—"
+                  }
+                />
+              </div>
+
+              <div className="mt-4 rounded-2xl bg-[#F7FAFC] p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-neutral-400">
+                  Donor health
+                </p>
+
+                <div className="mt-3 space-y-2 text-sm">
+                  <SmallRow
+                    label="Inactive"
+                    value={String(
+                      donorStats.inactive,
+                    )}
+                  />
+
+                  <SmallRow
+                    label="Blocked"
+                    value={String(
+                      donorStats.blocked,
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* MESSAGE */}
+
+          {(error ||
+            message) && (
+            <div
+              className={`mt-7 rounded-2xl border px-4 py-3 text-sm font-medium shadow-sm ${
+                error
+                  ? "border-red-500/30 bg-red-950/70 text-red-100"
+                  : "border-emerald-500/30 bg-emerald-950/70 text-emerald-100"
+              }`}
+            >
+              {error ||
+                message}
+            </div>
+          )}
+
+          {/* MAIN NAV */}
+
+          <div className="mt-8 grid grid-cols-3 rounded-2xl bg-white/10 p-1 backdrop-blur">
+            <MainTabButton
+              active={
+                mainTab ===
+                "donors"
+              }
+              label="Donors"
+              icon={
+                <Users
+                  size={16}
+                />
+              }
+              onClick={() =>
+                setMainTab(
+                  "donors",
+                )
               }
             />
 
-            Refresh
-          </button>
-        </div>
-
-        {/* HERO */}
-
-        <section className="mt-8 grid items-center gap-8 lg:grid-cols-[1fr_360px]">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 text-xs font-bold backdrop-blur">
-              <Gift
-                size={15}
-              />
-              Donation Management
-            </div>
-
-            <h1 className="mt-5 text-[42px] font-black leading-[0.92] tracking-[-1px] md:text-[68px]">
-              Funds
-              <br />
-              <span className="text-[#d6c51f]">
-                Donations
-              </span>
-            </h1>
-
-            <p className="mt-5 max-w-[620px] text-sm leading-6 text-white/65 md:text-base">
-              Manage verified donors, review client donation requests and complete approved fund redemptions.
-            </p>
-
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Link
-                href="/dashboard/donation/donor/register"
-                className="flex h-12 items-center gap-2 rounded-xl bg-[#2447d8] px-5 text-sm font-black text-white transition hover:bg-[#1e3bb8]"
-              >
-                <Users
-                  size={17}
-                />
-                Register Donor
-              </Link>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setMainTab(
-                    "requests",
-                  )
-                }
-                className="flex h-12 items-center gap-2 rounded-xl bg-white/10 px-5 text-sm font-bold backdrop-blur hover:bg-white/15"
-              >
+            <MainTabButton
+              active={
+                mainTab ===
+                "requests"
+              }
+              label="Requests"
+              icon={
                 <HandCoins
-                  size={17}
+                  size={16}
                 />
-                Review Requests
-              </button>
-            </div>
+              }
+              onClick={() =>
+                setMainTab(
+                  "requests",
+                )
+              }
+            />
+
+            <MainTabButton
+              active={
+                mainTab ===
+                "redemptions"
+              }
+              label="Redemptions"
+              icon={
+                <WalletCards
+                  size={16}
+                />
+              }
+              onClick={() =>
+                setMainTab(
+                  "redemptions",
+                )
+              }
+            />
           </div>
 
-          {/* SUMMARY */}
+          {/* DONORS */}
 
-          <div className="rounded-[28px] border border-white/10 bg-white/95 p-5 text-black shadow-2xl">
-            <div className="grid grid-cols-3 gap-3">
-              <SummaryBox
-                label="Active donors"
-                value={String(
-                  donorStats.active,
-                )}
-              />
-
-              <SummaryBox
-                label="Requests"
-                value={
-                  mainTab ===
-                  "requests"
-                    ? String(
-                        requests.length,
-                      )
-                    : "—"
-                }
-              />
-
-              <SummaryBox
-                label="Redemptions"
-                value={
-                  mainTab ===
-                  "redemptions"
-                    ? String(
-                        redemptions.length,
-                      )
-                    : "—"
-                }
-              />
-            </div>
-
-            <div className="mt-4 rounded-2xl bg-[#F7FAFC] p-4">
-              <p className="text-xs font-bold uppercase tracking-wide text-black/35">
-                Donor health
-              </p>
-
-              <div className="mt-3 space-y-2 text-sm">
-                <SmallRow
-                  label="Inactive"
-                  value={String(
-                    donorStats.inactive,
+          {mainTab ===
+            "donors" && (
+            <>
+              <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex gap-2 overflow-x-auto">
+                  {(
+                    [
+                      "all",
+                      "active",
+                      "inactive",
+                      "blocked",
+                    ] as const
+                  ).map(
+                    (
+                      status,
+                    ) => (
+                      <FilterButton
+                        key={
+                          status
+                        }
+                        active={
+                          donorFilter ===
+                          status
+                        }
+                        onClick={() =>
+                          setDonorFilter(
+                            status,
+                          )
+                        }
+                        label={
+                          status
+                        }
+                      />
+                    ),
                   )}
-                />
+                </div>
 
-                <SmallRow
-                  label="Blocked"
-                  value={String(
-                    donorStats.blocked,
-                  )}
+                <SearchBox
+                  value={
+                    search
+                  }
+                  onChange={
+                    setSearch
+                  }
+                  placeholder="Search donors"
                 />
               </div>
-            </div>
-          </div>
-        </section>
 
-        {/* MESSAGE */}
+              {loading ? (
+                <LoadingState
+                  label="Loading donors…"
+                />
+              ) : donors.length ===
+                0 ? (
+                <EmptyState
+                  title="No donors found"
+                  description="Register a donor to make them available to eligible clients."
+                />
+              ) : (
+                <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {donors.map(
+                    (
+                      donor,
+                    ) => (
+                      <DonorCard
+                        key={
+                          donor.id
+                        }
+                        donor={
+                          donor
+                        }
+                        busy={
+                          actionId ===
+                          donor.id
+                        }
+                        onStatusChange={(
+                          status,
+                        ) =>
+                          void changeDonorStatus(
+                            donor,
+                            status,
+                          )
+                        }
+                      />
+                    ),
+                  )}
+                </section>
+              )}
+            </>
+          )}
 
-        {(error ||
-          message) && (
-          <div
-            className={`mt-7 rounded-2xl px-4 py-3 text-sm ${
-              error
-                ? "bg-red-950/90 text-red-100"
-                : "bg-green-950/90 text-green-100"
-            }`}
-          >
-            {error ||
-              message}
-          </div>
-        )}
+          {/* REQUESTS */}
 
-        {/* MAIN NAV */}
+          {mainTab ===
+            "requests" && (
+            <>
+              <div className="mt-5 flex gap-2 overflow-x-auto">
+                {(
+                  [
+                    "pending",
+                    "approved",
+                    "rejected",
+                    "funded",
+                    "redeemed",
+                  ] as const
+                ).map(
+                  (
+                    status,
+                  ) => (
+                    <FilterButton
+                      key={
+                        status
+                      }
+                      active={
+                        requestFilter ===
+                        status
+                      }
+                      onClick={() =>
+                        setRequestFilter(
+                          status,
+                        )
+                      }
+                      label={
+                        status
+                      }
+                    />
+                  ),
+                )}
+              </div>
 
-        <div className="mt-8 grid grid-cols-3 rounded-2xl bg-white/10 p-1 backdrop-blur">
-          <MainTabButton
-            active={
-              mainTab ===
-              "donors"
-            }
-            label="Donors"
-            icon={
-              <Users
-                size={16}
-              />
-            }
-            onClick={() =>
-              setMainTab(
-                "donors",
-              )
-            }
-          />
+              {loading ? (
+                <LoadingState
+                  label="Loading donation requests…"
+                />
+              ) : requests.length ===
+                0 ? (
+                <EmptyState
+                  title={`No ${requestFilter} requests`}
+                  description="Client donation requests will appear here."
+                />
+              ) : (
+                <section className="mt-6 grid gap-4 lg:grid-cols-2">
+                  {requests.map(
+                    (
+                      request,
+                    ) => (
+                      <DonationRequestCard
+                        key={
+                          request.id
+                        }
+                        request={
+                          request
+                        }
+                        busy={
+                          actionId ===
+                          request.id
+                        }
+                        onOpen={() =>
+                          setSelectedRequest(
+                            request,
+                          )
+                        }
+                        onApprove={() =>
+                          void approveRequest(
+                            request,
+                          )
+                        }
+                        onReject={() =>
+                          setRejectionRequest(
+                            request,
+                          )
+                        }
+                      />
+                    ),
+                  )}
+                </section>
+              )}
+            </>
+          )}
 
-          <MainTabButton
-            active={
-              mainTab ===
-              "requests"
-            }
-            label="Requests"
-            icon={
-              <HandCoins
-                size={16}
-              />
-            }
-            onClick={() =>
-              setMainTab(
-                "requests",
-              )
-            }
-          />
+          {/* REDEMPTIONS */}
 
-          <MainTabButton
-            active={
-              mainTab ===
-              "redemptions"
-            }
-            label="Redemptions"
-            icon={
-              <WalletCards
-                size={16}
-              />
-            }
-            onClick={() =>
-              setMainTab(
-                "redemptions",
-              )
-            }
-          />
+          {mainTab ===
+            "redemptions" && (
+            <>
+              <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex gap-2 overflow-x-auto">
+                  {(
+                    [
+                      "pending_otp",
+                      "approved",
+                      "completed",
+                    ] as const
+                  ).map(
+                    (
+                      status,
+                    ) => (
+                      <FilterButton
+                        key={
+                          status
+                        }
+                        active={
+                          redemptionFilter ===
+                          status
+                        }
+                        onClick={() =>
+                          setRedemptionFilter(
+                            status,
+                          )
+                        }
+                        label={
+                          status ===
+                          "pending_otp"
+                            ? "Waiting OTP"
+                            : status
+                        }
+                      />
+                    ),
+                  )}
+                </div>
+
+                <SearchBox
+                  value={
+                    search
+                  }
+                  onChange={
+                    setSearch
+                  }
+                  placeholder="Search redemptions"
+                />
+              </div>
+
+              {loading ? (
+                <LoadingState
+                  label="Loading redemptions…"
+                />
+              ) : redemptions.length ===
+                0 ? (
+                <EmptyState
+                  title="No redemptions found"
+                  description="Donation redemption activity will appear here."
+                />
+              ) : (
+                <section className="mt-6 grid gap-4 lg:grid-cols-2">
+                  {redemptions.map(
+                    (
+                      redemption,
+                    ) => (
+                      <RedemptionCard
+                        key={
+                          redemption.id
+                        }
+                        redemption={
+                          redemption
+                        }
+                        busy={
+                          actionId ===
+                          redemption.id
+                        }
+                        onComplete={() =>
+                          setRedemptionToComplete(
+                            redemption,
+                          )
+                        }
+                      />
+                    ),
+                  )}
+                </section>
+              )}
+            </>
+          )}
         </div>
 
-        {/* DONORS */}
-
-        {mainTab ===
-          "donors" && (
-          <>
-            <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex gap-2 overflow-x-auto">
-                {(
-                  [
-                    "all",
-                    "active",
-                    "inactive",
-                    "blocked",
-                  ] as const
-                ).map(
-                  (
-                    status,
-                  ) => (
-                    <FilterButton
-                      key={
-                        status
-                      }
-                      active={
-                        donorFilter ===
-                        status
-                      }
-                      onClick={() =>
-                        setDonorFilter(
-                          status,
-                        )
-                      }
-                      label={
-                        status
-                      }
-                    />
-                  ),
-                )}
-              </div>
-
-              <SearchBox
-                value={
-                  search
-                }
-                onChange={
-                  setSearch
-                }
-                placeholder="Search donors"
-              />
-            </div>
-
-            {loading ? (
-              <LoadingState
-                label="Loading donors…"
-              />
-            ) : donors.length ===
-              0 ? (
-              <EmptyState
-                title="No donors found"
-                description="Register a donor to make them available to eligible clients."
-              />
-            ) : (
-              <section className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {donors.map(
-                  (
-                    donor,
-                  ) => (
-                    <DonorCard
-                      key={
-                        donor.id
-                      }
-                      donor={
-                        donor
-                      }
-                      busy={
-                        actionId ===
-                        donor.id
-                      }
-                      onStatusChange={(
-                        status,
-                      ) =>
-                        void changeDonorStatus(
-                          donor,
-                          status,
-                        )
-                      }
-                    />
-                  ),
-                )}
-              </section>
-            )}
-          </>
-        )}
-
-        {/* REQUESTS */}
-
-        {mainTab ===
-          "requests" && (
-          <>
-            <div className="mt-5 flex gap-2 overflow-x-auto">
-              {(
-                [
-                  "pending",
-                  "approved",
-                  "rejected",
-                  "funded",
-                  "redeemed",
-                ] as const
-              ).map(
-                (
-                  status,
-                ) => (
-                  <FilterButton
-                    key={
-                      status
-                    }
-                    active={
-                      requestFilter ===
-                      status
-                    }
-                    onClick={() =>
-                      setRequestFilter(
-                        status,
-                      )
-                    }
-                    label={
-                      status
-                    }
-                  />
-                ),
-              )}
-            </div>
-
-            {loading ? (
-              <LoadingState
-                label="Loading donation requests…"
-              />
-            ) : requests.length ===
-              0 ? (
-              <EmptyState
-                title={`No ${requestFilter} requests`}
-                description="Client donation requests will appear here."
-              />
-            ) : (
-              <section className="mt-6 grid gap-4 lg:grid-cols-2">
-                {requests.map(
-                  (
-                    request,
-                  ) => (
-                    <DonationRequestCard
-                      key={
-                        request.id
-                      }
-                      request={
-                        request
-                      }
-                      busy={
-                        actionId ===
-                        request.id
-                      }
-                      onOpen={() =>
-                        setSelectedRequest(
-                          request,
-                        )
-                      }
-                      onApprove={() =>
-                        void approveRequest(
-                          request,
-                        )
-                      }
-                      onReject={() =>
-                        setRejectionRequest(
-                          request,
-                        )
-                      }
-                    />
-                  ),
-                )}
-              </section>
-            )}
-          </>
-        )}
-
-        {/* REDEMPTIONS */}
-
-        {mainTab ===
-          "redemptions" && (
-          <>
-            <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex gap-2 overflow-x-auto">
-                {(
-                  [
-                    "pending_otp",
-                    "approved",
-                    "completed",
-                  ] as const
-                ).map(
-                  (
-                    status,
-                  ) => (
-                    <FilterButton
-                      key={
-                        status
-                      }
-                      active={
-                        redemptionFilter ===
-                        status
-                      }
-                      onClick={() =>
-                        setRedemptionFilter(
-                          status,
-                        )
-                      }
-                      label={
-                        status ===
-                        "pending_otp"
-                          ? "Waiting OTP"
-                          : status
-                      }
-                    />
-                  ),
-                )}
-              </div>
-
-              <SearchBox
-                value={
-                  search
-                }
-                onChange={
-                  setSearch
-                }
-                placeholder="Search redemptions"
-              />
-            </div>
-
-            {loading ? (
-              <LoadingState
-                label="Loading redemptions…"
-              />
-            ) : redemptions.length ===
-              0 ? (
-              <EmptyState
-                title="No redemptions found"
-                description="Donation redemption activity will appear here."
-              />
-            ) : (
-              <section className="mt-6 grid gap-4 lg:grid-cols-2">
-                {redemptions.map(
-                  (
-                    redemption,
-                  ) => (
-                    <RedemptionCard
-                      key={
-                        redemption.id
-                      }
-                      redemption={
-                        redemption
-                      }
-                      busy={
-                        actionId ===
-                        redemption.id
-                      }
-                      onComplete={() =>
-                        setRedemptionToComplete(
-                          redemption,
-                        )
-                      }
-                    />
-                  ),
-                )}
-              </section>
-            )}
-          </>
-        )}
-      </div>
-
-      <RequestDetailsOverlay
-        request={
-          selectedRequest
-        }
-        busy={
-          Boolean(
-            selectedRequest &&
-              actionId ===
-                selectedRequest.id,
-          )
-        }
-        onClose={() =>
-          setSelectedRequest(
-            null,
-          )
-        }
-        onApprove={() => {
-          if (
+        <RequestDetailsOverlay
+          request={
             selectedRequest
-          ) {
-            void approveRequest(
-              selectedRequest,
-            );
           }
-        }}
-        onReject={() => {
-          if (
-            selectedRequest
-          ) {
-            setRejectionRequest(
-              selectedRequest,
-            );
+          busy={
+            Boolean(
+              selectedRequest &&
+                actionId ===
+                  selectedRequest.id,
+            )
           }
-        }}
-      />
+          onClose={() =>
+            setSelectedRequest(
+              null,
+            )
+          }
+          onApprove={() => {
+            if (
+              selectedRequest
+            ) {
+              void approveRequest(
+                selectedRequest,
+              );
+            }
+          }}
+          onReject={() => {
+            if (
+              selectedRequest
+            ) {
+              setRejectionRequest(
+                selectedRequest,
+              );
+            }
+          }}
+        />
 
-      <RejectRequestOverlay
-        request={
-          rejectionRequest
-        }
-        busy={
-          Boolean(
-            rejectionRequest &&
-              actionId ===
-                rejectionRequest.id,
-          )
-        }
-        onClose={() =>
-          setRejectionRequest(
-            null,
-          )
-        }
-        onReject={(
-          reason,
-        ) => {
-          if (
+        <RejectRequestOverlay
+          request={
             rejectionRequest
-          ) {
-            void rejectRequest(
-              rejectionRequest.id,
-              reason,
-            );
           }
-        }}
-      />
+          busy={
+            Boolean(
+              rejectionRequest &&
+                actionId ===
+                  rejectionRequest.id,
+            )
+          }
+          onClose={() =>
+            setRejectionRequest(
+              null,
+            )
+          }
+          onReject={(
+            reason,
+          ) => {
+            if (
+              rejectionRequest
+            ) {
+              void rejectRequest(
+                rejectionRequest.id,
+                reason,
+              );
+            }
+          }}
+        />
 
-      <CompleteRedemptionOverlay
-        redemption={
-          redemptionToComplete
-        }
-        busy={
-          Boolean(
-            redemptionToComplete &&
-              actionId ===
-                redemptionToComplete.id,
-          )
-        }
-        onClose={() =>
-          setRedemptionToComplete(
-            null,
-          )
-        }
-        onConfirm={() => {
-          if (
+        <CompleteRedemptionOverlay
+          redemption={
             redemptionToComplete
-          ) {
-            void completeRedemption(
-              redemptionToComplete,
-            );
           }
-        }}
-      />
-    </main>
+          busy={
+            Boolean(
+              redemptionToComplete &&
+                actionId ===
+                  redemptionToComplete.id,
+            )
+          }
+          onClose={() =>
+            setRedemptionToComplete(
+              null,
+            )
+          }
+          onConfirm={() => {
+            if (
+              redemptionToComplete
+            ) {
+              void completeRedemption(
+                redemptionToComplete,
+              );
+            }
+          }}
+        />
+      </main>
+    </AppShell>
   );
 }
 
@@ -1282,7 +1275,7 @@ function DonorCard({
   ) => void;
 }) {
   return (
-    <article className="overflow-hidden rounded-[24px] border border-white/10 bg-white/95 text-black shadow-xl">
+    <article className="overflow-hidden rounded-[24px] border border-white/10 bg-white/95 text-neutral-900 shadow-xl">
       <div className="relative h-[190px] bg-[#E9EEF7]">
         {donor.profile_image_url ? (
           <Image
@@ -1316,20 +1309,20 @@ function DonorCard({
       </div>
 
       <div className="p-5">
-        <h2 className="text-lg font-black">
+        <h2 className="text-lg font-black text-neutral-900">
           {
             donor.full_name
           }
         </h2>
 
-        <p className="mt-1 text-sm text-black/45">
+        <p className="mt-1 text-sm text-neutral-500">
           {
             donor.email ||
             "No email"
           }
         </p>
 
-        <div className="mt-4 space-y-2 rounded-xl bg-[#F7FAFC] p-3 text-sm">
+        <div className="mt-4 space-y-2 rounded-xl border border-neutral-100 bg-[#F7FAFC] p-3 text-sm">
           <SmallRow
             label="Country"
             value={
@@ -1350,7 +1343,7 @@ function DonorCard({
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Link
             href={`/dashboard/donation/donor/edit/${donor.id}`}
-            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-gray-100 text-sm font-bold"
+            className="flex h-10 items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-neutral-100 text-sm font-bold text-neutral-700 transition hover:bg-neutral-200"
           >
             <Edit2
               size={15}
@@ -1370,7 +1363,7 @@ function DonorCard({
                   "inactive",
                 )
               }
-              className="flex h-10 items-center justify-center gap-2 rounded-xl bg-amber-50 text-sm font-bold text-amber-700 disabled:opacity-50"
+              className="flex h-10 items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 text-sm font-bold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"
             >
               <UserX
                 size={15}
@@ -1388,7 +1381,7 @@ function DonorCard({
                   "active",
                 )
               }
-              className="flex h-10 items-center justify-center gap-2 rounded-xl bg-green-50 text-sm font-bold text-green-700 disabled:opacity-50"
+              className="flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
             >
               <UserCheck
                 size={15}
@@ -1410,7 +1403,7 @@ function DonorCard({
                 "blocked",
               )
             }
-            className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-red-50 text-sm font-bold text-red-600 disabled:opacity-50"
+            className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
           >
             {busy ? (
               <Loader2
@@ -1452,14 +1445,14 @@ function DonationRequestCard({
   onReject: () => void;
 }) {
   return (
-    <article className="rounded-[24px] bg-white p-5 text-black shadow-xl">
+    <article className="rounded-[24px] border border-white/10 bg-white p-5 text-neutral-900 shadow-xl">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-[#2447d8]">
+          <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
             Donation Request
           </p>
 
-          <h2 className="mt-1 text-xl font-black">
+          <h2 className="mt-1 text-xl font-black text-neutral-900">
             {formatMoney(
               request.amount,
               request.currency,
@@ -1474,7 +1467,7 @@ function DonationRequestCard({
         />
       </div>
 
-      <div className="mt-5 space-y-3 rounded-2xl bg-[#F7FAFC] p-4 text-sm">
+      <div className="mt-5 space-y-3 rounded-2xl border border-neutral-100 bg-[#F7FAFC] p-4 text-sm">
         <SmallRow
           label="Donor"
           value={
@@ -1510,7 +1503,7 @@ function DonationRequestCard({
         onClick={
           onOpen
         }
-        className="mt-4 h-10 w-full rounded-xl bg-gray-100 text-sm font-bold"
+        className="mt-4 h-10 w-full rounded-xl border border-neutral-200 bg-neutral-100 text-sm font-bold text-neutral-700 transition hover:bg-neutral-200"
       >
         View details
       </button>
@@ -1526,7 +1519,7 @@ function DonationRequestCard({
             onClick={
               onReject
             }
-            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-red-50 text-sm font-bold text-red-600"
+            className="flex h-10 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-sm font-bold text-red-600 transition hover:bg-red-100"
           >
             <XCircle
               size={15}
@@ -1542,7 +1535,7 @@ function DonationRequestCard({
             onClick={
               onApprove
             }
-            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-[#2447d8] text-sm font-bold text-white"
+            className="flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-bold text-white shadow-sm transition hover:bg-blue-500"
           >
             {busy ? (
               <Loader2
@@ -1580,14 +1573,14 @@ function RedemptionCard({
   onComplete: () => void;
 }) {
   return (
-    <article className="rounded-[24px] bg-white p-5 text-black shadow-xl">
+    <article className="rounded-[24px] border border-white/10 bg-white p-5 text-neutral-900 shadow-xl">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-[#2447d8]">
+          <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
             Redemption
           </p>
 
-          <h2 className="mt-1 text-xl font-black">
+          <h2 className="mt-1 text-xl font-black text-neutral-900">
             {formatMoney(
               redemption.amount,
               redemption.currency,
@@ -1602,7 +1595,7 @@ function RedemptionCard({
         />
       </div>
 
-      <div className="mt-5 space-y-3 rounded-2xl bg-[#F7FAFC] p-4 text-sm">
+      <div className="mt-5 space-y-3 rounded-2xl border border-neutral-100 bg-[#F7FAFC] p-4 text-sm">
         <SmallRow
           label="Beneficiary"
           value={
@@ -1654,7 +1647,7 @@ function RedemptionCard({
           disabled={
             busy
           }
-          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-black text-white disabled:opacity-50"
+          className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-green-600 text-sm font-black text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50"
         >
           {busy ? (
             <Loader2
@@ -1699,15 +1692,15 @@ function RequestDetailsOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/75 px-4">
-      <section className="w-full max-w-lg rounded-[26px] bg-white p-6 text-black shadow-2xl">
+    <div className="fixed inset-0 z-[120] grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
+      <section className="w-full max-w-lg rounded-[26px] bg-white p-6 text-neutral-900 shadow-2xl">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-[#2447d8]">
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
               Donation request
             </p>
 
-            <h2 className="mt-1 text-2xl font-black">
+            <h2 className="mt-1 text-2xl font-black text-neutral-900">
               {formatMoney(
                 request.amount,
                 request.currency,
@@ -1720,7 +1713,7 @@ function RequestDetailsOverlay({
             onClick={
               onClose
             }
-            className="grid h-9 w-9 place-items-center rounded-full bg-gray-100"
+            className="grid h-9 w-9 place-items-center rounded-full bg-neutral-100 transition hover:bg-neutral-200"
           >
             <X
               size={17}
@@ -1728,7 +1721,7 @@ function RequestDetailsOverlay({
           </button>
         </div>
 
-        <div className="mt-6 space-y-3 rounded-2xl bg-[#F7FAFC] p-4 text-sm">
+        <div className="mt-6 space-y-3 rounded-2xl border border-neutral-100 bg-[#F7FAFC] p-4 text-sm">
           <SmallRow
             label="Donor"
             value={
@@ -1771,7 +1764,7 @@ function RequestDetailsOverlay({
               disabled={
                 busy
               }
-              className="h-11 rounded-xl bg-red-50 font-bold text-red-600"
+              className="h-11 rounded-xl border border-red-200 bg-red-50 font-bold text-red-600 transition hover:bg-red-100"
             >
               Reject
             </button>
@@ -1784,7 +1777,7 @@ function RequestDetailsOverlay({
               disabled={
                 busy
               }
-              className="h-11 rounded-xl bg-[#2447d8] font-bold text-white"
+              className="h-11 rounded-xl bg-blue-600 font-bold text-white shadow-sm transition hover:bg-blue-500"
             >
               Approve
             </button>
@@ -1832,9 +1825,9 @@ function RejectRequestOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[130] grid place-items-center bg-black/75 px-4">
-      <section className="w-full max-w-md rounded-[24px] bg-white p-6 text-black">
-        <h2 className="text-xl font-black">
+    <div className="fixed inset-0 z-[130] grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
+      <section className="w-full max-w-md rounded-[24px] bg-white p-6 text-neutral-900 shadow-2xl">
+        <h2 className="text-xl font-black text-neutral-900">
           Reject donation request
         </h2>
 
@@ -1853,7 +1846,7 @@ function RejectRequestOverlay({
             1000
           }
           placeholder="Reason for rejection"
-          className="mt-5 h-28 w-full resize-none rounded-xl border border-gray-200 p-3 text-sm outline-none"
+          className="mt-5 h-28 w-full resize-none rounded-xl border border-neutral-200 p-3 text-sm text-neutral-900 outline-none transition focus:border-red-400"
         />
 
         <div className="mt-5 grid grid-cols-2 gap-3">
@@ -1865,7 +1858,7 @@ function RejectRequestOverlay({
             disabled={
               busy
             }
-            className="h-11 rounded-xl bg-gray-100 font-bold"
+            className="h-11 rounded-xl border border-neutral-200 bg-neutral-100 font-bold text-neutral-700 transition hover:bg-neutral-200"
           >
             Cancel
           </button>
@@ -1883,7 +1876,7 @@ function RejectRequestOverlay({
                 reason.trim(),
               )
             }
-            className="h-11 rounded-xl bg-red-600 font-bold text-white disabled:opacity-40"
+            className="h-11 rounded-xl bg-red-600 font-bold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-40"
           >
             Reject
           </button>
@@ -1916,13 +1909,13 @@ function CompleteRedemptionOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[130] grid place-items-center bg-black/75 px-4">
-      <section className="w-full max-w-md rounded-[24px] bg-white p-6 text-black">
-        <h2 className="text-xl font-black">
+    <div className="fixed inset-0 z-[130] grid place-items-center bg-black/75 px-4 backdrop-blur-sm">
+      <section className="w-full max-w-md rounded-[24px] bg-white p-6 text-neutral-900 shadow-2xl">
+        <h2 className="text-xl font-black text-neutral-900">
           Complete redemption
         </h2>
 
-        <p className="mt-2 text-sm leading-6 text-black/50">
+        <p className="mt-2 text-sm leading-6 text-neutral-500">
           This will credit{" "}
           <strong>
             {formatMoney(
@@ -1942,7 +1935,7 @@ function CompleteRedemptionOverlay({
             disabled={
               busy
             }
-            className="h-11 rounded-xl bg-gray-100 font-bold"
+            className="h-11 rounded-xl border border-neutral-200 bg-neutral-100 font-bold text-neutral-700 transition hover:bg-neutral-200"
           >
             Cancel
           </button>
@@ -1955,7 +1948,7 @@ function CompleteRedemptionOverlay({
             disabled={
               busy
             }
-            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-green-600 font-bold text-white"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-green-600 font-bold text-white shadow-sm transition hover:bg-green-700 disabled:opacity-50"
           >
             {busy && (
               <Loader2
@@ -1998,7 +1991,7 @@ function MainTabButton({
       }
       className={`flex h-12 items-center justify-center gap-2 rounded-xl text-sm font-black transition ${
         active
-          ? "bg-white text-black"
+          ? "bg-white text-black shadow-sm"
           : "text-white/55 hover:text-white"
       }`}
     >
@@ -2025,8 +2018,8 @@ function FilterButton({
       }
       className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold capitalize transition ${
         active
-          ? "bg-[#2447d8] text-white"
-          : "bg-white/10 text-white/55"
+          ? "bg-blue-600 text-white shadow-sm"
+          : "bg-white/10 text-white/55 hover:bg-white/15 hover:text-white"
       }`}
     >
       {label.replaceAll(
@@ -2069,7 +2062,7 @@ function SearchBox({
         placeholder={
           placeholder
         }
-        className="h-10 w-full rounded-xl border border-white/10 bg-white/10 pl-9 pr-3 text-sm text-white outline-none placeholder:text-white/30"
+        className="h-10 w-full rounded-xl border border-white/10 bg-white/10 pl-9 pr-3 text-sm text-white outline-none transition placeholder:text-white/30 focus:border-white/30"
       />
     </div>
   );
@@ -2083,12 +2076,12 @@ function SummaryBox({
   value: string;
 }) {
   return (
-    <div className="rounded-xl bg-black px-2 py-4 text-center text-white">
-      <p className="text-xl font-black">
+    <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-2 py-4 text-center text-neutral-900">
+      <p className="text-xl font-black text-neutral-900">
         {value}
       </p>
 
-      <p className="mt-1 text-[10px] font-bold text-white/55">
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-neutral-400">
         {label}
       </p>
     </div>
@@ -2104,11 +2097,11 @@ function SmallRow({
 }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <span className="shrink-0 text-black/40">
+      <span className="shrink-0 text-neutral-400 font-medium">
         {label}
       </span>
 
-      <span className="text-right font-bold">
+      <span className="text-right font-semibold text-neutral-800">
         {value}
       </span>
     </div>
@@ -2129,18 +2122,18 @@ function StatusBadge({
       "completed" ||
     status ===
       "redeemed"
-      ? "bg-green-100 text-green-700"
+      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
       : status ===
           "pending" ||
         status ===
           "pending_otp"
-        ? "bg-amber-100 text-amber-700"
+        ? "bg-amber-50 text-amber-700 border border-amber-200"
         : status ===
             "blocked" ||
           status ===
             "rejected"
-          ? "bg-red-100 text-red-700"
-          : "bg-gray-100 text-gray-600";
+          ? "bg-red-50 text-red-700 border border-red-200"
+          : "bg-neutral-100 text-neutral-600 border border-neutral-200";
 
   return (
     <span
@@ -2162,7 +2155,7 @@ function LoadingState({
   return (
     <div className="grid min-h-[320px] place-items-center">
       <div className="text-center">
-        <Loader2 className="mx-auto animate-spin text-[#d6c51f]" />
+        <Loader2 className="mx-auto animate-spin text-blue-500" />
 
         <p className="mt-3 text-sm text-white/45">
           {label}

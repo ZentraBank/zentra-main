@@ -384,8 +384,9 @@ const [
   }
 
   return (
-    <main className="min-h-screen bg-[#13813d] text-[#24302b]">
-      <section className="mx-auto min-h-screen w-full max-w-[430px] px-6 pb-10 pt-12">
+    <main className="min-h-screen bg-[#13813d] text-[#24302b] lg:flex lg:items-center lg:justify-center lg:px-12 lg:py-16">
+      {/* Mobile Layout Wrapper */}
+      <section className="mx-auto min-h-screen w-full max-w-[430px] px-6 pb-10 pt-12 lg:hidden">
         <header className="relative flex items-center justify-center">
           <Link
             href="/investment/investment-types"
@@ -721,6 +722,245 @@ const [
           </button>
         </form>
       </section>
+
+      {/* Desktop Layout Wrapper */}
+      <section className="hidden lg:mx-auto lg:flex lg:w-full lg:max-w-[1200px] lg:flex-col">
+        {/* Top Header Bar */}
+        <header className="relative mb-10 flex items-center justify-between rounded-[24px] border border-white/20 bg-white/10 px-8 py-6 backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/investment/investment-types"
+              className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#13813d] shadow-md transition hover:bg-white/90"
+            >
+              <ArrowLeft
+                size={20}
+              />
+            </Link>
+
+            <div>
+              <h1 className="font-heading text-[22px] font-black tracking-tight text-white">
+                Investment Subscription & Details
+              </h1>
+              <p className="mt-0.5 text-xs text-white/80">
+                Review product metrics, evaluate compounding returns, and allocate funds securely.
+              </p>
+            </div>
+          </div>
+        </header>
+
+        {error && (
+          <div className="mb-8 rounded-[16px] bg-red-50 px-6 py-4 text-sm font-semibold text-red-700 shadow-md">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-12 gap-10">
+          {/* Left Column: Product Specifications & Details */}
+          <div className="col-span-6 space-y-8">
+            <div className="overflow-hidden rounded-[32px] border border-white/20 bg-[#c9f2ee] shadow-xl">
+              <div className="bg-gradient-to-br from-[#EBFFF8] to-[#B9E9DC] p-8">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-wider text-[#16884b]/70">
+                      Investment Opportunity
+                    </p>
+
+                    <h1 className="mt-2 font-heading text-3xl font-black leading-snug text-[#24302b]">
+                      {product.name}
+                    </h1>
+                  </div>
+
+                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-[18px] bg-[#16884b] text-white shadow-md">
+                    <TrendingUp size={26} />
+                  </div>
+                </div>
+
+                {product.description && (
+                  <p className="mt-4 text-sm leading-relaxed text-black/70">
+                    {product.description}
+                  </p>
+                )}
+
+                <div className="mt-8 grid grid-cols-3 gap-3">
+                  <InfoCardDesktop
+                    icon={<TrendingUp size={16} />}
+                    label="Annual Rate"
+                    value={`${formatNumber(product.annual_rate)}%`}
+                  />
+
+                  <InfoCardDesktop
+                    icon={<Clock3 size={16} />}
+                    label="Duration"
+                    value={formatDuration(product.duration_days)}
+                  />
+
+                  <InfoCardDesktop
+                    icon={<ShieldCheck size={16} />}
+                    label="Risk Level"
+                    value={product.risk_level}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white/80 p-8 backdrop-blur-sm border-t border-black/5">
+                <h3 className="text-sm font-black uppercase tracking-wider text-[#24302b] mb-4">
+                  Terms & Conditions
+                </h3>
+                <div className="space-y-4">
+                  <DetailRowDesktop
+                    label="Minimum Investment"
+                    value={formatMoney(product.minimum_amount, product.currency)}
+                  />
+                  <DetailRowDesktop
+                    label="Maximum Investment"
+                    value={product.maximum_amount ? formatMoney(product.maximum_amount, product.currency) : "No maximum"}
+                  />
+                  <DetailRowDesktop
+                    label="Payout Type"
+                    value={product.payout_type.replaceAll("_", " ")}
+                  />
+                  <DetailRowDesktop
+                    label="Currency"
+                    value={product.currency}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Investment Action Form & Projections */}
+          <div className="col-span-6">
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-[32px] border border-white/20 bg-white p-8 shadow-2xl backdrop-blur-md"
+            >
+              <h2 className="text-2xl font-black text-[#24302b]">
+                Start Investment
+              </h2>
+              <p className="mt-1 text-xs text-black/50">
+                Choose a funding account and enter the amount you want to invest.
+              </p>
+
+              <div className="mt-6">
+                <label className="text-xs font-bold text-black/70">
+                  Funding account
+                </label>
+
+                <select
+                  value={sourceAccountId}
+                  onChange={(event) => setSourceAccountId(event.target.value)}
+                  className="mt-2 h-[56px] w-full rounded-[16px] border border-black/10 bg-white px-5 text-sm font-semibold outline-none focus:border-[#1D4ED8]"
+                >
+                  <option value="">Select account</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {formatAccount(account)}
+                    </option>
+                  ))}
+                </select>
+
+                {accounts.length === 0 && (
+                  <p className="mt-2 text-xs font-semibold text-red-600">
+                    You do not have an active {product.currency} account available for this investment.
+                  </p>
+                )}
+              </div>
+
+              {selectedAccount && (
+                <div className="mt-4 rounded-[16px] bg-[#F5F8F7] p-4 border border-black/5">
+                  <DetailRowDesktop
+                    label="Available Balance"
+                    value={formatMoney(selectedAccount.balance, selectedAccount.currency)}
+                  />
+                  <div className="mt-2">
+                    <DetailRowDesktop
+                      label="Account Number"
+                      value={`•••• ${selectedAccount.account_number.slice(-4)}`}
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6">
+                <label className="text-xs font-bold text-black/70">
+                  Investment amount
+                </label>
+
+                <div className="mt-2 flex h-[56px] overflow-hidden rounded-[16px] border border-black/10 focus-within:border-[#1D4ED8]">
+                  <div className="grid min-w-[80px] place-items-center border-r border-black/15 bg-gray-50 text-xs font-black text-[#24302b]">
+                    {product.currency}
+                  </div>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={amount}
+                    onChange={(event) => setAmount(event.target.value)}
+                    placeholder="0.00"
+                    className="min-w-0 flex-1 px-5 text-lg font-black outline-none placeholder:text-black/20"
+                  />
+                </div>
+              </div>
+
+              <section className="mt-6 rounded-[20px] bg-[#F2FBF6] p-6 border border-[#16884b]/15">
+                <div className="flex items-center gap-2.5">
+                  <TrendingUp size={18} className="text-[#16884b]" />
+                  <p className="text-xs font-black text-[#16884b]">
+                    Investment Projection Summary
+                  </p>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  <ProjectionRowDesktop
+                    label="Principal Amount"
+                    value={formatMoney(numericAmount, product.currency)}
+                  />
+
+                  <ProjectionRowDesktop
+                    label="Expected Return"
+                    value={formatMoney(expectedReturn, product.currency)}
+                    success
+                  />
+
+                  <ProjectionRowDesktop
+                    label="Maturity Amount"
+                    value={formatMoney(maturityAmount, product.currency)}
+                    success
+                  />
+
+                  <ProjectionRowDesktop
+                    label="Estimated Maturity Date"
+                    value={maturityDate ? formatDate(maturityDate) : "—"}
+                  />
+                </div>
+
+                <p className="mt-5 text-[11px] leading-relaxed text-black/50">
+                  Returns shown are based on the product rate and duration. Final values are confirmed by the backend when the investment is created.
+                </p>
+              </section>
+
+              <button
+                type="submit"
+                disabled={submitting || accounts.length === 0}
+                className="mt-8 flex h-[56px] w-full items-center justify-center gap-2 rounded-[16px] bg-[#1D4ED8] text-base font-bold text-white shadow-lg shadow-blue-600/30 transition hover:bg-blue-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Starting investment...
+                  </>
+                ) : (
+                  <>
+                    <WalletCards size={18} />
+                    Invest Now
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
@@ -752,6 +992,31 @@ function InfoCard({
   );
 }
 
+function InfoCardDesktop({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-[16px] bg-white/70 p-4 shadow-xs">
+      <div className="flex items-center gap-1.5 text-[#16884b]">
+        {icon}
+        <p className="text-[10px] font-bold uppercase tracking-wider">
+          {label}
+        </p>
+      </div>
+
+      <p className="mt-2 truncate text-sm font-black capitalize text-[#24302b]">
+        {value}
+      </p>
+    </div>
+  );
+}
+
 function DetailRow({
   label,
   value,
@@ -766,6 +1031,26 @@ function DetailRow({
       </span>
 
       <span className="max-w-[220px] text-right text-[11px] font-bold capitalize">
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function DetailRowDesktop({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-5">
+      <span className="text-xs text-black/50 font-medium">
+        {label}
+      </span>
+
+      <span className="text-xs font-black capitalize text-[#24302b]">
         {value}
       </span>
     </div>
@@ -792,6 +1077,34 @@ function ProjectionRow({
           success
             ? "text-[#16884b]"
             : "text-[#333]"
+        }`}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function ProjectionRowDesktop({
+  label,
+  value,
+  success = false,
+}: {
+  label: string;
+  value: string;
+  success?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-5">
+      <span className="text-xs text-black/60 font-medium">
+        {label}
+      </span>
+
+      <span
+        className={`text-sm font-black ${
+          success
+            ? "text-[#16884b]"
+            : "text-[#24302b]"
         }`}
       >
         {value}

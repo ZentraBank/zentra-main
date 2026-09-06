@@ -9,8 +9,6 @@ import {
 
 import Link from "next/link";
 
-import AppShell from "@/components/layout/AppShell";
-
 import {
   getApiErrorMessage,
 } from "@/lib/api";
@@ -294,14 +292,14 @@ export default function TransactionsPage() {
   */
 
   return (
-    <AppShell>
+    <div className="mx-auto max-w-7xl px-4 py-8 text-neutral-900 md:px-8">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
             Transactions
           </h1>
 
-          <p className="text-sm text-white/70">
+          <p className="mt-1 text-sm text-neutral-500">
             Track credits,
             debits and
             transfers across
@@ -315,7 +313,7 @@ export default function TransactionsPage() {
             void load()
           }
           disabled={loading}
-          className="rounded-xl border border-white/20 bg-black/30 p-3 text-white disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-xl border border-neutral-200 bg-white p-3 text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-50"
           aria-label="Refresh transactions"
         >
           <RefreshCw
@@ -331,7 +329,7 @@ export default function TransactionsPage() {
 
       {/* Summary */}
 
-      <div className="mb-5 grid gap-4 md:grid-cols-3">
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
         <SummaryCard
           label="Total transactions"
           value={String(
@@ -398,11 +396,11 @@ export default function TransactionsPage() {
 
       {/* Search / filter */}
 
-      <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-3 py-2 md:w-96">
+      <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2 md:w-96 focus-within:border-blue-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition">
           <Search
             size={17}
-            className="text-gray-400"
+            className="text-neutral-400"
           />
 
           <input
@@ -416,7 +414,7 @@ export default function TransactionsPage() {
               )
             }
             placeholder="Search client, account or description"
-            className="w-full text-sm outline-none"
+            className="w-full text-sm text-neutral-900 outline-none placeholder:text-neutral-400 bg-transparent"
           />
         </div>
 
@@ -432,7 +430,7 @@ export default function TransactionsPage() {
                 .value as TransactionFilter,
             )
           }
-          className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 outline-none"
+          className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm font-medium text-neutral-700 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
         >
           <option value="all">
             All transactions
@@ -451,24 +449,24 @@ export default function TransactionsPage() {
       {/* Error */}
 
       {error ? (
-        <div className="mb-5 rounded-2xl bg-red-950/80 p-4 text-red-100">
+        <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">
           {error}
         </div>
       ) : null}
 
       {/* Transactions */}
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
         {loading ? (
-          <div className="flex min-h-44 items-center justify-center text-gray-600">
-            <RefreshCw className="mr-3 animate-spin" />
+          <div className="flex min-h-44 items-center justify-center text-neutral-500">
+            <RefreshCw className="mr-3 animate-spin text-blue-600" />
 
             Loading
             transactions…
           </div>
         ) : filtered.length ===
           0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-12 text-center text-neutral-500 font-medium">
             No transactions
             match your current
             filters.
@@ -486,7 +484,7 @@ export default function TransactionsPage() {
           )
         )}
       </div>
-    </AppShell>
+    </div>
   );
 }
 
@@ -507,13 +505,13 @@ function TransactionRow({
     "credit";
 
   const content = (
-    <div className="flex items-center justify-between gap-4 p-4">
-      <div className="flex min-w-0 items-center gap-3">
+    <div className="flex items-center justify-between gap-4 p-5">
+      <div className="flex min-w-0 items-center gap-4">
         <div
-          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border ${
             isCredit
-              ? "bg-emerald-50 text-emerald-600"
-              : "bg-red-50 text-red-600"
+              ? "border-emerald-100 bg-emerald-50 text-emerald-600"
+              : "border-red-100 bg-red-50 text-red-600"
           }`}
         >
           {isCredit ? (
@@ -529,16 +527,16 @@ function TransactionRow({
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate font-semibold text-gray-900">
+            <p className="truncate font-bold text-neutral-900">
               {tx.client_name ||
                 "Unknown client"}
             </p>
 
             <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${
                 isCredit
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-red-100 text-red-700"
+                  ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                  : "bg-red-100 text-red-700 border border-red-200"
               }`}
             >
               {
@@ -547,22 +545,22 @@ function TransactionRow({
             </span>
 
             {!tx.transfer_id ? (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase text-blue-700">
+              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold uppercase text-blue-700 border border-blue-100">
                 Adjustment
               </span>
             ) : (
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold uppercase text-gray-600">
+              <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-neutral-600 border border-neutral-200">
                 Transfer
               </span>
             )}
           </div>
 
-          <p className="mt-0.5 truncate text-xs text-gray-500">
+          <p className="mt-0.5 truncate text-xs text-neutral-500">
             {tx.client_email ||
               "—"}
           </p>
 
-          <p className="mt-1 truncate text-xs text-gray-400">
+          <p className="mt-1 truncate text-xs text-neutral-400 font-mono">
             {
               tx.account_name
             }
@@ -573,14 +571,14 @@ function TransactionRow({
           </p>
 
           {tx.description ? (
-            <p className="mt-1 truncate text-xs text-gray-500">
+            <p className="mt-1 truncate text-xs text-neutral-500">
               {
                 tx.description
               }
             </p>
           ) : null}
 
-          <p className="mt-1 text-[11px] text-gray-400">
+          <p className="mt-1 text-[11px] text-neutral-400">
             {new Date(
               tx.created_at,
             ).toLocaleString()}
@@ -590,7 +588,7 @@ function TransactionRow({
 
       <div className="shrink-0 text-right">
         <p
-          className={`font-bold ${
+          className={`font-extrabold ${
             isCredit
               ? "text-emerald-600"
               : "text-red-600"
@@ -605,15 +603,17 @@ function TransactionRow({
           )}
         </p>
 
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-neutral-500">
           Balance:{" "}
-          {money(
-            tx.balance_after,
-            tx.currency,
-          )}
+          <span className="font-semibold text-neutral-700">
+            {money(
+              tx.balance_after,
+              tx.currency,
+            )}
+          </span>
         </p>
 
-        <p className="mt-1 text-[11px] capitalize text-gray-400">
+        <p className="mt-1 text-[11px] font-medium capitalize text-neutral-400">
           Completed
         </p>
       </div>
@@ -634,7 +634,7 @@ function TransactionRow({
     return (
       <Link
         href={`/transactions/${tx.transfer_id}`}
-        className="block border-b border-gray-100 transition hover:bg-gray-50 last:border-b-0"
+        className="block border-b border-neutral-100 transition hover:bg-neutral-50/80 last:border-b-0"
       >
         {content}
       </Link>
@@ -642,7 +642,7 @@ function TransactionRow({
   }
 
   return (
-    <div className="border-b border-gray-100 last:border-b-0">
+    <div className="border-b border-neutral-100 last:border-b-0">
       {content}
     </div>
   );
@@ -664,17 +664,17 @@ function SummaryCard({
   secondary?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-sm text-gray-500">
+    <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-400">
         {label}
       </p>
 
-      <h2 className="mt-2 break-words text-2xl font-bold text-gray-900">
+      <h2 className="mt-2 break-words text-2xl font-extrabold text-neutral-900">
         {value}
       </h2>
 
       {secondary ? (
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-1 text-xs font-medium text-neutral-500">
           {secondary}
         </p>
       ) : null}

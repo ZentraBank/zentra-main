@@ -843,47 +843,22 @@ const changeOwnStatus = async ({
     cardId,
   });
 
-  if (
-  card.status === "frozen" &&
-  card.frozen_by_admin
-) {
-  throw httpError(
-    403,
-    "This card was frozen by your bank and cannot be unfrozen from your account"
-  );
-}
   const allowedTransitions =
     customerTransitions[card.status] || [];
 
-  if (
-    !allowedTransitions.includes(status)
-  ) {
+  if (!allowedTransitions.includes(status)) {
     throw httpError(
       409,
       `A customer cannot change a ${card.status} card to ${status}`
     );
   }
 
-const frozenByAdmin =
-  status === "frozen";
-
-const updated =
-  await repo.updateStatus({
-    tenantId:
-      auth.tenantId,
-
-    cardId,
-
-    status,
-
-    /*
-     * Freeze by tenant = protected freeze.
-     *
-     * Moving to active, blocked or inactive
-     * clears the freeze flag.
-     */
-    frozenByAdmin,
-  });
+  const updated =
+    await repo.updateStatus({
+      tenantId: auth.tenantId,
+      cardId,
+      status,
+    });
 
   await repo.createEvent({
     tenantId: auth.tenantId,
@@ -892,73 +867,6 @@ const updated =
     actorUserId: auth.userId,
     eventType: `card_${status}`,
   });
-
-  const notificationContent = {
-  frozen: {
-    type:
-      "card_frozen",
-
-    title:
-      "Card frozen",
-
-    message:
-      reason
-        ? `Your ${card.card_type} card ending in ${card.pan_last4} was frozen by your bank. Reason: ${reason}`
-        : `Your ${card.card_type} card ending in ${card.pan_last4} was frozen by your bank.`,
-  },
-
-  active: {
-    type:
-      card.status ===
-      "blocked"
-        ? "card_unblocked"
-        : "card_activated",
-
-    title:
-      card.status ===
-      "blocked"
-        ? "Card unblocked"
-        : card.status ===
-            "frozen"
-          ? "Card unfrozen"
-          : "Card activated",
-
-    message:
-      card.status ===
-      "blocked"
-        ? `Your ${card.card_type} card ending in ${card.pan_last4} has been unblocked by your bank.`
-        : card.status ===
-            "frozen"
-          ? `Your ${card.card_type} card ending in ${card.pan_last4} has been unfrozen by your bank.`
-          : `Your ${card.card_type} card ending in ${card.pan_last4} is now active.`,
-  },
-
-  blocked: {
-    type:
-      "card_blocked",
-
-    title:
-      "Card blocked",
-
-    message:
-      reason
-        ? `Your ${card.card_type} card ending in ${card.pan_last4} was blocked by your bank. Reason: ${reason}`
-        : `Your ${card.card_type} card ending in ${card.pan_last4} was blocked by your bank.`,
-  },
-
-  inactive: {
-    type:
-      "card_deactivated",
-
-    title:
-      "Card deactivated",
-
-    message:
-      reason
-        ? `Your ${card.card_type} card ending in ${card.pan_last4} was deactivated by your bank. Reason: ${reason}`
-        : `Your ${card.card_type} card ending in ${card.pan_last4} was deactivated by your bank.`,
-  },
-}[status];
 
   return updated;
 };

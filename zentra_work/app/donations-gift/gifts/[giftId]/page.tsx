@@ -416,364 +416,387 @@ export default function GiftedFundsPage() {
       "redemption_rejected";
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#FEF08A] text-[#454545]">
-      <section className="relative mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-5 pb-8 pt-12">
+    <main className="relative min-h-screen overflow-hidden bg-[#FEF08A] text-[#454545] lg:px-10 lg:py-16">
+      <section className="relative mx-auto flex min-h-screen w-full max-w-[430px] flex-col px-5 pb-8 pt-12 lg:max-w-[1100px] lg:px-0 lg:py-0">
         {/* Header */}
+        <header className="relative flex items-center justify-between lg:mb-8 lg:rounded-[24px] lg:border lg:border-black/5 lg:bg-white/50 lg:px-8 lg:py-6 lg:backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/donations-gift/gifts"
+              className="text-[#777] transition hover:text-[#333] lg:grid lg:h-10 lg:w-10 lg:place-items-center lg:rounded-full lg:bg-white lg:shadow-sm"
+              aria-label="Back"
+            >
+              <ArrowLeft
+                size={24}
+                className="lg:hidden"
+              />
+              <ArrowLeft
+                size={20}
+                className="hidden lg:block text-[#555]"
+              />
+            </Link>
 
-        <header className="relative flex items-center justify-center">
-          <Link
-            href="/donations-gift/gifts"
-            className="absolute left-0 text-[#777]"
-            aria-label="Back"
-          >
-            <ArrowLeft
-              size={24}
-            />
-          </Link>
+            <div className="hidden lg:block">
+              <h1 className="font-heading text-[22px] font-black tracking-tight text-[#333]">
+                Gift Details & Redemption
+              </h1>
+              <p className="mt-0.5 text-xs text-black/45">
+                Inspect incoming funds, review sender details, and process your secure redemption.
+              </p>
+            </div>
+          </div>
 
-          <h1 className="font-heading text-[14px] font-bold tracking-[0.13em]">
+          <h1 className="font-heading text-[14px] font-bold tracking-[0.13em] lg:hidden">
             Gift Received
           </h1>
         </header>
 
         {error && (
-          <div className="mt-5 rounded-[12px] bg-red-50 px-4 py-3 text-[11px] font-medium text-red-700">
+          <div className="mt-5 rounded-[12px] bg-red-50 px-4 py-3 text-[11px] font-medium text-red-700 lg:text-sm">
             {error}
           </div>
         )}
 
-        {/* Gift visual */}
+        {/* Desktop Grid Layout */}
+        <div className="lg:mt-6 lg:grid lg:grid-cols-12 lg:gap-8">
+          {/* Left Column: Summary & Status */}
+          <div className="lg:col-span-5 lg:space-y-6">
+            <div className="rounded-[20px] border border-black/5 bg-white/50 p-6 backdrop-blur-sm lg:rounded-[24px] lg:p-8">
+              <div className="relative flex flex-col items-center">
+                <div className="flex h-[160px] w-[160px] items-center justify-center rounded-full bg-[#FFE041] shadow-[0_8px_18px_rgba(0,0,0,0.2)] lg:h-[180px] lg:w-[180px]">
+                  <Gift
+                    size={62}
+                    className="text-blue-700"
+                  />
+                </div>
 
-        <div className="relative mt-6 flex flex-col items-center">
-          <div className="flex h-[180px] w-[180px] items-center justify-center rounded-full bg-[#FFE041] shadow-[0_8px_18px_rgba(0,0,0,0.2)]">
-            <Gift
-              size={62}
-              className="text-blue-700"
-            />
-          </div>
+                <h2 className="mt-5 text-[32px] font-semibold tracking-[0.03em] text-[#5daa7e] lg:text-[38px]">
+                  {formatMoney(
+                    gift.amount,
+                    gift.currency,
+                  )}
+                </h2>
 
-          <h2 className="mt-5 text-[35px] font-semibold tracking-[0.03em] text-[#5daa7e]">
-            {formatMoney(
-              gift.amount,
-              gift.currency,
-            )}
-          </h2>
+                <p className="mt-1 text-[13px] font-bold text-[#1D4ED8] lg:text-sm">
+                  {statusText(
+                    effectiveStatus,
+                  )}
+                </p>
 
-          <p className="mt-1 text-[13px] font-bold text-[#1D4ED8]">
-            {statusText(
-              effectiveStatus,
-            )}
-          </p>
+                {gift.status ===
+                  "pending" && (
+                  <Countdown
+                    countdown={
+                      countdown
+                    }
+                  />
+                )}
 
-          {gift.status ===
-            "pending" && (
-            <Countdown
-              countdown={
-                countdown
-              }
-            />
-          )}
-
-          <div className="mt-6 text-center">
-            <p className="text-[13px] font-medium text-[#777]">
-              Incoming from{" "}
-              <ArrowDownLeft
-                size={14}
-                className="ml-1 inline-block text-[#168d5a]"
-              />
-            </p>
-
-            <p className="mt-1 text-[17px] font-bold text-[#555]">
-              {
-                gift.sender_name
-              }
-            </p>
-          </div>
-        </div>
-
-        {/* Gift message */}
-
-        {gift.message && (
-          <div className="mt-6 rounded-[15px] border border-black/5 bg-white/45 px-4 py-4 backdrop-blur-sm">
-            <p className="text-[9px] font-black uppercase tracking-[0.08em] text-black/30">
-              Message from sender
-            </p>
-
-            <p className="mt-2 text-[12px] leading-5 text-[#555]">
-              {gift.message}
-            </p>
-          </div>
-        )}
-
-        {/* Receipt */}
-
-        <div className="mt-6 space-y-3">
-          <Detail
-            label="Gift amount"
-            value={formatMoney(
-              gift.amount,
-              gift.currency,
-            )}
-            valueClassName="font-bold text-[#168d5a]"
-          />
-
-          <Detail
-            label="Tier-2 Redemption fee"
-            value={formatMoney(
-              gift.redemption_fee,
-              gift.currency,
-            )}
-            valueClassName="font-bold text-[#d85b4f]"
-          />
-
-          <Detail
-            label="You will receive"
-            value={formatMoney(
-              gift.amount,
-              gift.currency,
-            )}
-            valueClassName="font-bold text-[#168d5a]"
-          />
-
-          <Detail
-            label="Account"
-            value={
-              gift.account_number
-                ? `•••• ${gift.account_number.slice(
-                    -4,
-                  )}`
-                : "—"
-            }
-          />
-
-          <Detail
-            label="Date received"
-            value={formatDate(
-              gift.created_at,
-            )}
-          />
-
-          <Detail
-            label="Status"
-            value={effectiveStatus.replaceAll(
-              "_",
-              " ",
-            )}
-            valueClassName="font-bold capitalize text-[#1D4ED8]"
-          />
-
-          <Detail
-            label="Transaction ID"
-            value={
-              gift.transaction_id ||
-              "Pending"
-            }
-          />
-
-          <Detail
-            label="Type"
-            value="Gifted Funds"
-          />
-
-          <Detail
-            label="Expires"
-            value={
-              gift.expires_at
-                ? formatDateTime(
-                    gift.expires_at,
-                  )
-                : "—"
-            }
-          />
-        </div>
-
-        {/* Pending decision */}
-
-        {actionable && (
-          <div className="mt-8 grid gap-3">
-            <button
-              type="button"
-              disabled={
-                deciding !==
-                null
-              }
-              onClick={() =>
-                void decide(
-                  "accepted",
-                )
-              }
-              className="flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#1D4ED8] text-[15px] font-bold text-white shadow-md transition active:scale-[0.98] disabled:opacity-50"
-            >
-              {deciding ===
-              "accepted" ? (
-                <Loader2
-                  size={17}
-                  className="animate-spin"
-                />
-              ) : (
-                <CheckCircle2
-                  size={17}
-                />
-              )}
-
-              Accept Gift
-            </button>
-
-            <button
-              type="button"
-              disabled={
-                deciding !==
-                null
-              }
-              onClick={() =>
-                void decide(
-                  "declined",
-                )
-              }
-              className="flex h-[44px] w-full items-center justify-center gap-2 rounded-[10px] border border-red-300 bg-white/40 text-[14px] font-bold text-red-600 disabled:opacity-50"
-            >
-              {deciding ===
-              "declined" ? (
-                <Loader2
-                  size={16}
-                  className="animate-spin"
-                />
-              ) : (
-                <XCircle
-                  size={16}
-                />
-              )}
-
-              Decline Gift
-            </button>
-          </div>
-        )}
-
-        {/* Accepted / rejected -> payment proof */}
-
-        {canSubmitProof && (
-          <>
-            {gift.status ===
-              "redemption_rejected" &&
-              proof
-                ?.rejection_reason && (
-                <div className="mt-7 rounded-[14px] border border-red-200 bg-red-50 px-4 py-4">
-                  <div className="flex items-start gap-3">
-                    <XCircle
-                      size={18}
-                      className="mt-0.5 shrink-0 text-red-600"
+                <div className="mt-6 text-center">
+                  <p className="text-[13px] font-medium text-[#777]">
+                    Incoming from{" "}
+                    <ArrowDownLeft
+                      size={14}
+                      className="ml-1 inline-block text-[#168d5a]"
                     />
+                  </p>
 
-                    <div>
-                      <p className="text-[11px] font-black text-red-700">
-                        Payment proof
-                        rejected
-                      </p>
+                  <p className="mt-1 text-[17px] font-bold text-[#555] lg:text-lg">
+                    {
+                      gift.sender_name
+                    }
+                  </p>
+                </div>
+              </div>
 
-                      <p className="mt-2 text-[12px] leading-5 text-red-700">
-                        {
-                          proof.rejection_reason
-                        }
-                      </p>
+              {/* Gift message */}
+              {gift.message && (
+                <div className="mt-6 rounded-[15px] border border-black/5 bg-white/45 px-4 py-4 backdrop-blur-sm lg:rounded-[18px] lg:p-5">
+                  <p className="text-[9px] font-black uppercase tracking-[0.08em] text-black/30 lg:text-[10px]">
+                    Message from sender
+                  </p>
 
-                      <p className="mt-2 text-[10px] text-red-600/70">
-                        Upload a new
-                        proof below.
-                      </p>
-                    </div>
-                  </div>
+                  <p className="mt-2 text-[12px] leading-5 text-[#555] lg:text-xs">
+                    {gift.message}
+                  </p>
                 </div>
               )}
 
-            <RedemptionProofForm
-              gift={gift}
-              proofFile={
-                proofFile
-              }
-              paymentReference={
-                paymentReference
-              }
-              paymentMethod={
-                paymentMethod
-              }
-              proofNote={
-                proofNote
-              }
-              submitting={
-                submittingProof
-              }
-              onFileChange={
-                setProofFile
-              }
-              onReferenceChange={
-                setPaymentReference
-              }
-              onPaymentMethodChange={
-                setPaymentMethod
-              }
-              onNoteChange={
-                setProofNote
-              }
-              onSubmit={() =>
-                void submitProof()
-              }
-            />
-          </>
-        )}
+              {/* Pending decision */}
+              {actionable && (
+                <div className="mt-8 grid gap-3">
+                  <button
+                    type="button"
+                    disabled={
+                      deciding !==
+                      null
+                    }
+                    onClick={() =>
+                      void decide(
+                        "accepted",
+                      )
+                    }
+                    className="flex h-[46px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#1D4ED8] text-[15px] font-bold text-white shadow-md transition active:scale-[0.98] disabled:opacity-50 lg:h-[50px]"
+                  >
+                    {deciding ===
+                    "accepted" ? (
+                      <Loader2
+                        size={17}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <CheckCircle2
+                        size={17}
+                      />
+                    )}
 
-        {/* Awaiting tenant review */}
+                    Accept Gift
+                  </button>
 
-        {gift.status ===
-          "redemption_pending_review" &&
-          proof && (
-            <ProofStatusCard
-              proof={
-                proof
-              }
-              currency={
-                gift.currency
-              }
-            />
-          )}
+                  <button
+                    type="button"
+                    disabled={
+                      deciding !==
+                      null
+                    }
+                    onClick={() =>
+                      void decide(
+                        "declined",
+                      )
+                    }
+                    className="flex h-[44px] w-full items-center justify-center gap-2 rounded-[10px] border border-red-300 bg-white/40 text-[14px] font-bold text-red-600 disabled:opacity-50 lg:h-[48px]"
+                  >
+                    {deciding ===
+                    "declined" ? (
+                      <Loader2
+                        size={16}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <XCircle
+                        size={16}
+                      />
+                    )}
 
-        {/* Processed */}
-
-        {gift.status ===
-          "processed" && (
-          <div className="mt-8 rounded-[16px] border border-green-200 bg-green-50 px-4 py-5 text-center">
-            <CheckCircle2
-              size={30}
-              className="mx-auto text-green-600"
-            />
-
-            <p className="mt-3 text-[15px] font-black text-green-700">
-              Redemption
-              approved
-            </p>
-
-            <p className="mt-2 text-[11px] leading-5 text-green-700/70">
-              Your redemption
-              payment proof has
-              been approved.
-            </p>
+                    Decline Gift
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        )}
 
-        {/* Other final states */}
+          {/* Right Column: Receipts & Proof Form / Details */}
+          <div className="mt-6 space-y-6 lg:col-span-7 lg:mt-0">
+            {/* Receipt Summary Card */}
+            <div className="rounded-[20px] border border-black/5 bg-white/50 p-6 backdrop-blur-sm lg:rounded-[24px] lg:p-8">
+              <h3 className="text-[16px] font-black text-[#333] lg:text-lg">
+                Transaction Breakdown
+              </h3>
 
-        {[
-          "declined",
-          "cancelled",
-          "expired",
-        ].includes(
-          effectiveStatus,
-        ) && (
-          <DecisionState
-            status={
-              effectiveStatus
-            }
-          />
-        )}
+              <div className="mt-5 space-y-3 lg:space-y-4">
+                <Detail
+                  label="Gift amount"
+                  value={formatMoney(
+                    gift.amount,
+                    gift.currency,
+                  )}
+                  valueClassName="font-bold text-[#168d5a]"
+                />
+
+                <Detail
+                  label="Tier-2 Redemption fee"
+                  value={formatMoney(
+                    gift.redemption_fee,
+                    gift.currency,
+                  )}
+                  valueClassName="font-bold text-[#d85b4f]"
+                />
+
+                <Detail
+                  label="You will receive"
+                  value={formatMoney(
+                    gift.amount,
+                    gift.currency,
+                  )}
+                  valueClassName="font-bold text-[#168d5a]"
+                />
+
+                <Detail
+                  label="Account"
+                  value={
+                    gift.account_number
+                      ? `•••• ${gift.account_number.slice(
+                          -4,
+                        )}`
+                      : "—"
+                  }
+                />
+
+                <Detail
+                  label="Date received"
+                  value={formatDate(
+                    gift.created_at,
+                  )}
+                />
+
+                <Detail
+                  label="Status"
+                  value={effectiveStatus.replaceAll(
+                    "_",
+                    " ",
+                  )}
+                  valueClassName="font-bold capitalize text-[#1D4ED8]"
+                />
+
+                <Detail
+                  label="Transaction ID"
+                  value={
+                    gift.transaction_id ||
+                    "Pending"
+                  }
+                />
+
+                <Detail
+                  label="Type"
+                  value="Gifted Funds"
+                />
+
+                <Detail
+                  label="Expires"
+                  value={
+                    gift.expires_at
+                      ? formatDateTime(
+                          gift.expires_at,
+                        )
+                      : "—"
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Accepted / rejected -> payment proof */}
+            {canSubmitProof && (
+              <>
+                {gift.status ===
+                  "redemption_rejected" &&
+                  proof
+                    ?.rejection_reason && (
+                    <div className="rounded-[14px] border border-red-200 bg-red-50 px-4 py-4 lg:rounded-[20px] lg:p-6">
+                      <div className="flex items-start gap-3">
+                        <XCircle
+                          size={18}
+                          className="mt-0.5 shrink-0 text-red-600"
+                        />
+
+                        <div>
+                          <p className="text-[11px] font-black text-red-700 lg:text-sm">
+                            Payment proof
+                            rejected
+                          </p>
+
+                          <p className="mt-2 text-[12px] leading-5 text-red-700 lg:text-xs">
+                            {
+                              proof.rejection_reason
+                            }
+                          </p>
+
+                          <p className="mt-2 text-[10px] text-red-600/70 lg:text-xs">
+                            Upload a new
+                            proof below.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                <RedemptionProofForm
+                  gift={gift}
+                  proofFile={
+                    proofFile
+                  }
+                  paymentReference={
+                    paymentReference
+                  }
+                  paymentMethod={
+                    paymentMethod
+                  }
+                  proofNote={
+                    proofNote
+                  }
+                  submitting={
+                    submittingProof
+                  }
+                  onFileChange={
+                    setProofFile
+                  }
+                  onReferenceChange={
+                    setPaymentReference
+                  }
+                  onPaymentMethodChange={
+                    setPaymentMethod
+                  }
+                  onNoteChange={
+                    setProofNote
+                  }
+                  onSubmit={() =>
+                    void submitProof()
+                  }
+                />
+              </>
+            )}
+
+            {/* Awaiting tenant review */}
+            {gift.status ===
+              "redemption_pending_review" &&
+              proof && (
+                <ProofStatusCard
+                  proof={
+                    proof
+                  }
+                  currency={
+                    gift.currency
+                  }
+                />
+              )}
+
+            {/* Processed */}
+            {gift.status ===
+              "processed" && (
+              <div className="rounded-[16px] border border-green-200 bg-green-50 px-4 py-5 text-center lg:rounded-[24px] lg:p-8">
+                <CheckCircle2
+                  size={30}
+                  className="mx-auto text-green-600 lg:w-10 lg:h-10"
+                />
+
+                <p className="mt-3 text-[15px] font-black text-green-700 lg:text-lg">
+                  Redemption
+                  approved
+                </p>
+
+                <p className="mt-2 text-[11px] leading-5 text-green-700/70 lg:text-xs">
+                  Your redemption
+                  payment proof has
+                  been approved.
+                </p>
+              </div>
+            )}
+
+            {/* Other final states */}
+            {[
+              "declined",
+              "cancelled",
+              "expired",
+            ].includes(
+              effectiveStatus,
+            ) && (
+              <DecisionState
+                status={
+                  effectiveStatus
+                }
+              />
+            )}
+          </div>
+        </div>
       </section>
     </main>
   );
@@ -832,20 +855,21 @@ function RedemptionProofForm({
   onSubmit: () => void;
 }) {
   return (
-    <div className="mt-8 rounded-[18px] border border-black/5 bg-white/65 px-4 py-5 shadow-sm backdrop-blur-sm">
+    <div className="rounded-[18px] border border-black/5 bg-white/65 px-4 py-5 shadow-sm backdrop-blur-sm lg:rounded-[24px] lg:p-8">
       <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-[#EEF4FF] text-[#1D4ED8]">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[11px] bg-[#EEF4FF] text-[#1D4ED8] lg:h-12 lg:w-12 lg:rounded-[16px]">
           <Upload
             size={18}
+            className="lg:w-5 lg:h-5"
           />
         </div>
 
         <div>
-          <h3 className="text-[15px] font-black text-[#333]">
+          <h3 className="text-[15px] font-black text-[#333] lg:text-lg">
             Redemption Payment
           </h3>
 
-          <p className="mt-1 text-[10px] leading-4 text-black/45">
+          <p className="mt-1 text-[10px] leading-4 text-black/45 lg:text-xs">
             Pay the redemption
             fee and submit your
             payment receipt for
@@ -854,19 +878,19 @@ function RedemptionProofForm({
         </div>
       </div>
 
-      <div className="mt-5 rounded-[13px] bg-[#FFF8D8] px-4 py-4">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-black/35">
+      <div className="mt-5 rounded-[13px] bg-[#FFF8D8] px-4 py-4 lg:rounded-[18px] lg:p-6">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-black/35 lg:text-[10px]">
           Redemption fee
         </p>
 
-        <p className="mt-1 text-[25px] font-black text-[#d85b4f]">
+        <p className="mt-1 text-[25px] font-black text-[#d85b4f] lg:text-[32px]">
           {formatMoney(
             gift.redemption_fee,
             gift.currency,
           )}
         </p>
 
-        <p className="mt-2 text-[10px] leading-4 text-black/40">
+        <p className="mt-2 text-[10px] leading-4 text-black/40 lg:text-xs">
           Your full gift
           remains{" "}
           <strong>
@@ -881,7 +905,7 @@ function RedemptionProofForm({
       </div>
 
       <div className="mt-5">
-        <label className="text-[11px] font-bold text-black/55">
+        <label className="text-[11px] font-bold text-black/55 lg:text-xs">
           Payment method
         </label>
 
@@ -897,7 +921,7 @@ function RedemptionProofForm({
                 .value as PaymentMethod,
             )
           }
-          className="mt-2 h-[46px] w-full rounded-[10px] border border-black/10 bg-white px-3 text-[12px] font-semibold outline-none"
+          className="mt-2 h-[46px] w-full rounded-[10px] border border-black/10 bg-white px-3 text-[12px] font-semibold outline-none lg:h-[50px] lg:text-sm"
         >
           <option value="bank_transfer">
             Bank transfer
@@ -918,7 +942,7 @@ function RedemptionProofForm({
       </div>
 
       <div className="mt-4">
-        <label className="text-[11px] font-bold text-black/55">
+        <label className="text-[11px] font-bold text-black/55 lg:text-xs">
           Payment reference
         </label>
 
@@ -935,16 +959,16 @@ function RedemptionProofForm({
           }
           placeholder="Optional payment reference"
           maxLength={180}
-          className="mt-2 h-[46px] w-full rounded-[10px] border border-black/10 bg-white px-3 text-[12px] outline-none"
+          className="mt-2 h-[46px] w-full rounded-[10px] border border-black/10 bg-white px-3 text-[12px] outline-none lg:h-[50px] lg:text-sm"
         />
       </div>
 
       <div className="mt-4">
-        <label className="text-[11px] font-bold text-black/55">
+        <label className="text-[11px] font-bold text-black/55 lg:text-xs">
           Payment receipt
         </label>
 
-        <label className="mt-2 flex min-h-[100px] cursor-pointer items-center justify-center rounded-[12px] border border-dashed border-[#1D4ED8]/30 bg-[#EEF4FF]/60 px-4 text-center transition hover:bg-[#E6EEFF]">
+        <label className="mt-2 flex min-h-[100px] cursor-pointer items-center justify-center rounded-[12px] border border-dashed border-[#1D4ED8]/30 bg-[#EEF4FF]/60 px-4 text-center transition hover:bg-[#E6EEFF] lg:min-h-[130px]">
           <input
             type="file"
             accept=".jpg,.jpeg,.png,.webp,.pdf"
@@ -964,16 +988,16 @@ function RedemptionProofForm({
             <div>
               <FileText
                 size={22}
-                className="mx-auto text-[#1D4ED8]"
+                className="mx-auto text-[#1D4ED8] lg:w-7 lg:h-7"
               />
 
-              <p className="mt-2 break-all text-[11px] font-black text-[#1D4ED8]">
+              <p className="mt-2 break-all text-[11px] font-black text-[#1D4ED8] lg:text-xs">
                 {
                   proofFile.name
                 }
               </p>
 
-              <p className="mt-1 text-[9px] text-black/40">
+              <p className="mt-1 text-[9px] text-black/40 lg:text-[10px]">
                 {formatFileSize(
                   proofFile.size,
                 )}
@@ -985,15 +1009,15 @@ function RedemptionProofForm({
             <div>
               <Upload
                 size={22}
-                className="mx-auto text-[#1D4ED8]"
+                className="mx-auto text-[#1D4ED8] lg:w-7 lg:h-7"
               />
 
-              <p className="mt-2 text-[11px] font-bold text-[#1D4ED8]">
+              <p className="mt-2 text-[11px] font-bold text-[#1D4ED8] lg:text-xs">
                 Upload payment
                 receipt
               </p>
 
-              <p className="mt-1 text-[9px] text-black/40">
+              <p className="mt-1 text-[9px] text-black/40 lg:text-[10px]">
                 JPG, PNG, WEBP
                 or PDF
               </p>
@@ -1003,7 +1027,7 @@ function RedemptionProofForm({
       </div>
 
       <div className="mt-4">
-        <label className="text-[11px] font-bold text-black/55">
+        <label className="text-[11px] font-bold text-black/55 lg:text-xs">
           Note
         </label>
 
@@ -1020,10 +1044,10 @@ function RedemptionProofForm({
           }
           maxLength={1000}
           placeholder="Optional note about your payment"
-          className="mt-2 h-[90px] w-full resize-none rounded-[10px] border border-black/10 bg-white px-3 py-3 text-[12px] outline-none"
+          className="mt-2 h-[90px] w-full resize-none rounded-[10px] border border-black/10 bg-white px-3 py-3 text-[12px] outline-none lg:h-[110px] lg:text-sm"
         />
 
-        <p className="mt-1 text-right text-[9px] text-black/30">
+        <p className="mt-1 text-right text-[9px] text-black/30 lg:text-[10px]">
           {
             proofNote.length
           }
@@ -1040,7 +1064,7 @@ function RedemptionProofForm({
         onClick={
           onSubmit
         }
-        className="mt-5 flex h-[45px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#1D4ED8] text-[13px] font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-5 flex h-[45px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#1D4ED8] text-[13px] font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50 lg:h-[50px] lg:text-sm"
       >
         {submitting ? (
           <>
@@ -1079,28 +1103,29 @@ function ProofStatusCard({
   currency: string;
 }) {
   return (
-    <div className="mt-8 rounded-[16px] border border-blue-200 bg-blue-50 px-4 py-5">
+    <div className="rounded-[16px] border border-blue-200 bg-blue-50 px-4 py-5 lg:rounded-[24px] lg:p-8">
       <div className="flex items-start gap-3">
-        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 lg:h-12 lg:w-12">
           <FileText
             size={18}
+            className="lg:w-5 lg:h-5"
           />
         </div>
 
         <div>
-          <p className="text-[13px] font-black text-blue-700">
+          <p className="text-[13px] font-black text-blue-700 lg:text-base">
             Payment proof
             submitted
           </p>
 
-          <p className="mt-1 text-[10px] leading-4 text-blue-700/70">
+          <p className="mt-1 text-[10px] leading-4 text-blue-700/70 lg:text-xs">
             Your receipt is
             waiting for review.
           </p>
         </div>
       </div>
 
-      <div className="mt-5 space-y-3">
+      <div className="mt-5 space-y-3 lg:space-y-4">
         <Detail
           label="Amount paid"
           value={formatMoney(
@@ -1238,7 +1263,7 @@ function Time({
 }) {
   return (
     <div className="min-w-[50px] text-center">
-      <p className="text-[17px] font-black tabular-nums">
+      <p className="text-[17px] font-black tabular-nums lg:text-xl">
         {String(
           value,
         ).padStart(
@@ -1247,7 +1272,7 @@ function Time({
         )}
       </p>
 
-      <p className="mt-1 text-[9px] font-semibold text-black/45">
+      <p className="mt-1 text-[9px] font-semibold text-black/45 lg:text-[10px]">
         {label}
       </p>
     </div>
@@ -1256,7 +1281,7 @@ function Time({
 
 function TimeSeparator() {
   return (
-    <span className="pb-4 text-[15px] font-black text-black/25">
+    <span className="pb-4 text-[15px] font-black text-black/25 lg:text-lg">
       :
     </span>
   );
@@ -1325,13 +1350,13 @@ function DecisionState({
 
   return (
     <div
-      className={`mt-8 rounded-[14px] border px-4 py-4 text-center ${current.className}`}
+      className={`rounded-[14px] border px-4 py-4 text-center lg:rounded-[20px] lg:p-6 ${current.className}`}
     >
-      <p className="text-[13px] font-black">
+      <p className="text-[13px] font-black lg:text-base">
         {current.title}
       </p>
 
-      <p className="mt-1 text-[10px] opacity-70">
+      <p className="mt-1 text-[10px] opacity-70 lg:text-xs">
         {current.message}
       </p>
     </div>
@@ -1354,13 +1379,13 @@ function Detail({
   valueClassName?: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-5 text-[13px]">
+    <div className="flex items-start justify-between gap-5 text-[13px] lg:text-sm">
       <p className="shrink-0 text-[#777]">
         {label}
       </p>
 
       <p
-        className={`max-w-[230px] break-words text-right font-medium text-[#444] ${valueClassName}`}
+        className={`max-w-[230px] break-words text-right font-medium text-[#444] lg:max-w-[320px] ${valueClassName}`}
       >
         {value}
       </p>

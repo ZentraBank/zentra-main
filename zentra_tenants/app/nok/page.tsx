@@ -1,9 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowLeft,
   ArrowRight,
   CheckCircle2,
   Clock3,
@@ -18,6 +16,7 @@ import {
   useState,
 } from "react";
 
+import AppShell from "@/components/layout/AppShell";
 import {
   nextOfKinService,
 } from "@/services/next-of-kin.service";
@@ -77,119 +76,95 @@ export default function NextOfKinManagementPage() {
   }, [loadClaims]);
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
-      <Image
-        src="/images/Background_1.png"
-        alt="Next-of-kin management background"
-        fill
-        priority
-        className="object-cover object-center"
-      />
+    <AppShell>
+      <main className="relative min-h-[calc(100svh-80px)] overflow-x-hidden rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_18%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.13),transparent_16%)] bg-black px-4 py-8 text-white md:px-8">
+        <div className="mx-auto max-w-[1180px]">
+          <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-white/50">
+                Next-of-kin Management
+              </p>
 
-      <div className="absolute inset-0 bg-black/20" />
+              <h1 className="mt-1 text-3xl font-black text-white md:text-4xl">
+                Account Manager
+              </h1>
 
-      <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[430px] flex-col px-5 pb-6 pt-8 md:max-w-[760px] md:px-8 md:pt-10">
-        <header className="relative flex items-center justify-center">
-          <Link
-            href="/dashboard"
-            aria-label="Go back"
-            className="absolute left-0 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/10"
-          >
-            <ArrowLeft
-              size={18}
-              strokeWidth={2}
-            />
-          </Link>
+              <p className="mt-2 max-w-2xl text-sm text-white/65">
+                Review and process POD claims submitted by your clients.
+              </p>
+            </div>
 
-          <p className="text-[11px] font-semibold tracking-[0.8px] md:text-xs">
-            Next-of-kin Management
-          </p>
-
-          <button
-            type="button"
-            onClick={() =>
-              void loadClaims()
-            }
-            disabled={loading}
-            aria-label="Refresh claims"
-            className="absolute right-0 flex h-9 w-9 items-center justify-center rounded-full transition hover:bg-white/10 disabled:opacity-50"
-          >
-            <RefreshCw
-              size={17}
-              className={
-                loading
-                  ? "animate-spin"
-                  : ""
+            <button
+              type="button"
+              onClick={() =>
+                void loadClaims()
               }
-            />
-          </button>
-        </header>
+              disabled={loading}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15 disabled:opacity-50"
+            >
+              <RefreshCw
+                size={17}
+                className={
+                  loading
+                    ? "animate-spin text-white"
+                    : ""
+                }
+              />
+              Refresh
+            </button>
+          </header>
 
-        <section className="mt-6">
-          <h1 className="mx-auto max-w-[420px] pt-6 text-center font-sf text-[43px] leading-[1.03] tracking-[-0.7px] md:text-[48px]">
-            Next-of-kin
-            <br />
-            Account Manager
-          </h1>
-
-          <p className="mx-auto mt-4 max-w-[450px] text-center font-lato text-[14px] font-medium leading-[1.4] text-white/90">
-            Review and process POD claims submitted by your clients.
-          </p>
-
-          <div className="mx-auto mt-7 flex w-full max-w-[560px] items-center justify-between rounded-[14px] border border-white/15 bg-white/10 px-4 py-4 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-[10px] bg-white text-[#2458E8]">
-                <FileText size={19} />
-              </div>
-
-              <div>
-                <p className="text-[15px] font-bold">
-                  POD Claims
-                </p>
-
-                <p className="mt-0.5 text-[11px] text-white/65">
-                  {loading
-                    ? "Loading claims..."
-                    : `${claims.length} claim${
-                        claims.length === 1
-                          ? ""
-                          : "s"
-                      } loaded`}
-                </p>
+          <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-3xl border border-white/10 bg-white p-6 shadow-xl text-neutral-900">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-blue-600">
+                  <FileText size={22} />
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                    POD Claims
+                  </p>
+                  <p className="mt-1 text-2xl font-black text-neutral-900">
+                    {loading ? "..." : claims.length}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
           {error && (
-            <div className="mx-auto mt-5 max-w-[560px] rounded-[12px] bg-red-50 px-4 py-3 text-[12px] font-medium text-red-700">
+            <div className="mt-6 rounded-2xl border border-red-500/30 bg-red-950/70 px-4 py-3 text-sm font-medium text-red-100 shadow-sm">
               {error}
             </div>
           )}
 
           {loading ? (
-            <div className="mx-auto mt-5 grid min-h-[260px] max-w-[560px] place-items-center rounded-[18px] bg-white/10 backdrop-blur-md">
-              <Loader2
-                size={30}
-                className="animate-spin"
-              />
+            <div className="mt-8 flex min-h-[300px] items-center justify-center rounded-3xl border border-white/10 bg-white/5">
+              <div className="flex items-center gap-3 text-sm text-white/60">
+                <Loader2
+                  size={24}
+                  className="animate-spin text-white"
+                />
+                Loading claims...
+              </div>
             </div>
           ) : claims.length === 0 ? (
-            <div className="mx-auto mt-5 max-w-[560px] rounded-[18px] bg-white px-6 py-10 text-center text-[#333] shadow-lg">
+            <div className="mt-8 rounded-3xl border border-white/10 bg-white/5 p-12 text-center text-white">
               <FileText
                 size={38}
-                className="mx-auto text-black/20"
+                className="mx-auto text-white/30"
               />
 
-              <h2 className="mt-4 text-[17px] font-bold">
+              <h2 className="mt-4 text-base font-bold text-white">
                 No POD claims
               </h2>
 
-              <p className="mx-auto mt-2 max-w-[280px] text-[12px] leading-5 text-black/45">
+              <p className="mx-auto mt-1 max-w-[280px] text-xs text-white/50">
                 Client next-of-kin claims will appear here when they are submitted.
               </p>
             </div>
           ) : (
-            <div className="mx-auto mt-5 w-full max-w-[560px] space-y-3">
+            <section className="mt-8 grid gap-5 lg:grid-cols-2">
               {claims.map(
                 (claim) => (
                   <ClaimCard
@@ -202,20 +177,11 @@ export default function NextOfKinManagementPage() {
                   />
                 ),
               )}
-            </div>
+            </section>
           )}
-        </section>
-
-        <div className="mt-auto flex justify-center pb-1 pt-10">
-          <Link
-            href="/dashboard"
-            className="flex h-[40px] w-[260px] items-center justify-center rounded-[8px] bg-[#1E40AF] font-roboto text-[15px] text-white shadow-lg transition hover:bg-[#1e3fc2] active:scale-95 md:w-[220px]"
-          >
-            Go to Dashboard
-          </Link>
         </div>
-      </div>
-    </main>
+      </main>
+    </AppShell>
   );
 }
 
@@ -225,14 +191,14 @@ function ClaimCard({
   claim: PodClaim;
 }) {
   return (
-    <article className="overflow-hidden rounded-[16px] bg-white text-[#333] shadow-[0_4px_14px_rgba(0,0,0,0.18)]">
-      <div className="flex items-start justify-between gap-3 border-b border-black/5 px-4 py-4">
+    <article className="overflow-hidden rounded-3xl border border-white/10 bg-white text-neutral-900 shadow-xl">
+      <div className="flex items-start justify-between gap-3 border-b border-neutral-100 p-6">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-black/35">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-400">
             Deceased account holder
           </p>
 
-          <h2 className="mt-1 truncate text-[16px] font-bold text-[#222]">
+          <h2 className="mt-1 truncate text-lg font-bold text-neutral-900">
             {
               claim.deceased_name
             }
@@ -246,41 +212,43 @@ function ClaimCard({
         />
       </div>
 
-      <div className="px-4 py-4">
-        <InfoRow
-          label="Beneficiary"
-          value={
-            claim.beneficiary_name
-          }
-        />
+      <div className="p-6">
+        <div className="space-y-3 rounded-2xl border border-neutral-100 bg-neutral-50/60 p-4 text-sm">
+          <InfoRow
+            label="Beneficiary"
+            value={
+              claim.beneficiary_name
+            }
+          />
 
-        <InfoRow
-          label="Relationship"
-          value={
-            claim.relationship_to_deceased
-          }
-        />
+          <InfoRow
+            label="Relationship"
+            value={
+              claim.relationship_to_deceased
+            }
+          />
 
-        <InfoRow
-          label="Account"
-          value={`•••• ${claim.deceased_account_number.slice(
-            -4,
-          )}`}
-        />
+          <InfoRow
+            label="Account"
+            value={`•••• ${claim.deceased_account_number.slice(
+              -4,
+            )}`}
+          />
 
-        <InfoRow
-          label="Submitted"
-          value={formatDate(
-            claim.submitted_at ??
-              claim.created_at,
-          )}
-        />
+          <InfoRow
+            label="Submitted"
+            value={formatDate(
+              claim.submitted_at ??
+                claim.created_at,
+            )}
+          />
+        </div>
 
         <Link
           href={`/nok/${encodeURIComponent(
             claim.id,
           )}`}
-          className="group mt-4 flex h-[42px] w-full items-center justify-between rounded-[10px] bg-[#EEF4FF] px-4 text-[12px] font-bold text-[#2458E8] transition hover:bg-[#E4EDFF]"
+          className="group mt-5 flex h-12 w-full items-center justify-between rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
         >
           <span>
             Review claim
@@ -305,56 +273,56 @@ function StatusBadge({
     draft: {
       label: "Draft",
       className:
-        "bg-gray-100 text-gray-600",
+        "bg-neutral-100 text-neutral-700 border border-neutral-200",
       icon: Clock3,
     },
 
     submitted: {
       label: "Submitted",
       className:
-        "bg-amber-50 text-amber-700",
+        "bg-amber-50 text-amber-700 border border-amber-200",
       icon: Clock3,
     },
 
     under_review: {
       label: "Under review",
       className:
-        "bg-blue-50 text-blue-700",
+        "bg-blue-50 text-blue-700 border border-blue-200",
       icon: Clock3,
     },
 
     more_information_required: {
       label: "More info",
       className:
-        "bg-orange-50 text-orange-700",
+        "bg-orange-50 text-orange-700 border border-orange-200",
       icon: Clock3,
     },
 
     approved: {
       label: "Approved",
       className:
-        "bg-green-50 text-green-700",
+        "bg-emerald-50 text-emerald-700 border border-emerald-200",
       icon: CheckCircle2,
     },
 
     rejected: {
       label: "Rejected",
       className:
-        "bg-red-50 text-red-700",
+        "bg-red-50 text-red-700 border border-red-200",
       icon: XCircle,
     },
 
     completed: {
       label: "Completed",
       className:
-        "bg-green-50 text-green-700",
+        "bg-emerald-50 text-emerald-700 border border-emerald-200",
       icon: CheckCircle2,
     },
 
     cancelled: {
       label: "Cancelled",
       className:
-        "bg-gray-100 text-gray-600",
+        "bg-neutral-100 text-neutral-700 border border-neutral-200",
       icon: XCircle,
     },
   } as const;
@@ -367,9 +335,9 @@ function StatusBadge({
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${current.className}`}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold capitalize ${current.className}`}
     >
-      <Icon size={12} />
+      <Icon size={14} />
       {current.label}
     </span>
   );
@@ -383,12 +351,12 @@ function InfoRow({
   value: string;
 }) {
   return (
-    <div className="mb-2.5 flex items-start justify-between gap-4">
-      <span className="text-[11px] text-black/40">
+    <div className="flex items-start justify-between gap-4 text-sm">
+      <span className="shrink-0 text-neutral-400 font-medium">
         {label}
       </span>
 
-      <span className="max-w-[250px] text-right text-[12px] font-semibold capitalize text-[#333]">
+      <span className="max-w-[250px] text-right font-semibold capitalize text-neutral-800">
         {value}
       </span>
     </div>

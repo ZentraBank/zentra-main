@@ -25,6 +25,7 @@ import {
   XCircle,
 } from "lucide-react";
 
+import AppShell from "@/components/layout/AppShell";
 import {
   cardService,
   type TenantCard,
@@ -505,377 +506,379 @@ export default function CardsManagementPage() {
     };
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8 text-white md:px-10 lg:px-16">
-      <div className="mx-auto max-w-[1200px]">
+    <AppShell>
+      <main className="relative min-h-[calc(100svh-80px)] overflow-x-hidden rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_18%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.13),transparent_16%)] bg-black px-4 py-8 text-white md:px-10 lg:px-16">
+        <div className="mx-auto max-w-[1200px]">
 
-        {/* TOP BAR */}
+          {/* TOP BAR */}
 
-        <div className="flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-white/15"
-          >
-            <ArrowLeft
-              size={20}
-            />
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link
+              href="/dashboard"
+              className="grid h-10 w-10 place-items-center rounded-full bg-white/10 transition hover:bg-white/15"
+            >
+              <ArrowLeft
+                size={20}
+              />
+            </Link>
 
-          <button
-            type="button"
-            onClick={
-              refresh
-            }
-            disabled={
-              loading
-            }
-            className="flex h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold transition hover:bg-white/15 disabled:opacity-50"
-          >
-            <RefreshCw
-              size={15}
-              className={
-                loading
-                  ? "animate-spin"
-                  : ""
+            <button
+              type="button"
+              onClick={
+                refresh
               }
-            />
+              disabled={
+                loading
+              }
+              className="flex h-10 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-bold transition hover:bg-white/15 disabled:opacity-50"
+            >
+              <RefreshCw
+                size={15}
+                className={
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }
+              />
 
-            Refresh
-          </button>
-        </div>
-
-        {/* HEADER */}
-
-        <header className="mt-8">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">
-            Card management
-          </p>
-
-          <h1 className="mt-2 text-3xl font-black text-[#2f73ff] md:text-5xl">
-            Client Cards
-          </h1>
-
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">
-            Review card applications and manage cards already issued to your customers.
-          </p>
-        </header>
-
-        {(error ||
-          message) && (
-          <div
-            className={`mt-6 rounded-2xl px-4 py-3 text-sm ${
-              error
-                ? "bg-red-950 text-red-100"
-                : "bg-green-950 text-green-100"
-            }`}
-          >
-            {error ||
-              message}
+              Refresh
+            </button>
           </div>
-        )}
 
-        {/* MAIN TAB */}
+          {/* HEADER */}
 
-        <div className="mt-8 grid grid-cols-2 rounded-2xl bg-white/5 p-1">
-          <button
-            type="button"
-            onClick={() =>
-              setMainTab(
-                "requests",
-              )
-            }
-            className={`h-12 rounded-xl text-sm font-black transition ${
-              mainTab ===
-              "requests"
-                ? "bg-white text-black"
-                : "text-white/50 hover:text-white"
-            }`}
-          >
-            Card Requests
-          </button>
+          <header className="mt-8">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/40">
+              Card management
+            </p>
 
-          <button
-            type="button"
-            onClick={() =>
-              setMainTab(
-                "cards",
-              )
-            }
-            className={`h-12 rounded-xl text-sm font-black transition ${
-              mainTab ===
-              "cards"
-                ? "bg-white text-black"
-                : "text-white/50 hover:text-white"
-            }`}
-          >
-            Issued Cards
-          </button>
+            <h1 className="mt-2 text-3xl font-black text-[#2f73ff] md:text-5xl">
+              Client Cards
+            </h1>
+
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">
+              Review card applications and manage cards already issued to your customers.
+            </p>
+          </header>
+
+          {(error ||
+            message) && (
+            <div
+              className={`mt-6 rounded-2xl px-4 py-3 text-sm font-medium shadow-sm ${
+                error
+                  ? "border border-red-500/30 bg-red-950/70 text-red-100"
+                  : "border border-emerald-500/30 bg-emerald-950/70 text-emerald-100"
+              }`}
+            >
+              {error ||
+                message}
+            </div>
+          )}
+
+          {/* MAIN TAB */}
+
+          <div className="mt-8 grid grid-cols-2 rounded-2xl bg-white/5 p-1">
+            <button
+              type="button"
+              onClick={() =>
+                setMainTab(
+                  "requests",
+                )
+              }
+              className={`h-12 rounded-xl text-sm font-black transition ${
+                mainTab ===
+                "requests"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-white/50 hover:text-white"
+              }`}
+            >
+              Card Requests
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                setMainTab(
+                  "cards",
+                )
+              }
+              className={`h-12 rounded-xl text-sm font-black transition ${
+                mainTab ===
+                "cards"
+                  ? "bg-white text-black shadow-sm"
+                  : "text-white/50 hover:text-white"
+              }`}
+            >
+              Issued Cards
+            </button>
+          </div>
+
+          {mainTab ===
+          "requests" ? (
+            <>
+              {/* REQUEST FILTER */}
+
+              <div className="mt-5 flex overflow-x-auto rounded-2xl bg-white/5 p-1">
+                <RequestTabButton
+                  active={
+                    requestTab ===
+                    "pending"
+                  }
+                  onClick={() =>
+                    setRequestTab(
+                      "pending",
+                    )
+                  }
+                  icon={
+                    <Clock3
+                      size={15}
+                    />
+                  }
+                  label="Pending"
+                />
+
+                <RequestTabButton
+                  active={
+                    requestTab ===
+                    "approved"
+                  }
+                  onClick={() =>
+                    setRequestTab(
+                      "approved",
+                    )
+                  }
+                  icon={
+                    <Check
+                      size={15}
+                    />
+                  }
+                  label="Approved"
+                />
+
+                <RequestTabButton
+                  active={
+                    requestTab ===
+                    "rejected"
+                  }
+                  onClick={() =>
+                    setRequestTab(
+                      "rejected",
+                    )
+                  }
+                  icon={
+                    <XCircle
+                      size={15}
+                    />
+                  }
+                  label="Rejected"
+                />
+              </div>
+
+              {loading ? (
+                <LoadingState
+                  label="Loading card requests…"
+                />
+              ) : requests.length ===
+                0 ? (
+                <EmptyState
+                  title={`No ${requestTab} card requests`}
+                  description="Card applications will appear here when clients submit them."
+                />
+              ) : (
+                <section className="mt-6 grid gap-5 lg:grid-cols-2">
+                  {requests.map(
+                    (
+                      request,
+                    ) => (
+                      <RequestCard
+                        key={
+                          request.id
+                        }
+                        request={
+                          request
+                        }
+                        busy={
+                          actionId ===
+                          request.id
+                        }
+                        onApprove={() =>
+                          void approveRequest(
+                            request,
+                          )
+                        }
+                        onReject={() =>
+                          setRejectingRequest(
+                            request,
+                          )
+                        }
+                      />
+                    ),
+                  )}
+                </section>
+              )}
+            </>
+          ) : (
+            <>
+              {/* CARD FILTER */}
+
+              <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+                {(
+                  [
+                    "all",
+                    "active",
+                    "frozen",
+                    "blocked",
+                    "inactive",
+                  ] as const
+                ).map(
+                  (
+                    status,
+                  ) => (
+                    <button
+                      key={
+                        status
+                      }
+                      type="button"
+                      onClick={() =>
+                        setCardFilter(
+                          status,
+                        )
+                      }
+                      className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold capitalize transition ${
+                        cardFilter ===
+                        status
+                          ? "bg-[#2f73ff] text-white shadow-sm"
+                          : "bg-white/10 text-white/55 hover:bg-white/15 hover:text-white"
+                      }`}
+                    >
+                      {status}
+                      {" "}
+                      {
+                        cardCounts[
+                          status
+                        ]
+                      }
+                    </button>
+                  ),
+                )}
+              </div>
+
+              {loading ? (
+                <LoadingState
+                  label="Loading issued cards…"
+                />
+              ) : filteredCards.length ===
+                0 ? (
+                <EmptyState
+                  title="No cards found"
+                  description="Issued cards matching this status will appear here."
+                />
+              ) : (
+                <section className="mt-6 grid gap-5 lg:grid-cols-2">
+                  {filteredCards.map(
+                    (
+                      card,
+                    ) => (
+                      <IssuedCard
+                        key={
+                          card.id
+                        }
+                        card={
+                          card
+                        }
+                        busy={
+                          actionId ===
+                          card.id
+                        }
+                        onAction={(
+                          status,
+                          label,
+                        ) =>
+                          setCardAction(
+                            {
+                              card,
+                              status,
+                              label,
+                            },
+                          )
+                        }
+                      />
+                    ),
+                  )}
+                </section>
+              )}
+            </>
+          )}
         </div>
 
-        {mainTab ===
-        "requests" ? (
-          <>
-            {/* REQUEST FILTER */}
+        {/* REJECTION OVERLAY */}
 
-            <div className="mt-5 flex overflow-x-auto rounded-2xl bg-white/5 p-1">
-              <RequestTabButton
-                active={
-                  requestTab ===
-                  "pending"
-                }
-                onClick={() =>
-                  setRequestTab(
-                    "pending",
-                  )
-                }
-                icon={
-                  <Clock3
-                    size={15}
-                  />
-                }
-                label="Pending"
-              />
-
-              <RequestTabButton
-                active={
-                  requestTab ===
-                  "approved"
-                }
-                onClick={() =>
-                  setRequestTab(
-                    "approved",
-                  )
-                }
-                icon={
-                  <Check
-                    size={15}
-                  />
-                }
-                label="Approved"
-              />
-
-              <RequestTabButton
-                active={
-                  requestTab ===
-                  "rejected"
-                }
-                onClick={() =>
-                  setRequestTab(
-                    "rejected",
-                  )
-                }
-                icon={
-                  <XCircle
-                    size={15}
-                  />
-                }
-                label="Rejected"
-              />
-            </div>
-
-            {loading ? (
-              <LoadingState
-                label="Loading card requests…"
-              />
-            ) : requests.length ===
-              0 ? (
-              <EmptyState
-                title={`No ${requestTab} card requests`}
-                description="Card applications will appear here when clients submit them."
-              />
-            ) : (
-              <section className="mt-6 grid gap-5 lg:grid-cols-2">
-                {requests.map(
-                  (
-                    request,
-                  ) => (
-                    <RequestCard
-                      key={
-                        request.id
-                      }
-                      request={
-                        request
-                      }
-                      busy={
-                        actionId ===
-                        request.id
-                      }
-                      onApprove={() =>
-                        void approveRequest(
-                          request,
-                        )
-                      }
-                      onReject={() =>
-                        setRejectingRequest(
-                          request,
-                        )
-                      }
-                    />
-                  ),
-                )}
-              </section>
-            )}
-          </>
-        ) : (
-          <>
-            {/* CARD FILTER */}
-
-            <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
-              {(
-                [
-                  "all",
-                  "active",
-                  "frozen",
-                  "blocked",
-                  "inactive",
-                ] as const
-              ).map(
-                (
-                  status,
-                ) => (
-                  <button
-                    key={
-                      status
-                    }
-                    type="button"
-                    onClick={() =>
-                      setCardFilter(
-                        status,
-                      )
-                    }
-                    className={`shrink-0 rounded-full px-4 py-2 text-xs font-bold capitalize transition ${
-                      cardFilter ===
-                      status
-                        ? "bg-[#2f73ff] text-white"
-                        : "bg-white/10 text-white/55 hover:bg-white/15 hover:text-white"
-                    }`}
-                  >
-                    {status}
-                    {" "}
-                    {
-                      cardCounts[
-                        status
-                      ]
-                    }
-                  </button>
-                ),
-              )}
-            </div>
-
-            {loading ? (
-              <LoadingState
-                label="Loading issued cards…"
-              />
-            ) : filteredCards.length ===
-              0 ? (
-              <EmptyState
-                title="No cards found"
-                description="Issued cards matching this status will appear here."
-              />
-            ) : (
-              <section className="mt-6 grid gap-5 lg:grid-cols-2">
-                {filteredCards.map(
-                  (
-                    card,
-                  ) => (
-                    <IssuedCard
-                      key={
-                        card.id
-                      }
-                      card={
-                        card
-                      }
-                      busy={
-                        actionId ===
-                        card.id
-                      }
-                      onAction={(
-                        status,
-                        label,
-                      ) =>
-                        setCardAction(
-                          {
-                            card,
-                            status,
-                            label,
-                          },
-                        )
-                      }
-                    />
-                  ),
-                )}
-              </section>
-            )}
-          </>
-        )}
-      </div>
-
-      {/* REJECTION OVERLAY */}
-
-      <RejectOverlay
-        request={
-          rejectingRequest
-        }
-        busy={
-          Boolean(
-            rejectingRequest &&
-              actionId ===
-                rejectingRequest.id,
-          )
-        }
-        onClose={() =>
-          setRejectingRequest(
-            null,
-          )
-        }
-        onReject={(
-          reason,
-        ) => {
-          if (
+        <RejectOverlay
+          request={
             rejectingRequest
-          ) {
-            void rejectRequest(
-              rejectingRequest.id,
+          }
+          busy={
+            Boolean(
+              rejectingRequest &&
+                actionId ===
+                  rejectingRequest.id,
+            )
+          }
+          onClose={() =>
+            setRejectingRequest(
+              null,
+            )
+          }
+          onReject={(
+            reason,
+          ) => {
+            if (
+              rejectingRequest
+            ) {
+              void rejectRequest(
+                rejectingRequest.id,
+                reason,
+              );
+            }
+          }}
+        />
+
+        {/* CARD STATUS ACTION */}
+
+        <CardActionOverlay
+          action={
+            cardAction
+          }
+          busy={
+            Boolean(
+              cardAction &&
+                actionId ===
+                  cardAction.card.id,
+            )
+          }
+          onClose={() =>
+            setCardAction(
+              null,
+            )
+          }
+          onConfirm={(
+            reason,
+          ) => {
+            if (
+              !cardAction
+            ) {
+              return;
+            }
+
+            void updateCardStatus(
+              cardAction.card,
+              cardAction.status,
               reason,
             );
-          }
-        }}
-      />
-
-      {/* CARD STATUS ACTION */}
-
-      <CardActionOverlay
-        action={
-          cardAction
-        }
-        busy={
-          Boolean(
-            cardAction &&
-              actionId ===
-                cardAction.card.id,
-          )
-        }
-        onClose={() =>
-          setCardAction(
-            null,
-          )
-        }
-        onConfirm={(
-          reason,
-        ) => {
-          if (
-            !cardAction
-          ) {
-            return;
-          }
-
-          void updateCardStatus(
-            cardAction.card,
-            cardAction.status,
-            reason,
-          );
-        }}
-      />
-    </main>
+          }}
+        />
+      </main>
+    </AppShell>
   );
 }
 
@@ -905,7 +908,7 @@ function RequestCard({
     "pending";
 
   return (
-    <article className="overflow-hidden rounded-[24px] bg-white text-[#252525] shadow-xl">
+    <article className="overflow-hidden rounded-[24px] border border-white/10 bg-white text-[#252525] shadow-xl">
       <div className="flex items-start justify-between gap-4 border-b border-black/5 p-5">
         <div className="flex min-w-0 items-center gap-3">
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#E8F0FF] text-[#2458E8]">
@@ -915,7 +918,7 @@ function RequestCard({
           </div>
 
           <div className="min-w-0">
-            <p className="truncate text-[16px] font-black">
+            <p className="truncate text-[16px] font-black text-neutral-900">
               {
                 request.customer_name
               }
@@ -937,7 +940,7 @@ function RequestCard({
       </div>
 
       <div className="p-5">
-        <h2 className="text-xl font-black">
+        <h2 className="text-xl font-black text-neutral-900">
           {prettyCardType(
             request.card_type,
           )}
@@ -1000,7 +1003,7 @@ function RequestCard({
         {request.status ===
           "rejected" &&
           request.rejection_reason && (
-            <div className="mt-4 rounded-2xl bg-red-50 p-4 text-sm text-red-700">
+            <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               {
                 request.rejection_reason
               }
@@ -1010,7 +1013,7 @@ function RequestCard({
         {request.status ===
           "approved" &&
           request.issued_card_id && (
-            <div className="mt-4 rounded-2xl bg-green-50 p-4 text-sm font-semibold text-green-700">
+            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-700">
               Card issued successfully.
             </div>
           )}
@@ -1025,7 +1028,7 @@ function RequestCard({
               disabled={
                 busy
               }
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-50 text-sm font-bold text-red-600 disabled:opacity-50"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 text-sm font-bold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
             >
               <X
                 size={16}
@@ -1041,7 +1044,7 @@ function RequestCard({
               disabled={
                 busy
               }
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2458E8] text-sm font-bold text-white disabled:opacity-50"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2458E8] text-sm font-bold text-white shadow-sm transition hover:bg-[#1d4ed8] disabled:opacity-50"
             >
               {busy ? (
                 <Loader2
@@ -1093,7 +1096,7 @@ function IssuedCard({
     );
 
   return (
-    <article className="overflow-hidden rounded-[26px] bg-white text-[#252525] shadow-xl">
+    <article className="overflow-hidden rounded-[26px] border border-white/10 bg-white text-[#252525] shadow-xl">
       <div className="bg-gradient-to-br from-[#1D4ED8] via-[#2458E8] to-[#12285f] p-5 text-white">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -1256,7 +1259,7 @@ function IssuedCard({
             )}
           </div>
         ) : (
-          <div className="mt-5 rounded-xl bg-gray-100 px-4 py-3 text-center text-xs font-semibold text-gray-500">
+          <div className="mt-5 rounded-xl bg-neutral-100 px-4 py-3 text-center text-xs font-semibold text-neutral-500">
             No further card actions are available.
           </div>
         )}
@@ -1419,7 +1422,7 @@ function RequestTabButton({
       }
       className={`flex h-11 min-w-[120px] flex-1 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition ${
         active
-          ? "bg-white text-black"
+          ? "bg-white text-black shadow-sm"
           : "text-white/55 hover:text-white"
       }`}
     >
@@ -1443,27 +1446,27 @@ function StatusBadge({
   const classes =
     status === "active" ||
     status === "approved"
-      ? "bg-green-100 text-green-700"
+      ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
 
       : status ===
           "pending"
-        ? "bg-amber-100 text-amber-700"
+        ? "bg-amber-50 text-amber-700 border border-amber-200"
 
         : status ===
             "frozen"
-          ? "bg-sky-100 text-sky-700"
+          ? "bg-sky-50 text-sky-700 border border-sky-200"
 
           : status ===
               "blocked"
-            ? "bg-orange-100 text-orange-700"
+            ? "bg-orange-50 text-orange-700 border border-orange-200"
 
             : status ===
                 "rejected" ||
                 status ===
                   "inactive"
-              ? "bg-red-100 text-red-700"
+              ? "bg-red-50 text-red-700 border border-red-200"
 
-              : "bg-gray-100 text-gray-600";
+              : "bg-neutral-100 text-neutral-600 border border-neutral-200";
 
   return (
     <span
@@ -1490,13 +1493,13 @@ function InfoRow({
   wrap?: boolean;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4 text-sm">
       <span className="shrink-0 text-black/40">
         {label}
       </span>
 
       <span
-        className={`text-right font-bold ${
+        className={`text-right font-bold text-neutral-800 ${
           wrap
             ? "max-w-[60%] break-all"
             : ""
@@ -1552,7 +1555,7 @@ function RejectOverlay({
       <section className="w-full max-w-md rounded-[24px] bg-white p-6 text-[#252525] shadow-2xl">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-black">
+            <h2 className="text-xl font-black text-neutral-900">
               Reject card request
             </h2>
 
@@ -1575,7 +1578,7 @@ function RejectOverlay({
             disabled={
               busy
             }
-            className="grid h-9 w-9 place-items-center rounded-full bg-gray-100"
+            className="grid h-9 w-9 place-items-center rounded-full bg-neutral-100 transition hover:bg-neutral-200"
           >
             <X
               size={17}
@@ -1599,7 +1602,7 @@ function RejectOverlay({
             500
           }
           placeholder="Why is this card request being rejected?"
-          className="mt-6 h-28 w-full resize-none rounded-xl border border-gray-200 p-3 text-sm outline-none focus:border-red-400"
+          className="mt-6 h-28 w-full resize-none rounded-xl border border-black/10 p-3 text-sm text-neutral-900 outline-none transition focus:border-red-400"
         />
 
         <div className="mt-5 grid grid-cols-2 gap-3">
@@ -1611,7 +1614,7 @@ function RejectOverlay({
             disabled={
               busy
             }
-            className="h-11 rounded-xl bg-gray-100 text-sm font-bold"
+            className="h-11 rounded-xl bg-neutral-100 text-sm font-bold text-neutral-700 transition hover:bg-neutral-200"
           >
             Cancel
           </button>
@@ -1629,7 +1632,7 @@ function RejectOverlay({
                 .length <
                 3
             }
-            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-bold text-white disabled:opacity-40"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 text-sm font-bold text-white transition hover:bg-red-700 disabled:opacity-40"
           >
             {busy && (
               <Loader2
@@ -1705,7 +1708,7 @@ function CardActionOverlay({
       <section className="w-full max-w-md rounded-[24px] bg-white p-6 text-[#252525] shadow-2xl">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-xl font-black">
+            <h2 className="text-xl font-black text-neutral-900">
               {action.label} card
             </h2>
 
@@ -1730,7 +1733,7 @@ function CardActionOverlay({
             onClick={
               onClose
             }
-            className="grid h-9 w-9 place-items-center rounded-full bg-gray-100"
+            className="grid h-9 w-9 place-items-center rounded-full bg-neutral-100 transition hover:bg-neutral-200"
           >
             <X
               size={17}
@@ -1740,7 +1743,7 @@ function CardActionOverlay({
 
         {needsReason && (
           <label className="mt-6 block">
-            <span className="text-sm font-bold">
+            <span className="text-sm font-bold text-neutral-900">
               Reason
             </span>
 
@@ -1760,7 +1763,7 @@ function CardActionOverlay({
                 500
               }
               placeholder={`Reason for ${action.label.toLowerCase()}ing this card`}
-              className="mt-2 h-24 w-full resize-none rounded-xl border border-gray-200 p-3 text-sm outline-none"
+              className="mt-2 h-24 w-full resize-none rounded-xl border border-black/10 p-3 text-sm text-neutral-900 outline-none transition focus:border-blue-500"
             />
           </label>
         )}
@@ -1774,7 +1777,7 @@ function CardActionOverlay({
             disabled={
               busy
             }
-            className="h-11 rounded-xl bg-gray-100 text-sm font-bold"
+            className="h-11 rounded-xl bg-neutral-100 text-sm font-bold text-neutral-700 transition hover:bg-neutral-200"
           >
             Cancel
           </button>
@@ -1796,7 +1799,7 @@ function CardActionOverlay({
                   undefined,
               )
             }
-            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2458E8] text-sm font-bold text-white disabled:opacity-40"
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#2458E8] text-sm font-bold text-white shadow-sm transition hover:bg-[#1d4ed8] disabled:opacity-40"
           >
             {busy && (
               <Loader2
@@ -1873,19 +1876,19 @@ function actionButtonClass(
 ) {
   const styles = {
     blue:
-      "bg-blue-50 text-blue-700",
+      "border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100",
 
     amber:
-      "bg-amber-50 text-amber-700",
+      "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100",
 
     red:
-      "bg-red-50 text-red-600",
+      "border border-red-200 bg-red-50 text-red-600 hover:bg-red-100",
 
     green:
-      "bg-green-50 text-green-700",
+      "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
   };
 
-  return `flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold disabled:opacity-50 ${styles[tone]}`;
+  return `flex h-11 items-center justify-center gap-2 rounded-xl text-sm font-bold shadow-xs transition disabled:opacity-50 ${styles[tone]}`;
 }
 
 function prettyCardType(

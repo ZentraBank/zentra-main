@@ -114,57 +114,78 @@ export default function GiftsPage() {
     ).length;
 
   return (
-    <main className="min-h-screen bg-[#FEF08A] px-5 pb-10 pt-12 text-[#454545]">
-      <section className="mx-auto w-full max-w-[430px]">
-        <header className="relative flex items-center justify-center">
-          <Link
-            href="/dashboard"
-            className="absolute left-0 text-[#777]"
-            aria-label="Back"
-          >
-            <ArrowLeft
-              size={24}
-            />
-          </Link>
+    <main className="min-h-screen bg-[#FEF08A] px-5 pb-10 pt-12 text-[#454545] lg:px-10 lg:py-16">
+      <section className="mx-auto w-full max-w-[430px] lg:max-w-[1200px]">
+        {/* Mobile Header / Desktop Header Layout Switch */}
+        <header className="relative flex items-center justify-between lg:mb-8 lg:rounded-[24px] lg:border lg:border-black/5 lg:bg-white/50 lg:px-8 lg:py-6 lg:backdrop-blur-sm">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard"
+              className="text-[#777] transition hover:text-[#333] lg:grid lg:h-10 lg:w-10 lg:place-items-center lg:rounded-full lg:bg-white lg:shadow-sm"
+              aria-label="Back"
+            >
+              <ArrowLeft
+                size={24}
+                className="lg:hidden"
+              />
+              <ArrowLeft
+                size={20}
+                className="hidden lg:block text-[#555]"
+              />
+            </Link>
 
-          <h1 className="font-heading text-[14px] font-bold tracking-[0.13em]">
+            <div className="hidden lg:block">
+              <h1 className="font-heading text-[22px] font-black tracking-tight text-[#333]">
+                My Gifts Dashboard
+              </h1>
+              <p className="mt-0.5 text-xs text-black/45">
+                Manage, track, and respond to incoming gifted funds securely.
+              </p>
+            </div>
+          </div>
+
+          <h1 className="font-heading text-[14px] font-bold tracking-[0.13em] lg:hidden">
             My Gifts
           </h1>
 
-          <button
-            type="button"
-            onClick={() =>
-              void load()
-            }
-            disabled={loading}
-            className="absolute right-0 grid h-9 w-9 place-items-center rounded-full bg-white/50 text-[#555] shadow-sm disabled:opacity-50"
-            aria-label="Refresh gifts"
-          >
-            <RefreshCw
-              size={15}
-              className={
-                loading
-                  ? "animate-spin"
-                  : ""
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() =>
+                void load()
               }
-            />
-          </button>
+              disabled={loading}
+              className="grid h-9 w-9 place-items-center rounded-full bg-white/50 text-[#555] shadow-sm disabled:opacity-50 lg:h-11 lg:w-11 lg:bg-white lg:hover:bg-white/80"
+              aria-label="Refresh gifts"
+            >
+              <RefreshCw
+                size={15}
+                className={`lg:w-[18px] lg:h-[18px] ${
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }`}
+              />
+            </button>
+          </div>
         </header>
 
-        <section className="mt-7 rounded-[20px] border border-black/5 bg-white/50 px-4 py-5 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-[14px] bg-[#FFE041] text-[#1D4ED8] shadow-sm">
+        {/* Hero Section / Summary Cards */}
+        <section className="mt-7 rounded-[20px] border border-black/5 bg-white/50 px-4 py-5 backdrop-blur-sm lg:mt-0 lg:grid lg:grid-cols-3 lg:gap-6 lg:rounded-[24px] lg:p-8">
+          <div className="flex items-center gap-3 lg:col-span-1 lg:items-start lg:gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[14px] bg-[#FFE041] text-[#1D4ED8] shadow-sm lg:h-16 lg:w-16 lg:rounded-[20px]">
               <Gift
                 size={23}
+                className="lg:w-7 lg:h-7"
               />
             </div>
 
             <div>
-              <p className="text-[18px] font-black text-[#333]">
+              <p className="text-[18px] font-black text-[#333] lg:text-[22px]">
                 Gifted Funds
               </p>
 
-              <p className="mt-1 text-[10px] leading-4 text-black/45">
+              <p className="mt-1 text-[10px] leading-4 text-black/45 lg:text-xs lg:leading-relaxed">
                 View gifts sent
                 to you and respond
                 before they expire.
@@ -172,7 +193,7 @@ export default function GiftsPage() {
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
+          <div className="mt-5 grid grid-cols-2 gap-3 lg:col-span-2 lg:mt-0 lg:gap-4">
             <SummaryBox
               label="Total gifts"
               value={String(
@@ -189,8 +210,9 @@ export default function GiftsPage() {
           </div>
         </section>
 
-        <div className="mt-5 overflow-x-auto pb-1">
-          <div className="flex min-w-max gap-2">
+        {/* Filter Navigation */}
+        <div className="mt-5 overflow-x-auto pb-1 lg:mt-8 lg:overflow-visible">
+          <div className="flex min-w-max gap-2 lg:flex-wrap">
             <FilterButton
               active={
                 statusFilter ===
@@ -259,13 +281,13 @@ export default function GiftsPage() {
         </div>
 
         {error && (
-          <div className="mt-5 rounded-[12px] bg-red-50 px-4 py-3 text-[11px] font-medium text-red-700">
+          <div className="mt-5 rounded-[12px] bg-red-50 px-4 py-3 text-[11px] font-medium text-red-700 lg:text-sm">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="mt-6 grid min-h-[300px] place-items-center rounded-[18px] bg-white/40">
+          <div className="mt-6 grid min-h-[300px] place-items-center rounded-[18px] bg-white/40 lg:rounded-[24px]">
             <div className="text-center">
               <Loader2
                 size={28}
@@ -279,7 +301,7 @@ export default function GiftsPage() {
           </div>
         ) : filteredGifts.length ===
           0 ? (
-          <div className="mt-6 grid min-h-[300px] place-items-center rounded-[18px] border border-dashed border-black/10 bg-white/35 px-5">
+          <div className="mt-6 grid min-h-[300px] place-items-center rounded-[18px] border border-dashed border-black/10 bg-white/35 px-5 lg:rounded-[24px]">
             <div className="text-center">
               <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#FFE041] text-[#1D4ED8]">
                 <Gift
@@ -287,11 +309,11 @@ export default function GiftsPage() {
                 />
               </div>
 
-              <p className="mt-4 text-[14px] font-black text-[#444]">
+              <p className="mt-4 text-[14px] font-black text-[#444] lg:text-lg">
                 No gifts found
               </p>
 
-              <p className="mx-auto mt-2 max-w-[230px] text-[10px] leading-4 text-black/40">
+              <p className="mx-auto mt-2 max-w-[230px] text-[10px] leading-4 text-black/40 lg:max-w-[300px] lg:text-xs">
                 Gifts sent to
                 your account will
                 appear here.
@@ -299,7 +321,7 @@ export default function GiftsPage() {
             </div>
           </div>
         ) : (
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
             {filteredGifts.map(
               (gift) => (
                 <GiftCard
@@ -337,15 +359,15 @@ function GiftCard({
       : gift.status;
 
   return (
-    <article className="overflow-hidden rounded-[18px] border border-black/5 bg-white/55 shadow-sm backdrop-blur-sm">
-      <div className="px-4 py-4">
+    <article className="flex flex-col justify-between overflow-hidden rounded-[18px] border border-black/5 bg-white/55 shadow-sm backdrop-blur-sm lg:rounded-[24px]">
+      <div className="px-4 py-4 lg:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-black/35">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-black/35 lg:text-[11px]">
               Gift from
             </p>
 
-            <p className="mt-1 truncate text-[15px] font-black text-[#444]">
+            <p className="mt-1 truncate text-[15px] font-black text-[#444] lg:text-lg">
               {
                 gift.sender_name
               }
@@ -359,12 +381,12 @@ function GiftCard({
           />
         </div>
 
-        <div className="mt-5">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-black/30">
+        <div className="mt-5 lg:mt-6">
+          <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-black/30 lg:text-[10px]">
             Gift amount
           </p>
 
-          <p className="mt-1 text-[30px] font-black tracking-[-0.04em] text-[#5daa7e]">
+          <p className="mt-1 text-[30px] font-black tracking-[-0.04em] text-[#5daa7e] lg:text-[38px]">
             {formatMoney(
               gift.amount,
               gift.currency,
@@ -372,7 +394,7 @@ function GiftCard({
           </p>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-3 lg:gap-4">
           <MiniDetail
             label="Redemption fee"
             value={formatMoney(
@@ -394,12 +416,12 @@ function GiftCard({
         </div>
 
         {gift.message && (
-          <div className="mt-4 rounded-[12px] bg-white/60 px-3 py-3">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-black/30">
+          <div className="mt-4 rounded-[12px] bg-white/60 px-3 py-3 lg:rounded-[16px] lg:p-4">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-black/30 lg:text-[10px]">
               Message
             </p>
 
-            <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-black/55">
+            <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-black/55 lg:text-xs">
               {gift.message}
             </p>
           </div>
@@ -407,25 +429,25 @@ function GiftCard({
 
         {gift.status ===
           "pending" && (
-          <div className="mt-4 flex items-center gap-3 rounded-[12px] bg-[#FFF8D8] px-3 py-3">
+          <div className="mt-4 flex items-center gap-3 rounded-[12px] bg-[#FFF8D8] px-3 py-3 lg:rounded-[16px] lg:p-4">
             <Clock3
               size={16}
-              className={
+              className={`lg:w-5 lg:h-5 ${
                 countdown.expired
                   ? "text-red-500"
                   : "text-[#1D4ED8]"
-              }
+              }`}
             />
 
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-black/30">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.06em] text-black/30 lg:text-[10px]">
                 {countdown.expired
                   ? "Response window"
                   : "Time remaining"}
               </p>
 
               <p
-                className={`mt-1 text-[11px] font-black tabular-nums ${
+                className={`mt-1 text-[11px] font-black tabular-nums lg:text-xs ${
                   countdown.expired
                     ? "text-red-600"
                     : "text-[#1D4ED8]"
@@ -449,7 +471,7 @@ function GiftCard({
 
         {gift.status ===
           "redemption_pending_review" && (
-          <div className="mt-4 rounded-[12px] bg-blue-50 px-3 py-3 text-[10px] font-semibold text-blue-700">
+          <div className="mt-4 rounded-[12px] bg-blue-50 px-3 py-3 text-[10px] font-semibold text-blue-700 lg:rounded-[16px] lg:text-xs lg:p-4">
             Your payment proof
             is awaiting review.
           </div>
@@ -457,7 +479,7 @@ function GiftCard({
 
         {gift.status ===
           "redemption_rejected" && (
-          <div className="mt-4 rounded-[12px] bg-red-50 px-3 py-3 text-[10px] font-semibold text-red-700">
+          <div className="mt-4 rounded-[12px] bg-red-50 px-3 py-3 text-[10px] font-semibold text-red-700 lg:rounded-[16px] lg:text-xs lg:p-4">
             Your payment proof
             was rejected. Open
             the gift to submit
@@ -470,7 +492,7 @@ function GiftCard({
         href={`/donations-gift/gifts/${encodeURIComponent(
           gift.id,
         )}`}
-        className="flex h-[46px] items-center justify-center border-t border-black/5 bg-[#1D4ED8] text-[12px] font-bold text-white transition active:bg-[#173FC0]"
+        className="flex h-[46px] items-center justify-center border-t border-black/5 bg-[#1D4ED8] text-[12px] font-bold text-white transition hover:bg-[#173FC0] active:bg-[#173FC0] lg:h-[54px] lg:text-sm"
       >
         {actionLabel(
           effectiveStatus,
@@ -495,10 +517,10 @@ function FilterButton({
       onClick={
         onClick
       }
-      className={`h-[36px] rounded-full px-4 text-[10px] font-bold transition ${
+      className={`h-[36px] rounded-full px-4 text-[10px] font-bold transition lg:h-11 lg:px-6 lg:text-xs ${
         active
-          ? "bg-[#1D4ED8] text-white"
-          : "border border-black/5 bg-white/50 text-black/50"
+          ? "bg-[#1D4ED8] text-white shadow-sm"
+          : "border border-black/5 bg-white/50 text-black/50 hover:bg-white/80"
       }`}
     >
       {label}
@@ -514,12 +536,12 @@ function SummaryBox({
   value: string;
 }) {
   return (
-    <div className="rounded-[12px] bg-white/60 px-3 py-3">
-      <p className="text-[9px] font-semibold uppercase tracking-[0.05em] text-black/30">
+    <div className="rounded-[12px] bg-white/60 px-3 py-3 lg:rounded-[20px] lg:p-6">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.05em] text-black/30 lg:text-xs">
         {label}
       </p>
 
-      <p className="mt-1 text-[19px] font-black text-[#333]">
+      <p className="mt-1 text-[19px] font-black text-[#333] lg:text-[32px]">
         {value}
       </p>
     </div>
@@ -534,12 +556,12 @@ function MiniDetail({
   value: string;
 }) {
   return (
-    <div className="rounded-[11px] bg-white/60 px-3 py-3">
-      <p className="text-[9px] text-black/35">
+    <div className="rounded-[11px] bg-white/60 px-3 py-3 lg:rounded-[16px] lg:p-4">
+      <p className="text-[9px] text-black/35 lg:text-[11px]">
         {label}
       </p>
 
-      <p className="mt-1 truncate text-[11px] font-bold text-[#444]">
+      <p className="mt-1 truncate text-[11px] font-bold text-[#444] lg:text-sm">
         {value}
       </p>
     </div>
@@ -583,7 +605,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`shrink-0 rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.05em] ${
+      className={`shrink-0 rounded-full px-2.5 py-1 text-[8px] font-black uppercase tracking-[0.05em] lg:px-3 lg:py-1.5 lg:text-[10px] ${
         styles[status] ??
         "bg-gray-100 text-gray-600"
       }`}

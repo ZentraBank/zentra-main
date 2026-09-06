@@ -263,8 +263,9 @@ export default function MyInvestmentsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#13813d] px-5 pb-12 pt-10 text-white">
-      <section className="mx-auto w-full max-w-[430px]">
+    <main className="min-h-screen bg-[#13813d] px-5 pb-12 pt-10 text-white lg:flex lg:items-center lg:justify-center lg:px-12 lg:py-16">
+      {/* Mobile Layout Wrapper */}
+      <section className="mx-auto w-full max-w-[430px] lg:hidden">
         <header className="relative flex items-center justify-center">
           <Link
             href="/investment/investment-types"
@@ -602,6 +603,252 @@ export default function MyInvestmentsPage() {
           </>
         )}
       </section>
+
+      {/* Desktop Layout Wrapper */}
+      <section className="hidden lg:mx-auto lg:flex lg:w-full lg:max-w-[1200px] lg:flex-col">
+        {/* Top Header Bar */}
+        <header className="relative mb-10 flex items-center justify-between rounded-[24px] border border-white/20 bg-white/10 px-8 py-6 backdrop-blur-md shadow-lg">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/investment/investment-types"
+              className="grid h-10 w-10 place-items-center rounded-full bg-white text-[#13813d] shadow-md transition hover:bg-white/90"
+            >
+              <ArrowLeft
+                size={20}
+              />
+            </Link>
+
+            <div>
+              <h1 className="font-heading text-[22px] font-black tracking-tight text-white">
+                My Investment Portfolio & Growth
+              </h1>
+              <p className="mt-0.5 text-xs text-white/80">
+                Track active portfolios, analyze returns, and manage maturities securely.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/investment/investment-types"
+              className="flex items-center gap-2 rounded-full bg-white text-[#13813d] px-6 py-2.5 text-xs font-bold shadow-md transition hover:bg-white/90"
+            >
+              <TrendingUp size={16} />
+              Explore New Investments
+            </Link>
+
+            <button
+              type="button"
+              onClick={() =>
+                void load()
+              }
+              className="grid h-11 w-11 place-items-center rounded-full bg-white/20 text-white shadow-sm transition hover:bg-white/30"
+              aria-label="Refresh portfolio"
+            >
+              <RefreshCw
+                size={18}
+              />
+            </button>
+          </div>
+        </header>
+
+        {error && (
+          <div className="mb-8 rounded-[16px] bg-red-50 px-6 py-4 text-sm font-semibold text-red-700 shadow-md">
+            {error}
+          </div>
+        )}
+
+        {/* Portfolio Summary Banner */}
+        <div className="mb-10 grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="rounded-[24px] border border-white/20 bg-[#10291E] p-8 shadow-xl">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/50">
+              Total Portfolio Value
+            </p>
+            <p className="mt-3 text-3xl font-black text-[#71D49B]">
+              {portfolioCurrency
+                ? formatMoney(totals.current, portfolioCurrency)
+                : totals.current.toLocaleString()}
+            </p>
+            <p className="mt-1 text-xs font-semibold text-[#71D49B]/80">
+              +{portfolioCurrency ? formatMoney(totals.accrued, portfolioCurrency) : totals.accrued.toLocaleString()} total growth
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-white/20 bg-white/10 p-8 backdrop-blur-md shadow-xl flex flex-col justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/60">
+              Total Principal Invested
+            </p>
+            <p className="text-2xl font-black text-white">
+              {portfolioCurrency
+                ? formatMoney(totals.principal, portfolioCurrency)
+                : totals.principal.toLocaleString()}
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-white/20 bg-white/10 p-8 backdrop-blur-md shadow-xl flex flex-col justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/60">
+              Projected Maturity Value
+            </p>
+            <p className="text-2xl font-black text-white">
+              {portfolioCurrency
+                ? formatMoney(totals.expected, portfolioCurrency)
+                : totals.expected.toLocaleString()}
+            </p>
+          </div>
+
+          <div className="rounded-[24px] border border-white/20 bg-white/10 p-8 backdrop-blur-md shadow-xl flex flex-col justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-white/60">
+              Active Portfolios
+            </p>
+            <p className="text-2xl font-black text-white">
+              {totals.active} Active
+            </p>
+          </div>
+        </div>
+
+        {/* Search & Filters Bar */}
+        <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="relative w-full md:w-80">
+            <Search
+              size={16}
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40"
+            />
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search by product name or ID..."
+              className="h-12 w-full rounded-[14px] bg-white pl-11 pr-4 text-xs font-semibold text-black outline-none shadow-sm focus:ring-2 focus:ring-[#71D49B]"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <FilterButton
+              label="All Portfolios"
+              value="all"
+              current={filter}
+              onClick={setFilter}
+            />
+            <FilterButton
+              label="Active"
+              value="active"
+              current={filter}
+              onClick={setFilter}
+            />
+            <FilterButton
+              label="Matured"
+              value="matured"
+              current={filter}
+              onClick={setFilter}
+            />
+            <FilterButton
+              label="Withdrawal Requested"
+              value="withdrawal_requested"
+              current={filter}
+              onClick={setFilter}
+            />
+            <FilterButton
+              label="Completed"
+              value="completed"
+              current={filter}
+              onClick={setFilter}
+            />
+          </div>
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="grid min-h-[360px] place-items-center rounded-[28px] border border-dashed border-white/30 bg-white/10 px-6 backdrop-blur-sm">
+            <div className="text-center text-white max-w-sm">
+              <TrendingUp size={44} className="mx-auto text-white/70" />
+              <p className="mt-4 text-lg font-black">
+                No investments found
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-white/70">
+                You do not have any investments matching the current search criteria or filter status.
+              </p>
+              <Link
+                href="/investment/investment-types"
+                className="mt-6 inline-flex h-11 items-center justify-center rounded-[12px] bg-white px-6 text-xs font-bold text-[#13813d] shadow-md transition hover:bg-white/90"
+              >
+                Explore Investment Opportunities
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((investment) => (
+              <div
+                key={investment.id}
+                className="flex flex-col justify-between overflow-hidden rounded-[24px] border border-white/20 bg-[#10291E] shadow-xl transition hover:-translate-y-1 hover:shadow-2xl"
+              >
+                <div className="p-8">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-white/40">
+                        Investment Asset
+                      </p>
+                      <h3 className="mt-1 font-heading text-xl font-black text-white">
+                        {investment.product_name || "Investment"}
+                      </h3>
+                      <p className="mt-1 text-xs text-white/60">
+                        {formatNumber(investment.annual_rate)}% Rate • {formatDuration(investment.duration_days)}
+                      </p>
+                    </div>
+
+                    <StatusBadge status={investment.status} dark />
+                  </div>
+
+                  <div className="mt-6 rounded-[16px] bg-white/5 p-5 border border-white/10">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/40">
+                      Current Value
+                    </p>
+                    <p className="mt-1 text-2xl font-black text-[#71D49B]">
+                      {formatMoney(
+                        investment.current_value ?? investment.principal,
+                        investment.currency,
+                      )}
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-[#71D49B]/80">
+                      +{formatMoney(investment.accrued_return ?? 0, investment.currency)} accrued growth
+                    </p>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div className="rounded-[12px] bg-white/5 p-3.5 border border-white/10">
+                      <p className="text-[10px] uppercase font-bold text-white/40">Principal</p>
+                      <p className="mt-1 text-xs font-black text-white">
+                        {formatMoney(investment.principal, investment.currency)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-[12px] bg-white/5 p-3.5 border border-white/10">
+                      <p className="text-[10px] uppercase font-bold text-white/40">Remaining</p>
+                      <p className="mt-1 text-xs font-black text-white">
+                        {investment.days_remaining ?? 0} days
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 px-8 py-5 backdrop-blur-sm border-t border-white/10 flex items-center justify-between">
+                  <span className="text-xs font-bold text-white/70">
+                    ID: {investment.id.slice(0, 8)}...
+                  </span>
+
+                  <Link
+                    href={`/investment/my-investments/${encodeURIComponent(
+                      investment.id,
+                    )}`}
+                    className="flex items-center gap-1.5 rounded-full bg-[#1D4ED8] px-5 py-2 text-xs font-bold text-white shadow-md transition hover:bg-blue-600"
+                  >
+                    View Details
+                    <ChevronRight size={16} />
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }
@@ -803,11 +1050,11 @@ function FilterButton({
       onClick={() =>
         onClick(value)
       }
-      className={`h-[34px] shrink-0 rounded-full px-4 text-[9px] font-bold ${
+      className={`h-[34px] lg:h-11 shrink-0 rounded-full px-4 lg:px-6 text-[9px] lg:text-xs font-bold transition ${
         current ===
         value
-          ? "bg-white text-[#13813d]"
-          : "border border-white/20 bg-white/10 text-white"
+          ? "bg-white text-[#13813d] shadow-md"
+          : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
       }`}
     >
       {label}
@@ -847,7 +1094,7 @@ function StatusBadge({
 
   return (
     <span
-      className={`rounded-full px-2.5 py-1 text-[8px] font-black uppercase ${
+      className={`rounded-full px-2.5 py-1 text-[8px] lg:text-[10px] font-black uppercase ${
         styles[
           status as keyof typeof styles
         ] ??
