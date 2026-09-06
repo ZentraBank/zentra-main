@@ -115,16 +115,21 @@ const permissions = [
     name: "Manage subscriptions",
   },
 
-  {
-    module: "cards",
-    code: "cards.read",
-    name: "Read cards",
-  },
-  {
-    module: "cards",
-    code: "cards.manage",
-    name: "Manage cards",
-  },
+ {
+  module: "cards",
+  code: "cards.read",
+  name: "Read cards",
+},
+{
+  module: "cards",
+  code: "cards.request",
+  name: "Request cards",
+},
+{
+  module: "cards",
+  code: "cards.manage",
+  name: "Manage cards",
+},
 
   {
     module: "donations",
@@ -882,7 +887,9 @@ const customerPermissionCodes = [
 
   "notifications.read",
   "subscriptions.read",
+
   "cards.read",
+  "cards.request",
 
   "donations.read",
   "donations.create",

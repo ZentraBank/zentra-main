@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 const mainServices = [
-  { title: "Send money", icon: Send, href: "/dashboard/transfer" },
+  { title: "Send money", icon: Send, href: "/accounts" },
   { title: "FX", icon: Landmark, href: "/fx" },
   { title: "Kyc", icon: UserLock, href: "/dashboard/kyc" },
   { title: "Cards", icon: CreditCard, href: "/dashboard/card-lock" },
@@ -35,8 +35,8 @@ const mainServices = [
 const accountServices = [
   { title: "My Clients", icon: UsersRound, href: "/clients" },
   { title: "Me as Agent", icon: UserCog, href: "/agent" },
-  { title: "Chat Admin", icon: ArrowRightLeft, href: "/dashboard/communications" },
-  { title: "Platform Chat", icon: UserCog, href: "/admin/platform-chat" },
+  { title: "Communications", icon: ArrowRightLeft, href: "/dashboard/communications" },
+  // { title: "Platform Chat", icon: UserCog, href: "/admin/platform-chat" },
 ];
 
 function ServiceCard({ title, icon: Icon, href }: { title: string; icon: React.ElementType; href: string }) {
@@ -143,8 +143,8 @@ useEffect(() => {
             {accountServices.map((service) => <ServiceCard key={service.title} {...service} />)}
           </section>
           <div className="mt-7 flex justify-center gap-3">
-            <Link href="/accounts" className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-black">Send Money</Link>
-            <Link href="/transactions" className="rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white">View transactions</Link>
+            {/* <Link href="/accounts" className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-black">Send Money</Link>
+            <Link href="/transactions" className="rounded-xl border border-white/25 bg-white/10 px-5 py-3 text-sm font-bold text-white">View transactions</Link> */}
           </div>
         </div>
       </main>

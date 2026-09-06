@@ -40,18 +40,22 @@ const {
 | Public onboarding subscription flow
 |--------------------------------------------------------------------------
 |
-| These routes are intentionally BEFORE tenant resolution and normal
-| authentication.
+| These routes are intentionally defined before tenant resolution and
+| normal authentication.
 |
-| Newly created tenants may not yet be accessing the API through a resolved
-| tenant domain and they do not yet have a normal authenticated session.
+| Newly registered tenants may not yet have a normal authenticated tenant
+| session. Access to these endpoints is therefore controlled using the
+| X-Onboarding-Token header.
 |
-| Their access is restricted using:
+| The subscription service resolves the onboarding token back to the
+| appropriate tenant and tenant owner.
 |
-|   X-Onboarding-Token
-|
-| The service resolves that token back to the correct tenant + owner.
-|
+*/
+
+/*
+|--------------------------------------------------------------------------
+| Start onboarding subscription request
+|--------------------------------------------------------------------------
 */
 
 router.post(
@@ -62,11 +66,23 @@ router.post(
   controller.startOnboardingSubscription
 );
 
+/*
+|--------------------------------------------------------------------------
+| Upload onboarding payment proof file
+|--------------------------------------------------------------------------
+*/
+
 router.post(
   "/onboarding/payment-proof/upload",
   uploadSingleDocument,
   controller.uploadOnboardingPaymentProof
 );
+
+/*
+|--------------------------------------------------------------------------
+| Attach payment proof to onboarding request
+|--------------------------------------------------------------------------
+*/
 
 router.patch(
   "/onboarding/requests/:requestId/payment-proof",
@@ -76,6 +92,12 @@ router.patch(
   controller.submitOnboardingProof
 );
 
+/*
+|--------------------------------------------------------------------------
+| Read onboarding subscription status
+|--------------------------------------------------------------------------
+*/
+
 router.get(
   "/onboarding/status",
   validate(
@@ -83,12 +105,13 @@ router.get(
   ),
   controller.getOnboardingStatus
 );
+
 /*
 |--------------------------------------------------------------------------
 | Tenant-resolved subscription routes
 |--------------------------------------------------------------------------
 |
-| Everything below this point requires a tenant context.
+| Everything below this point must resolve a tenant before continuing.
 |
 */
 
@@ -98,11 +121,11 @@ router.use(
 
 /*
 |--------------------------------------------------------------------------
-| Public subscription catalogue
+| Subscription plans
 |--------------------------------------------------------------------------
 |
-| Public in the sense that a normal JWT is not required.
-| A valid tenant still has to be resolved.
+| A tenant context must exist, but a normal authenticated JWT is not
+| required to retrieve the subscription catalogue.
 |
 */
 
@@ -113,7 +136,7 @@ router.get(
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated routes
+| Authenticated tenant routes
 |--------------------------------------------------------------------------
 */
 
@@ -123,8 +146,33 @@ router.use(
 
 /*
 |--------------------------------------------------------------------------
-| Current subscription
+| Upload authenticated payment proof
 |--------------------------------------------------------------------------
+|
+| Creates the private subscriptions/payment_proof file record and returns
+| the paymentProofFileId required by the request payment-proof endpoint.
+|
+*/
+
+router.post(
+  "/payment-proof/upload",
+  requireAllPermissions(
+    "subscriptions.read"
+  ),
+  uploadSingleDocument,
+  controller.uploadPaymentProof
+);
+/*
+|--------------------------------------------------------------------------
+| Current tenant subscription
+|--------------------------------------------------------------------------
+|
+| Returns:
+|
+| - current active subscription
+| - resolved subscription entitlements
+| - any open plan-change request for the current user
+|
 */
 
 router.get(
@@ -137,8 +185,17 @@ router.get(
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated subscription request
+| Request subscription plan change
 |--------------------------------------------------------------------------
+|
+| This endpoint is used by an authenticated tenant administrator to request
+| a different subscription plan.
+|
+| It can support both upgrades and downgrades. The tenant is only requesting
+| the plan change here; it does NOT approve or activate its own subscription.
+|
+| Commercial approval belongs to the platform/Superadmin subscription flow.
+|
 */
 
 router.post(
@@ -154,8 +211,14 @@ router.post(
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated payment proof
+| Submit payment proof for plan-change request
 |--------------------------------------------------------------------------
+|
+| The tenant can attach payment proof to its own subscription request.
+|
+| Once submitted, the request must be reviewed and approved or rejected by
+| the platform/Superadmin subscription module.
+|
 */
 
 router.patch(
@@ -167,57 +230,6 @@ router.patch(
     "subscriptions.read"
   ),
   controller.submitProof
-);
-
-/*
-|--------------------------------------------------------------------------
-| Tenant admin - pending requests
-|--------------------------------------------------------------------------
-*/
-
-router.get(
-  "/admin/requests/pending",
-  validate(
-    schema.pending
-  ),
-  requireAllPermissions(
-    "subscriptions.manage"
-  ),
-  controller.listPending
-);
-
-/*
-|--------------------------------------------------------------------------
-| Tenant admin - approve request
-|--------------------------------------------------------------------------
-*/
-
-router.post(
-  "/admin/requests/:requestId/approve",
-  validate(
-    schema.approve
-  ),
-  requireAllPermissions(
-    "subscriptions.manage"
-  ),
-  controller.approve
-);
-
-/*
-|--------------------------------------------------------------------------
-| Tenant admin - reject request
-|--------------------------------------------------------------------------
-*/
-
-router.post(
-  "/admin/requests/:requestId/reject",
-  validate(
-    schema.reject
-  ),
-  requireAllPermissions(
-    "subscriptions.manage"
-  ),
-  controller.reject
 );
 
 module.exports = router;

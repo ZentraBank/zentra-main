@@ -27,6 +27,10 @@ import {
   getApiErrorMessage,
 } from "@/lib/api-client";
 
+import {
+  setTenantSlug,
+} from "@/lib/tenant";
+
 export default function RegisterOtpPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,39 +68,54 @@ export default function RegisterOtpPage() {
       Array<HTMLInputElement | null>
     >([]);
 
-  useEffect(() => {
-    const queryEmail =
-      searchParams.get("email");
+useEffect(() => {
+  const queryEmail =
+    searchParams.get("email");
 
-    const storedEmail =
-      sessionStorage.getItem(
-        "zentra_registration_email",
-      );
+  const storedEmail =
+    sessionStorage.getItem(
+      "zentra_registration_email",
+    );
 
-    const resolvedEmail =
-      queryEmail ||
-      storedEmail ||
-      "";
+  const storedTenantSlug =
+    sessionStorage.getItem(
+      "zentra_registration_tenant_slug",
+    );
 
-    setEmail(resolvedEmail);
+  /*
+   * Restore the tenant that owns
+   * this invitation/registration.
+   */
+  if (storedTenantSlug) {
+    setTenantSlug(
+      storedTenantSlug,
+    );
+  }
 
-    if (!resolvedEmail) {
-      setError(
-        "Registration email is missing. Please start signup again.",
-      );
-    }
+  const resolvedEmail =
+    queryEmail ||
+    storedEmail ||
+    "";
 
-    const developmentCode =
-      sessionStorage.getItem(
-        "zentra_registration_development_code",
-      );
+  setEmail(resolvedEmail);
 
-    if (developmentCode) {
-      setMessage(
-        `Development OTP: ${developmentCode}`,
-      );
-    }
-  }, [searchParams]);
+  if (!resolvedEmail) {
+    setError(
+      "Registration email is missing. Please start signup again.",
+    );
+  }
+
+  const developmentCode =
+    sessionStorage.getItem(
+      "zentra_registration_development_code",
+    );
+
+  if (developmentCode) {
+    setMessage(
+      `Development OTP: ${developmentCode}`,
+    );
+  }
+}, [searchParams]);
 
   useEffect(() => {
     if (countdown <= 0) {

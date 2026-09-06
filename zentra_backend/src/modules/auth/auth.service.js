@@ -626,21 +626,12 @@ const requestRegistration = async ({
 }) => {
   /*
   |--------------------------------------------------------------------------
-  | Validate tenant context
-  |--------------------------------------------------------------------------
-  */
-
-  if (!tenantId) {
-    throw createHttpError(
-      400,
-      "Tenant is required"
-    );
-  }
-
-  /*
-  |--------------------------------------------------------------------------
   | Validate invitation code
   |--------------------------------------------------------------------------
+  |
+  | Client registration is invitation-driven.
+  | The invitation determines the tenant.
+  |
   */
 
   const normalizedInviteCode =
@@ -657,7 +648,7 @@ const requestRegistration = async ({
 
   /*
   |--------------------------------------------------------------------------
-  | Resolve invite
+  | Resolve invitation
   |--------------------------------------------------------------------------
   */
 
@@ -668,8 +659,7 @@ const requestRegistration = async ({
 
   const invite =
     await clientsRepo.findInviteByCodeHash({
-      codeHash:
-        inviteCodeHash,
+      codeHash: inviteCodeHash,
     });
 
   if (!invite) {
@@ -681,7 +671,7 @@ const requestRegistration = async ({
 
   /*
   |--------------------------------------------------------------------------
-  | Validate invite status
+  | Validate invitation status
   |--------------------------------------------------------------------------
   */
 
@@ -715,17 +705,22 @@ const requestRegistration = async ({
 
   /*
   |--------------------------------------------------------------------------
-  | Make sure invite belongs to resolved tenant
+  | Invitation tenant is authoritative
   |--------------------------------------------------------------------------
+  |
+  | Do NOT compare invite.tenant_id with the tenant resolved from the
+  | browser request. The shared client application may still have another
+  | tenant stored locally when an invitation link is first opened.
+  |
   */
 
-  if (
-    String(invite.tenant_id) !==
-    String(tenantId)
-  ) {
+  const registrationTenantId =
+    invite.tenant_id;
+
+  if (!registrationTenantId) {
     throw createHttpError(
-      403,
-      "This invitation does not belong to this bank"
+      400,
+      "The invitation is not associated with a valid bank"
     );
   }
 
@@ -786,13 +781,13 @@ const requestRegistration = async ({
 
   /*
   |--------------------------------------------------------------------------
-  | Resolve customer role from invite tenant
+  | Resolve customer role from invitation tenant
   |--------------------------------------------------------------------------
   */
 
   const role =
     await authRepo.findCustomerRole(
-      invite.tenant_id
+      registrationTenantId
     );
 
   if (!role) {
@@ -816,16 +811,15 @@ const requestRegistration = async ({
 
   /*
   |--------------------------------------------------------------------------
-  | Store hashed OTP + registration payload
+  | Store OTP against invitation tenant
   |--------------------------------------------------------------------------
   */
 
   await authRepo.createVerificationCode({
-    id:
-      randomUUID(),
+    id: randomUUID(),
 
     tenantId:
-      invite.tenant_id,
+      registrationTenantId,
 
     purpose:
       "registration",
@@ -844,6 +838,9 @@ const requestRegistration = async ({
     payloadJson: {
       inviteId:
         invite.id,
+
+      tenantId:
+        registrationTenantId,
 
       firstName,
 
@@ -896,7 +893,11 @@ const requestRegistration = async ({
   );
 
   console.log(
-    `Tenant ID: ${invite.tenant_id}`
+    `Tenant ID: ${registrationTenantId}`
+  );
+
+  console.log(
+    `Incoming tenant ID: ${tenantId || "none"}`
   );
 
   console.log(
@@ -908,15 +909,21 @@ const requestRegistration = async ({
   );
 
   return {
-    email:
-      normalizedEmail,
+  email:
+    normalizedEmail,
 
-    expiresIn:
-      OTP_EXPIRY_SECONDS,
+  tenantId:
+    registrationTenantId,
 
-    message:
-      "Verification code generated",
-  };
+  tenantSlug:
+    invite.tenant_slug,
+
+  expiresIn:
+    OTP_EXPIRY_SECONDS,
+
+  message:
+    "Verification code generated",
+};
 };
 
 /*

@@ -19,6 +19,10 @@ import {
   type TenantRegistrationCompleteResponse,
 } from "@/services/auth.service";
 
+import {
+  setTenantSlug,
+} from "@/lib/tenant";
+
 type PendingRegistration = {
   method: "email";
   email: string;
@@ -443,16 +447,16 @@ export default function RegisterSuccessPage() {
             },
           );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Preserve non-sensitive onboarding context
-        |--------------------------------------------------------------------------
-        |
-        | The registration password and verification token are removed below.
-        | Only identifiers required for the next onboarding screens remain.
-        |
-        */
+                  /*
+          |--------------------------------------------------------------------------
+          | Bind browser to newly created tenant
+          |--------------------------------------------------------------------------
+          */
 
+          setTenantSlug(
+            result.tenant.code,
+          );
+  
         const onboardingContext:
           TenantOnboardingContext = {
           tenantId:
@@ -496,16 +500,6 @@ export default function RegisterSuccessPage() {
             onboardingContext,
           ),
         );
-
-        /*
-        |--------------------------------------------------------------------------
-        | Remove sensitive registration state
-        |--------------------------------------------------------------------------
-        |
-        | The plaintext password and registration token must not remain once
-        | tenant provisioning has completed.
-        |
-        */
 
         sessionStorage.removeItem(
           "zentra_pending_tenant_registration",
@@ -575,7 +569,7 @@ export default function RegisterSuccessPage() {
   ) {
     return (
       <main
-        className="relative min-h-screen overflow-hidden px-5 pb-10 pt-[120px] text-white"
+        className="relative min-h-screen overflow-hidden px-5 pb-10 pt-[120px] text-white md:flex md:items-center md:justify-center md:pt-0"
         style={{
           backgroundImage:
             "url('/images/Background.png')",
@@ -590,18 +584,18 @@ export default function RegisterSuccessPage() {
             "top right",
         }}
       >
-        <section className="relative mx-auto max-w-[360px] rounded-[16px] border-[4px] border-[#d6c51f] bg-black px-5 pb-7 pt-6 shadow-2xl">
+        <section className="relative mx-auto max-w-[360px] rounded-[16px] border-[4px] border-[#d6c51f] bg-black px-5 pb-7 pt-6 shadow-2xl md:max-w-[480px] md:p-10">
           <div className="flex justify-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500/15">
               <CheckCircle2 className="h-10 w-10 text-green-400" />
             </div>
           </div>
 
-          <h1 className="font-heading mt-5 text-center text-[22px] font-black leading-tight text-white">
+          <h1 className="font-heading mt-5 text-center text-[22px] font-black leading-tight text-white md:text-[28px]">
             Organisation Created
           </h1>
 
-          <p className="font-body mt-4 text-center text-[14px] font-medium leading-[20px] text-white/75">
+          <p className="font-body mt-4 text-center text-[14px] font-medium leading-[20px] text-white/75 md:text-[15px]">
             Your organisation has
             been created successfully.
             Choose a subscription plan
@@ -611,13 +605,13 @@ export default function RegisterSuccessPage() {
 
           <div className="mx-auto my-5 w-[86%] border-b border-white/20" />
 
-          <div className="space-y-3 rounded-[12px] border border-white/10 bg-white/5 p-4">
+          <div className="space-y-3 rounded-[12px] border border-white/10 bg-white/5 p-4 md:p-5">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-white/40">
                 Organisation
               </p>
 
-              <p className="mt-1 text-[14px] font-bold">
+              <p className="mt-1 text-[14px] font-bold md:text-[15px]">
                 {
                   registrationComplete
                     .tenant
@@ -631,7 +625,7 @@ export default function RegisterSuccessPage() {
                 Organisation Code
               </p>
 
-              <p className="mt-1 text-[14px] font-bold">
+              <p className="mt-1 text-[14px] font-bold md:text-[15px]">
                 {
                   registrationComplete
                     .tenant
@@ -645,7 +639,7 @@ export default function RegisterSuccessPage() {
                 Temporary Domain
               </p>
 
-              <p className="mt-1 break-all text-[13px] font-bold text-[#8dabff]">
+              <p className="mt-1 break-all text-[13px] font-bold text-[#8dabff] md:text-[14px]">
                 {
                   registrationComplete
                     .tenant
@@ -665,7 +659,7 @@ export default function RegisterSuccessPage() {
             </div>
           </div>
 
-          <p className="mt-5 text-center text-[12px] leading-[18px] text-white/55">
+          <p className="mt-5 text-center text-[12px] leading-[18px] text-white/55 md:text-[13px]">
             Select the subscription
             package that best suits
             your organisation to
@@ -674,7 +668,7 @@ export default function RegisterSuccessPage() {
 
           <Link
             href="/subscribe/details"
-            className="font-heading mt-6 flex h-[42px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#2458e8] text-[15px] font-bold text-white transition hover:bg-[#1f4fd3]"
+            className="font-heading mt-6 flex h-[42px] w-full items-center justify-center gap-2 rounded-[10px] bg-[#2458e8] text-[15px] font-bold text-white transition hover:bg-[#1f4fd3] md:h-[46px]"
           >
             Continue to Subscription
 
@@ -695,7 +689,7 @@ export default function RegisterSuccessPage() {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden px-5 pb-12 pt-[80px] text-white"
+      className="relative min-h-screen overflow-hidden px-5 pb-12 pt-[80px] text-white md:flex md:items-center md:justify-center md:py-12"
       style={{
         backgroundImage:
           "url('/images/Background.png')",
@@ -712,27 +706,27 @@ export default function RegisterSuccessPage() {
     >
       <Link
         href="/register/otp"
-        className="absolute left-4 top-12 z-30 text-white transition hover:text-white/70"
+        className="absolute left-4 top-12 z-30 text-white transition hover:text-white/70 md:left-8 md:top-8"
       >
         <ArrowLeft
           size={22}
         />
       </Link>
 
-      <section className="relative mx-auto max-w-[390px] rounded-[16px] border-[4px] border-[#d6c51f] bg-black/95 px-5 pb-7 pt-6 shadow-2xl">
-        <h1 className="font-heading text-center text-[22px] font-black leading-none text-white">
+      <section className="relative mx-auto max-w-[390px] rounded-[16px] border-[4px] border-[#d6c51f] bg-black/95 px-5 pb-7 pt-6 shadow-2xl md:max-w-[560px] md:p-10">
+        <h1 className="font-heading text-center text-[22px] font-black leading-none text-white md:text-[28px]">
           Set Up Your
           Organisation
         </h1>
 
-        <p className="font-body mt-3 text-center text-[13px] font-medium leading-[19px] text-white/65">
+        <p className="font-body mt-3 text-center text-[13px] font-medium leading-[19px] text-white/65 md:text-[14px]">
           Your email has been
           verified. Complete your
           organisation details before
           choosing your subscription.
         </p>
 
-        <div className="mt-5 flex justify-center">
+        <div className="mt-5 flex justify-center md:hidden">
           <Image
             src="/images/success.png"
             alt="Organisation setup"
@@ -763,7 +757,7 @@ export default function RegisterSuccessPage() {
           onSubmit={
             handleSubmit
           }
-          className="space-y-4"
+          className="space-y-4 md:space-y-5"
         >
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -793,7 +787,7 @@ export default function RegisterSuccessPage() {
 
                   setError("");
                 }}
-                className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60"
+                className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60 md:h-[44px]"
                 placeholder="First name"
               />
             </div>
@@ -825,7 +819,7 @@ export default function RegisterSuccessPage() {
 
                   setError("");
                 }}
-                className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60"
+                className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60 md:h-[44px]"
                 placeholder="Last name"
               />
             </div>
@@ -855,7 +849,7 @@ export default function RegisterSuccessPage() {
                   event.target.value,
                 )
               }
-              className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60"
+              className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60 md:h-[44px]"
               placeholder="Example Bank Ltd"
             />
           </div>
@@ -884,7 +878,7 @@ export default function RegisterSuccessPage() {
                   event.target.value,
                 )
               }
-              className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] lowercase text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60"
+              className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] lowercase text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60 md:h-[44px]"
               placeholder="example-bank"
             />
 
@@ -921,7 +915,7 @@ export default function RegisterSuccessPage() {
 
                 setError("");
               }}
-              className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60"
+              className="h-[42px] w-full rounded-[10px] border border-white/15 bg-white/10 px-3 text-[13px] text-white outline-none transition placeholder:text-white/30 focus:border-[#d6c51f] focus:ring-2 focus:ring-[#d6c51f]/20 disabled:opacity-60 md:h-[44px]"
               placeholder="Example Bank"
             />
           </div>
@@ -953,7 +947,7 @@ export default function RegisterSuccessPage() {
 
                   setError("");
                 }}
-                className="h-[42px] w-[55px] cursor-pointer rounded-[8px] border border-white/15 bg-white/10 p-1 disabled:opacity-60"
+                className="h-[42px] w-[55px] cursor-pointer rounded-[8px] border border-white/15 bg-white/10 p-1 disabled:opacity-60 md:h-[44px]"
               />
 
               <input
@@ -962,7 +956,7 @@ export default function RegisterSuccessPage() {
                   primaryColor
                 }
                 readOnly
-                className="h-[42px] flex-1 rounded-[10px] border border-white/15 bg-white/5 px-3 text-[13px] uppercase text-white/70 outline-none"
+                className="h-[42px] flex-1 rounded-[10px] border border-white/15 bg-white/5 px-3 text-[13px] uppercase text-white/70 outline-none md:h-[44px]"
               />
             </div>
           </div>
@@ -980,7 +974,7 @@ export default function RegisterSuccessPage() {
             disabled={
               submitting
             }
-            className="font-heading flex h-[44px] w-full items-center justify-center rounded-[10px] bg-[#2458e8] text-[15px] font-bold text-white shadow-[0_10px_22px_rgba(36,88,232,0.35)] transition hover:bg-[#1f4fd3] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            className="font-heading flex h-[44px] w-full items-center justify-center rounded-[10px] bg-[#2458e8] text-[15px] font-bold text-white shadow-[0_10px_22px_rgba(36,88,232,0.35)] transition hover:bg-[#1f4fd3] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 md:h-[48px]"
           >
             {submitting ? (
               <>

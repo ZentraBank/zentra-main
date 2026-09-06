@@ -1,7 +1,11 @@
-const router = require("express").Router();
+const router =
+  require("express").Router();
 
-const controller = require("./accounts.controller");
-const schemas = require("./accounts.validation");
+const controller =
+  require("./accounts.controller");
+
+const schemas =
+  require("./accounts.validation");
 
 const validate =
   require("../../middleware/validate.middleware");
@@ -14,18 +18,29 @@ const {
 
 const {
   resolveTenantMiddleware,
-} = require("../../middleware/tenant.middleware");
+} = require(
+  "../../middleware/tenant.middleware"
+);
 
 const {
   authenticate,
-} = require("../../middleware/auth.middleware");
+} = require(
+  "../../middleware/auth.middleware"
+);
 
 const {
   requireAllPermissions,
-} = require("../../middleware/permission.middleware");
+} = require(
+  "../../middleware/permission.middleware"
+);
 
-router.use(resolveTenantMiddleware);
-router.use(authenticate);
+router.use(
+  resolveTenantMiddleware
+);
+
+router.use(
+  authenticate
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -35,9 +50,12 @@ router.use(authenticate);
 
 router.get(
   "/me",
-  requireAllPermissions("accounts.read"),
+  requireAllPermissions(
+    "accounts.read"
+  ),
   controller.listOwn
 );
+
 router.get(
   "/me/activity",
   validate(
@@ -48,6 +66,7 @@ router.get(
   ),
   controller.listOwnActivity
 );
+
 router.get(
   "/transfer-destination/:accountNumber",
   validate(
@@ -61,15 +80,23 @@ router.get(
 
 router.get(
   "/me/:accountId",
-  validate(schemas.accountIdSchema),
-  requireAllPermissions("accounts.read"),
+  validate(
+    schemas.accountIdSchema
+  ),
+  requireAllPermissions(
+    "accounts.read"
+  ),
   controller.getOwn
 );
 
 router.post(
   "/",
-  validate(schemas.createAccountSchema),
-  requireAllPermissions("accounts.create"),
+  validate(
+    schemas.createAccountSchema
+  ),
+  requireAllPermissions(
+    "accounts.create"
+  ),
   controller.createOwn
 );
 
@@ -81,24 +108,47 @@ router.post(
 
 router.get(
   "/tenant",
-  requireAllPermissions("accounts.read"),
+  requireAllPermissions(
+    "accounts.read"
+  ),
   controller.listTenantAccounts
+);
+
+/*
+ * IMPORTANT:
+ * This route must come BEFORE
+ * /tenant/:accountId.
+ */
+router.get(
+  "/tenant/activity",
+  requireAllPermissions(
+    "transactions.read"
+  ),
+  controller.listTenantActivity
 );
 
 router.get(
   "/tenant/:accountId",
-  validate(schemas.accountIdSchema),
-  requireAllPermissions("accounts.read"),
+  validate(
+    schemas.accountIdSchema
+  ),
+  requireAllPermissions(
+    "accounts.read"
+  ),
   controller.getTenantAccount
 );
+
 router.patch(
   "/tenant/:accountId/balance",
-  validate(schemas.balanceSchema),
+  validate(
+    schemas.balanceSchema
+  ),
   requireAllPermissions(
     "accounts.manage_balance"
   ),
   controller.setBalance
 );
+
 router.post(
   "/tenant/:accountId/adjustment",
   validate(
@@ -110,11 +160,22 @@ router.post(
   controller.adjustTenantBalance
 );
 
+/*
+|--------------------------------------------------------------------------
+| General account management
+|--------------------------------------------------------------------------
+*/
+
 router.patch(
   "/:accountId/status",
-  validate(schemas.statusSchema),
-  requireAllPermissions("accounts.manage"),
+  validate(
+    schemas.statusSchema
+  ),
+  requireAllPermissions(
+    "accounts.manage"
+  ),
   controller.setStatus
 );
 
-module.exports = router;
+module.exports =
+  router;

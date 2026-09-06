@@ -130,7 +130,6 @@ const isPlanCode = (
 };
 
 export default function CheckoutPage() {
-  
   return (
     <Suspense
       fallback={
@@ -148,10 +147,8 @@ export default function CheckoutPage() {
 }
 
 function CheckoutContent() {
-    const router =
-    useRouter();
-  const searchParams =
-    useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const requestedPlan =
     (
@@ -189,7 +186,7 @@ function CheckoutContent() {
       null,
     );
 
-    const [
+  const [
     submitting,
     setSubmitting,
   ] = useState(false);
@@ -198,19 +195,6 @@ function CheckoutContent() {
     submitError,
     setSubmitError,
   ] = useState("");
-
-  /*
-  |--------------------------------------------------------------------------
-  | Restore tenant onboarding context
-  |--------------------------------------------------------------------------
-  |
-  | This information is used only to maintain the registration flow.
-  |
-  | IMPORTANT:
-  | tenantId from sessionStorage must NEVER be treated by the backend as
-  | sufficient authorization to create or modify a subscription.
-  |
-  */
 
   useEffect(() => {
     try {
@@ -232,7 +216,7 @@ function CheckoutContent() {
           stored,
         ) as TenantOnboardingContext;
 
-            if (
+      if (
         !parsed.tenantId ||
         !parsed.tenantName ||
         !parsed.email ||
@@ -292,12 +276,6 @@ function CheckoutContent() {
     }
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Copy payment address
-  |--------------------------------------------------------------------------
-  */
-
   const copyAddress =
     async (
       coinName: string,
@@ -334,12 +312,6 @@ function CheckoutContent() {
       }
     };
 
-      /*
-  |--------------------------------------------------------------------------
-  | Start onboarding subscription
-  |--------------------------------------------------------------------------
-  */
-
   const continueToPaymentProof =
     async () => {
       if (
@@ -353,16 +325,6 @@ function CheckoutContent() {
       setSubmitError("");
 
       try {
-        /*
-        |--------------------------------------------------------------------------
-        | Reuse an existing request
-        |--------------------------------------------------------------------------
-        |
-        | This prevents repeated clicks/back-navigation from creating duplicate
-        | subscription requests during the same onboarding session.
-        |
-        */
-
         if (
           onboarding.subscriptionRequestId &&
           onboarding.selectedPlan ===
@@ -412,12 +374,6 @@ function CheckoutContent() {
           );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Extract request ID
-        |--------------------------------------------------------------------------
-        */
-
         const requestId =
           payload?.data?.id ||
           payload?.data
@@ -428,12 +384,6 @@ function CheckoutContent() {
             "The server did not return a subscription request ID"
           );
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Update onboarding context
-        |--------------------------------------------------------------------------
-        */
 
         const updatedOnboarding: TenantOnboardingContext =
           {
@@ -459,12 +409,6 @@ function CheckoutContent() {
           updatedOnboarding
         );
 
-        /*
-        |--------------------------------------------------------------------------
-        | Continue
-        |--------------------------------------------------------------------------
-        */
-
         router.push(
           `/subscribe/payment-proof?plan=${selectedPlan}`
         );
@@ -485,11 +429,6 @@ function CheckoutContent() {
         );
       }
     };
-  /*
-  |--------------------------------------------------------------------------
-  | Loading onboarding data
-  |--------------------------------------------------------------------------
-  */
 
   if (loading) {
     return (
@@ -508,12 +447,6 @@ function CheckoutContent() {
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Missing registration context
-  |--------------------------------------------------------------------------
-  */
-
   if (!onboarding) {
     return (
       <main className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-black px-5 text-white">
@@ -525,13 +458,13 @@ function CheckoutContent() {
           className="pointer-events-none object-cover"
         />
 
-        <div className="relative z-10 w-full max-w-[390px] rounded-2xl border border-white/10 bg-black/80 px-5 py-8 text-center">
-          <h1 className="text-[22px] font-extrabold">
+        <div className="relative z-10 w-full max-w-[390px] rounded-2xl border border-white/10 bg-black/80 px-5 py-8 text-center md:max-w-[440px] md:p-10">
+          <h1 className="text-[22px] font-extrabold md:text-[26px]">
             Registration information
             unavailable
           </h1>
 
-          <p className="mt-3 text-[13px] leading-5 text-white/65">
+          <p className="mt-3 text-[13px] leading-5 text-white/65 md:text-[14px]">
             We could not find the
             organisation associated
             with this subscription.
@@ -542,7 +475,7 @@ function CheckoutContent() {
 
           <Link
             href="/register"
-            className="mt-6 flex h-[44px] items-center justify-center rounded-xl bg-blue-700 text-[14px] font-bold text-white"
+            className="mt-6 flex h-[44px] items-center justify-center rounded-xl bg-blue-700 text-[14px] font-bold text-white transition hover:bg-blue-600 md:h-[48px]"
           >
             Return to Registration
           </Link>
@@ -552,7 +485,7 @@ function CheckoutContent() {
   }
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
+    <main className="relative min-h-[100svh] overflow-hidden bg-black text-white md:flex md:items-center md:justify-center">
       <Image
         src="/images/Background_1.png"
         alt="Background"
@@ -561,263 +494,269 @@ function CheckoutContent() {
         className="pointer-events-none object-cover"
       />
 
-      <div className="relative z-10 mx-auto max-w-[430px] px-2 pb-8 pt-5">
+      <div className="relative z-10 mx-auto max-w-[430px] px-2 pb-8 pt-5 md:min-h-0 md:max-w-[900px] md:rounded-[28px] md:border md:border-white/10 md:bg-black/85 md:p-10 md:shadow-2xl md:backdrop-blur-xl lg:max-w-[980px]">
         {/* Header */}
 
-        <header className="relative flex items-center justify-center">
+        <header className="relative flex items-center justify-center md:mb-4">
           <Link
             href={`/subscribe/details?plan=${selectedPlan}`}
-            className="absolute left-1 text-white"
+            className="absolute left-1 text-white md:left-2"
           >
             <ArrowLeft
               size={19}
             />
           </Link>
 
-          <h2 className="text-[12px] font-bold">
+          <h2 className="text-[12px] font-bold md:text-[16px]">
             Payment
           </h2>
         </header>
 
-        {/* Intro */}
+        <div className="md:grid md:grid-cols-[1.1fr_1fr] md:gap-10 md:mt-4">
+          <div className="flex flex-col">
+            {/* Intro */}
 
-        <section className="mt-9 grid grid-cols-[1fr_132px] items-center gap-2">
-          <div>
-            <h1 className="text-left text-[30px] font-extrabold leading-[34px] tracking-[-0.5px]">
-              Purchase with
-              cryptocurrency
-            </h1>
+            <section className="mt-9 grid grid-cols-[1fr_132px] items-center gap-2 md:mt-0">
+              <div>
+                <h1 className="text-left text-[30px] font-extrabold leading-[34px] tracking-[-0.5px] md:text-[38px] md:leading-[42px]">
+                  Purchase with
+                  cryptocurrency
+                </h1>
 
-            <p className="mt-4 max-w-[235px] text-left text-[13px] font-bold leading-[16px]">
-              After this purchase,
-              you will enjoy this
-              Online Banking for the
-              next 1 month.
-              Re-subscribe once it is
-              expired.
-            </p>
+                <p className="mt-4 max-w-[235px] text-left text-[13px] font-bold leading-[16px] md:max-w-none md:text-[14px] md:leading-6">
+                  After this purchase,
+                  you will enjoy this
+                  Online Banking for the
+                  next 1 month.
+                  Re-subscribe once it is
+                  expired.
+                </p>
+              </div>
+
+              <Image
+                src="/images/payment-1.png"
+                alt="Crypto payment"
+                width={135}
+                height={135}
+                priority
+                className="object-contain md:w-[170px] md:h-[170px]"
+              />
+            </section>
+
+            {/* Organisation */}
+
+            <section className="mt-5 rounded-lg border border-white/10 bg-black/45 px-3 py-3 md:mt-6 md:p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-white/50 md:text-[11px]">
+                Organisation
+              </p>
+
+              <p className="mt-1 text-[13px] font-extrabold md:text-[15px]">
+                {onboarding.tenantName}
+              </p>
+
+              <p className="mt-1 text-[11px] text-white/50 md:text-[13px]">
+                {onboarding.email}
+              </p>
+            </section>
+
+            {/* Purchase summary */}
+
+            <section className="relative mt-4 overflow-hidden rounded-lg border border-orange-500 bg-black/40 shadow-[0_4px_15px_rgba(0,0,0,0.4)] md:mt-6">
+              <Image
+                src="/images/payment-2.png"
+                alt=""
+                fill
+                className="object-cover opacity-70"
+              />
+
+              <div className="relative z-10 grid grid-cols-[1fr_auto] gap-y-1 px-3 py-3 text-left text-[12px] font-medium leading-4 md:p-4 md:text-[14px] md:leading-6">
+                <span>
+                  Purchase Amount:
+                </span>
+
+                <span className="text-[26px] font-extrabold leading-6 md:text-[32px]">
+                  {currentPlan.price}
+                </span>
+
+                <span>
+                  Service subscribed:
+                </span>
+
+                <span className="font-extrabold">
+                  {
+                    currentPlan.serviceType
+                  }
+                </span>
+
+                <span>
+                  Subscription type:
+                </span>
+
+                <span className="font-extrabold">
+                  {
+                    currentPlan.name
+                  }
+                </span>
+
+                <span>
+                  Payment method:
+                </span>
+
+                <span className="font-extrabold">
+                  Cryptocurrency
+                </span>
+              </div>
+            </section>
           </div>
 
-          <Image
-            src="/images/payment-1.png"
-            alt="Crypto payment"
-            width={135}
-            height={135}
-            priority
-            className="object-contain"
-          />
-        </section>
+          <div className="flex flex-col">
+            {/* Payment coins */}
 
-        {/* Organisation */}
+            <section className="mt-4 rounded-t-xl bg-white px-2 pb-7 pt-3 text-black shadow-[0_0_18px_rgba(255,255,255,0.35)] md:mt-0 md:rounded-2xl md:p-6">
+              <h2 className="mb-2 text-left text-[13px] font-extrabold md:text-[16px]">
+                Choose Payment Coin
+              </h2>
 
-        <section className="mt-5 rounded-lg border border-white/10 bg-black/45 px-3 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-white/50">
-            Organisation
-          </p>
+              <div className="space-y-3 md:space-y-4">
+                {coins.map(
+                  (coin) => {
+                    const hasAddress =
+                      Boolean(
+                        coin.address,
+                      );
 
-          <p className="mt-1 text-[13px] font-extrabold">
-            {onboarding.tenantName}
-          </p>
-
-          <p className="mt-1 text-[11px] text-white/50">
-            {onboarding.email}
-          </p>
-        </section>
-
-        {/* Purchase summary */}
-
-        <section className="relative mt-4 overflow-hidden rounded-lg border border-orange-500 bg-black/40 shadow-[0_4px_15px_rgba(0,0,0,0.4)]">
-          <Image
-            src="/images/payment-2.png"
-            alt=""
-            fill
-            className="object-cover opacity-70"
-          />
-
-          <div className="relative z-10 grid grid-cols-[1fr_auto] gap-y-1 px-3 py-3 text-left text-[12px] font-medium leading-4">
-            <span>
-              Purchase Amount:
-            </span>
-
-            <span className="text-[26px] font-extrabold leading-6">
-              {currentPlan.price}
-            </span>
-
-            <span>
-              Service subscribed:
-            </span>
-
-            <span className="font-extrabold">
-              {
-                currentPlan.serviceType
-              }
-            </span>
-
-            <span>
-              Subscription type:
-            </span>
-
-            <span className="font-extrabold">
-              {
-                currentPlan.name
-              }
-            </span>
-
-            <span>
-              Payment method:
-            </span>
-
-            <span className="font-extrabold">
-              Cryptocurrency
-            </span>
-          </div>
-        </section>
-
-        {/* Payment coins */}
-
-        <section className="mt-4 rounded-t-xl bg-white px-2 pb-7 pt-3 text-black shadow-[0_0_18px_rgba(255,255,255,0.35)]">
-          <h2 className="mb-2 text-left text-[13px] font-extrabold">
-            Choose Payment Coin
-          </h2>
-
-          <div className="space-y-3">
-            {coins.map(
-              (coin) => {
-                const hasAddress =
-                  Boolean(
-                    coin.address,
-                  );
-
-                return (
-                  <div
-                    key={
-                      coin.name
-                    }
-                    className="rounded-lg border border-black/15 bg-white px-3 py-2 shadow-sm"
-                  >
-                    <div className="mb-2 flex items-center justify-between">
-                      <h3 className="text-[13px] font-extrabold">
-                        {
+                    return (
+                      <div
+                        key={
                           coin.name
                         }
-                      </h3>
-
-                      <span className="text-[11px] font-semibold">
-                        {
-                          coin.network
-                        }
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      disabled={
-                        !hasAddress
-                      }
-                      onClick={() =>
-                        copyAddress(
-                          coin.name,
-                          coin.address,
-                        )
-                      }
-                      className="flex h-[27px] w-full items-center justify-between rounded-full border border-black/15 px-3 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <span className="truncate text-[11px] text-black">
-                        {!hasAddress
-                          ? "Payment address not configured"
-                          : copiedCoin ===
+                        className="rounded-lg border border-black/15 bg-white px-3 py-2 shadow-sm md:p-3.5"
+                      >
+                        <div className="mb-2 flex items-center justify-between">
+                          <h3 className="text-[13px] font-extrabold md:text-[14px]">
+                            {
                               coin.name
-                            ? "Copied!"
-                            : coin.address}
-                      </span>
+                            }
+                          </h3>
 
-                      {copiedCoin ===
-                      coin.name ? (
-                        <Check
-                          size={17}
-                          className="shrink-0 text-green-600"
-                        />
-                      ) : (
-                        <Copy
-                          size={17}
-                          className="shrink-0 text-blue-700"
-                        />
-                      )}
-                    </button>
+                          <span className="text-[11px] font-semibold md:text-[12px]">
+                            {
+                              coin.network
+                            }
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={
+                            !hasAddress
+                          }
+                          onClick={() =>
+                            copyAddress(
+                              coin.name,
+                              coin.address,
+                            )
+                          }
+                          className="flex h-[27px] w-full items-center justify-between rounded-full border border-black/15 px-3 disabled:cursor-not-allowed disabled:opacity-50 md:h-[34px]"
+                        >
+                          <span className="truncate text-[11px] text-black md:text-[12px]">
+                            {!hasAddress
+                              ? "Payment address not configured"
+                              : copiedCoin ===
+                                  coin.name
+                                ? "Copied!"
+                                : coin.address}
+                          </span>
+
+                          {copiedCoin ===
+                          coin.name ? (
+                            <Check
+                              size={17}
+                              className="shrink-0 text-green-600"
+                            />
+                          ) : (
+                            <Copy
+                              size={17}
+                              className="shrink-0 text-blue-700"
+                            />
+                          )}
+                        </button>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+
+              {/* Instructions */}
+
+              <ul className="mt-6 list-disc space-y-2 pl-5 text-left text-[11px] leading-[13px] text-black/55 md:text-[12px] md:leading-5">
+                <li>
+                  Send payment only
+                  through the network
+                  displayed for your
+                  selected coin.
+                </li>
+
+                <li>
+                  Copy the payment
+                  address above and
+                  complete the transfer
+                  using your
+                  cryptocurrency
+                  wallet.
+                </li>
+
+                <li>
+                  After completing the
+                  payment, continue to
+                  upload your payment
+                  proof for review and
+                  activation.
+                </li>
+              </ul>
+
+              {/* Continue */}
+
+              <div className="mt-8">
+                {submitError && (
+                  <div className="mb-3 rounded-lg border border-red-500/30 bg-red-50 px-3 py-2 text-left text-[11px] font-medium text-red-700">
+                    {submitError}
                   </div>
-                );
-              },
-            )}
+                )}
+
+                <button
+                  type="button"
+                  onClick={
+                    continueToPaymentProof
+                  }
+                  disabled={
+                    submitting
+                  }
+                  className="flex h-[42px] w-full items-center justify-center gap-3 rounded-xl bg-blue-700 text-[14px] font-bold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60 md:h-[48px] md:text-[16px]"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2
+                        size={18}
+                        className="animate-spin"
+                      />
+
+                      Creating subscription...
+                    </>
+                  ) : (
+                    <>
+                      Upload Payment Proof
+
+                      <ArrowRight
+                        size={18}
+                      />
+                    </>
+                  )}
+                </button>
+              </div>
+            </section>
           </div>
-
-          {/* Instructions */}
-
-          <ul className="mt-6 list-disc space-y-2 pl-5 text-left text-[11px] leading-[13px] text-black/55">
-            <li>
-              Send payment only
-              through the network
-              displayed for your
-              selected coin.
-            </li>
-
-            <li>
-              Copy the payment
-              address above and
-              complete the transfer
-              using your
-              cryptocurrency
-              wallet.
-            </li>
-
-            <li>
-              After completing the
-              payment, continue to
-              upload your payment
-              proof for review and
-              activation.
-            </li>
-          </ul>
-
-          {/* Continue */}
-
-          <div className="mt-8">
-  {submitError && (
-    <div className="mb-3 rounded-lg border border-red-500/30 bg-red-50 px-3 py-2 text-left text-[11px] font-medium text-red-700">
-      {submitError}
-    </div>
-  )}
-
-  <button
-    type="button"
-    onClick={
-      continueToPaymentProof
-    }
-    disabled={
-      submitting
-    }
-    className="flex h-[42px] w-full items-center justify-center gap-3 rounded-xl bg-blue-700 text-[14px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
-  >
-    {submitting ? (
-      <>
-        <Loader2
-          size={18}
-          className="animate-spin"
-        />
-
-        Creating subscription...
-      </>
-    ) : (
-      <>
-        Upload Payment Proof
-
-        <ArrowRight
-          size={18}
-        />
-      </>
-    )}
-  </button>
-</div>
-        </section>
+        </div>
       </div>
     </main>
   );

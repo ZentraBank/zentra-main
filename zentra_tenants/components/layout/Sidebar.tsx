@@ -21,7 +21,7 @@ import { logout } from "@/services/auth.service";
 
 const customerNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Accounts", href: "/accounts", icon: Wallet },
+  // { label: "Send Money", href: "/accounts", icon: Wallet },
   {
     label: "Transactions",
     href: "/transactions",
@@ -50,13 +50,13 @@ const adminNavItems = [
     icon: LayoutDashboard,
   },
   {
-    label: "Users",
+    label: "Clients",
     href: "/clients",
     icon: Users,
   },
   {
     label: "Accounts",
-    href: "/admin/accounts",
+    href: "/accounts",
     icon: Wallet,
   },
   {
@@ -69,8 +69,8 @@ const adminNavItems = [
    * Tenant ↔ client conversations
    */
   {
-    label: "Chats",
-    href: "/admin/chat",
+    label: "Client Chat",
+    href: "/dashboard/communications/chat",
     icon: MessageCircle,
   },
 
@@ -84,14 +84,14 @@ const adminNavItems = [
     feature: "platform_chat",
   },
 
-  {
-    label: "Audit Logs",
-    href: "#",
-    icon: ShieldCheck,
-  },
+  // {
+  //   label: "Audit Logs",
+  //   href: "#",
+  //   icon: ShieldCheck,
+  // },
   {
     label: "Subscriptions",
-    href: "/subscribe",
+    href: "/dashboard/subscriptions",
     icon: CreditCard,
   },
 ];

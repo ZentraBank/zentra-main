@@ -3,6 +3,10 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
+import {
+  resolveTenantSlug,
+} from "@/lib/tenant";
+
 import type {
   AuthSessionResponse,
 } from "@/types/auth.types";
@@ -84,10 +88,19 @@ export const api =
 
 api.interceptors.request.use(
   (config) => {
-    config.headers.set(
-      "X-Tenant-Slug",
-      TENANT_SLUG,
-    );
+    const tenantSlug =
+  resolveTenantSlug();
+
+if (tenantSlug) {
+  config.headers.set(
+    "X-Tenant-Slug",
+    tenantSlug,
+  );
+} else {
+  config.headers.delete(
+    "X-Tenant-Slug",
+  );
+}
 
     console.log(
   "API REQUEST:",
@@ -137,12 +150,16 @@ const refreshSession =
                 true,
 
               headers: {
-                "X-Tenant-Slug":
-                  TENANT_SLUG,
+              ...(resolveTenantSlug()
+                ? {
+                    "X-Tenant-Slug":
+                      resolveTenantSlug()!,
+                  }
+                : {}),
 
-                "X-Zentra-App":
-                  "tenant",
-              },
+              "X-Zentra-App":
+                "tenant",
+            },
             },
           )
           .then(

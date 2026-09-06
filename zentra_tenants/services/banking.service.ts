@@ -37,6 +37,80 @@ export async function getTenantAccounts() {
   return response.data.data;
 }
 
+export type TenantAccountActivity = {
+  id: string;
+  tenant_id: string;
+  account_id: string;
+
+  transfer_id?: string | null;
+
+  entry_type:
+    | "credit"
+    | "debit";
+
+  amount: string | number;
+
+  balance_after:
+    | string
+    | number;
+
+  description?:
+    | string
+    | null;
+
+  created_at: string;
+
+  user_id?: string;
+
+  account_number: string;
+  account_name: string;
+  account_type: string;
+  currency: string;
+
+  client_name?: string;
+  client_email?: string;
+};
+
+type TenantActivityResponse = {
+  activity:
+    TenantAccountActivity[];
+
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
+export const getTenantAccountActivity =
+  async ({
+    page = 1,
+    pageSize = 100,
+  }: {
+    page?: number;
+    pageSize?: number;
+  } = {}) => {
+    const response =
+      await api.get<{
+        success: boolean;
+        data: TenantActivityResponse;
+      }>(
+        "/accounts/tenant/activity",
+        {
+          params: {
+            page,
+            pageSize,
+          },
+        },
+      );
+
+    return (
+      response.data.data
+        .activity ?? []
+    );
+  };
+  
 export async function getTenantTransfers(
   params?: {
     page?: number;

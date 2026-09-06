@@ -88,6 +88,7 @@ const ACCEPTED_FILE_TYPES = [
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:5000/api/v1";
+
 const isPlanCode = (
   value: string,
 ): value is PlanCode => {
@@ -178,12 +179,6 @@ function PaymentProofContent() {
   ] =
     useState("");
 
-  /*
-  |--------------------------------------------------------------------------
-  | Restore onboarding context
-  |--------------------------------------------------------------------------
-  */
-
   useEffect(() => {
     try {
       const stored =
@@ -204,7 +199,7 @@ function PaymentProofContent() {
           stored,
         ) as TenantOnboardingContext;
 
-            if (
+      if (
         !parsed.tenantId ||
         !parsed.tenantName ||
         !parsed.email ||
@@ -261,12 +256,6 @@ function PaymentProofContent() {
     }
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Select payment proof
-  |--------------------------------------------------------------------------
-  */
-
   const handleFileChange = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -322,12 +311,6 @@ function PaymentProofContent() {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Replace payment proof
-  |--------------------------------------------------------------------------
-  */
-
   const handleReplaceFile =
     () => {
       setError("");
@@ -335,31 +318,6 @@ function PaymentProofContent() {
 
       fileInputRef.current?.click();
     };
-
-  /*
-  |--------------------------------------------------------------------------
-  | Submit payment proof
-  |--------------------------------------------------------------------------
-  |
-  | We intentionally do not send tenantId directly as trusted authorization.
-  |
-  | The backend subscription/payment endpoint still needs to be wired to a
-  | secure onboarding identity/token before this becomes a real upload.
-  |
-  */
-
-   /*
-  |--------------------------------------------------------------------------
-  | Submit payment proof
-  |--------------------------------------------------------------------------
-  |
-  | Step 1:
-  | Upload the actual file to private storage.
-  |
-  | Step 2:
-  | Attach the returned private file ID to the subscription request.
-  |
-  */
 
   const handleSubmit =
     async () => {
@@ -376,12 +334,6 @@ function PaymentProofContent() {
       setSubmitting(true);
 
       try {
-        /*
-        |--------------------------------------------------------------------------
-        | Step 1 - Upload private payment proof
-        |--------------------------------------------------------------------------
-        */
-
         const formData =
           new FormData();
 
@@ -433,12 +385,6 @@ function PaymentProofContent() {
           );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Step 2 - Submit proof against subscription request
-        |--------------------------------------------------------------------------
-        */
-
         const proofResponse =
           await fetch(
             `${API_BASE_URL}/subscriptions/onboarding/requests/${onboarding.subscriptionRequestId}/payment-proof`,
@@ -480,12 +426,6 @@ function PaymentProofContent() {
               "Unable to submit payment proof"
           );
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Preserve updated onboarding state
-        |--------------------------------------------------------------------------
-        */
 
         const updatedOnboarding: TenantOnboardingContext =
           {
@@ -531,12 +471,6 @@ function PaymentProofContent() {
       }
     };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Loading
-  |--------------------------------------------------------------------------
-  */
-
   if (loadingContext) {
     return (
       <main className="flex min-h-[100svh] items-center justify-center bg-black text-white">
@@ -555,12 +489,6 @@ function PaymentProofContent() {
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Missing onboarding context
-  |--------------------------------------------------------------------------
-  */
-
   if (!onboarding) {
     return (
       <main className="relative flex min-h-[100svh] items-center justify-center overflow-hidden bg-black px-5 text-white">
@@ -572,18 +500,18 @@ function PaymentProofContent() {
           className="pointer-events-none object-cover"
         />
 
-        <div className="relative z-10 w-full max-w-[390px] rounded-2xl border border-white/10 bg-black/80 px-5 py-8 text-center">
+        <div className="relative z-10 w-full max-w-[390px] rounded-2xl border border-white/10 bg-black/80 px-5 py-8 text-center md:max-w-[440px] md:p-10">
           <XCircle
             size={48}
             className="mx-auto text-red-400"
           />
 
-          <h1 className="mt-4 text-[22px] font-extrabold">
+          <h1 className="mt-4 text-[22px] font-extrabold md:text-[26px]">
             Registration
             information unavailable
           </h1>
 
-          <p className="mt-3 text-[13px] leading-5 text-white/65">
+          <p className="mt-3 text-[13px] leading-5 text-white/65 md:text-[14px]">
             We could not determine
             which organisation this
             payment belongs to.
@@ -594,7 +522,7 @@ function PaymentProofContent() {
 
           <Link
             href="/register"
-            className="mt-6 flex h-[44px] items-center justify-center rounded-xl bg-blue-700 text-[14px] font-bold text-white"
+            className="mt-6 flex h-[44px] items-center justify-center rounded-xl bg-blue-700 text-[14px] font-bold text-white transition hover:bg-blue-600 md:h-[48px]"
           >
             Return to Registration
           </Link>
@@ -604,7 +532,7 @@ function PaymentProofContent() {
   }
 
   return (
-    <main className="relative min-h-[100svh] overflow-hidden bg-black text-white">
+    <main className="relative min-h-[100svh] overflow-hidden bg-black text-white md:flex md:items-center md:justify-center">
       <Image
         src="/images/Background_1.png"
         alt="Background"
@@ -613,379 +541,385 @@ function PaymentProofContent() {
         className="pointer-events-none object-cover"
       />
 
-      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[430px] flex-col px-3 pb-6 pt-5">
+      <div className="relative z-10 mx-auto flex min-h-[100svh] max-w-[430px] flex-col px-3 pb-6 pt-5 md:min-h-0 md:max-w-[900px] md:rounded-[28px] md:border md:border-white/10 md:bg-black/85 md:p-10 md:shadow-2xl md:backdrop-blur-xl lg:max-w-[980px]">
         {/* Header */}
 
-        <header className="relative flex items-center justify-center">
+        <header className="relative flex items-center justify-center md:mb-4">
           <Link
             href={`/subscribe/checkout?plan=${selectedPlan}`}
-            className="absolute left-1 text-white"
+            className="absolute left-1 text-white md:left-2"
           >
             <ArrowLeft
               size={19}
             />
           </Link>
 
-          <h2 className="text-[12px] font-bold">
+          <h2 className="text-[12px] font-bold md:text-[16px]">
             Upload Payment Proof
           </h2>
         </header>
 
-        {/* Heading */}
+        <div className="md:grid md:grid-cols-[1.1fr_1fr] md:gap-10 md:mt-4">
+          <div className="flex flex-col">
+            {/* Heading */}
 
-        <section className="mt-8 text-center">
-          <h1 className="text-[31px] font-extrabold leading-[34px] tracking-[-0.5px]">
-            Confirm Your Payment
-          </h1>
+            <section className="mt-8 text-center md:mt-0 md:text-left">
+              <h1 className="text-[31px] font-extrabold leading-[34px] tracking-[-0.5px] md:text-[38px] md:leading-[42px]">
+                Confirm Your Payment
+              </h1>
 
-          <p className="mx-auto mt-3 max-w-[310px] text-[13px] font-bold leading-[17px] text-white/85">
-            Upload your crypto
-            payment receipt so your
-            subscription can be
-            confirmed and activated.
-          </p>
-        </section>
+              <p className="mx-auto mt-3 max-w-[310px] text-[13px] font-bold leading-[17px] text-white/85 md:mx-0 md:max-w-none md:text-[14px] md:leading-6">
+                Upload your crypto
+                payment receipt so your
+                subscription can be
+                confirmed and activated.
+              </p>
+            </section>
 
-        {/* Organisation */}
+            {/* Organisation */}
 
-        <section className="mt-5 rounded-xl border border-white/10 bg-black/45 px-4 py-3 text-left">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-white/50">
-            Organisation
-          </p>
+            <section className="mt-5 rounded-xl border border-white/10 bg-black/45 px-4 py-3 text-left md:mt-6 md:p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-white/50 md:text-[11px]">
+                Organisation
+              </p>
 
-          <p className="mt-1 text-[13px] font-extrabold">
-            {
-              onboarding.tenantName
-            }
-          </p>
+              <p className="mt-1 text-[13px] font-extrabold md:text-[15px]">
+                {
+                  onboarding.tenantName
+                }
+              </p>
 
-          <p className="mt-1 text-[11px] text-white/55">
-            {
-              onboarding.email
-            }
-          </p>
-        </section>
+              <p className="mt-1 text-[11px] text-white/55 md:text-[13px]">
+                {
+                  onboarding.email
+                }
+              </p>
+            </section>
 
-        {/* Subscription Summary */}
+            {/* Subscription Summary */}
 
-        <section className="relative mt-4 overflow-hidden rounded-xl border border-orange-500 bg-black/45 shadow-[0_4px_15px_rgba(0,0,0,0.4)]">
-          <Image
-            src="/images/payment-2.png"
-            alt=""
-            fill
-            className="object-cover opacity-65"
-          />
-
-          <div className="relative z-10 grid grid-cols-[1fr_auto] gap-y-2 px-4 py-4 text-[12px] font-medium">
-            <span>
-              Subscription:
-            </span>
-
-            <span className="font-extrabold">
-              {
-                currentPlan.name
-              }
-            </span>
-
-            <span>
-              Amount Paid:
-            </span>
-
-            <span className="text-[22px] font-extrabold leading-5">
-              {
-                currentPlan.price
-              }
-            </span>
-
-            <span>
-              Status:
-            </span>
-
-            <span
-              className={`font-extrabold ${
-                submitted
-                  ? "text-green-300"
-                  : "text-yellow-300"
-              }`}
-            >
-              {submitted
-                ? "Proof Submitted"
-                : "Awaiting Confirmation"}
-            </span>
-          </div>
-        </section>
-
-        {/* Upload */}
-
-        <section className="mt-5 rounded-t-[24px] bg-white px-4 pb-6 pt-5 text-black shadow-[0_0_18px_rgba(255,255,255,0.35)]">
-          <input
-            ref={
-              fileInputRef
-            }
-            type="file"
-            accept="image/png,image/jpeg,image/webp,application/pdf,.png,.jpg,.jpeg,.webp,.pdf"
-            onChange={
-              handleFileChange
-            }
-            className="hidden"
-          />
-
-          {/* Error */}
-
-          {error && (
-            <div className="mb-4 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-3 text-left">
-              <XCircle
-                size={18}
-                className="mt-[1px] shrink-0 text-red-600"
+            <section className="relative mt-4 overflow-hidden rounded-xl border border-orange-500 bg-black/45 shadow-[0_4px_15px_rgba(0,0,0,0.4)] md:mt-6">
+              <Image
+                src="/images/payment-2.png"
+                alt=""
+                fill
+                className="object-cover opacity-65"
               />
 
-              <p className="text-[11px] font-semibold leading-4 text-red-700">
-                {error}
-              </p>
-            </div>
-          )}
+              <div className="relative z-10 grid grid-cols-[1fr_auto] gap-y-2 px-4 py-4 text-[12px] font-medium md:p-4 md:text-[14px] md:leading-6">
+                <span>
+                  Subscription:
+                </span>
 
-          {/* No file */}
+                <span className="font-extrabold">
+                  {
+                    currentPlan.name
+                  }
+                </span>
 
-          {!proofFile && (
-            <>
-              <button
-                type="button"
-                onClick={() =>
-                  fileInputRef.current?.click()
+                <span>
+                  Amount Paid:
+                </span>
+
+                <span className="text-[22px] font-extrabold leading-5 md:text-[32px]">
+                  {
+                    currentPlan.price
+                  }
+                </span>
+
+                <span>
+                  Status:
+                </span>
+
+                <span
+                  className={`font-extrabold ${
+                    submitted
+                      ? "text-green-300"
+                      : "text-yellow-300"
+                  }`}
+                >
+                  {submitted
+                    ? "Proof Submitted"
+                    : "Awaiting Confirmation"}
+                </span>
+              </div>
+            </section>
+          </div>
+
+          <div className="flex flex-col">
+            {/* Upload */}
+
+            <section className="mt-5 rounded-t-[24px] bg-white px-4 pb-6 pt-5 text-black shadow-[0_0_18px_rgba(255,255,255,0.35)] md:mt-0 md:rounded-2xl md:p-6">
+              <input
+                ref={
+                  fileInputRef
                 }
-                className="flex min-h-[190px] w-full flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-blue-700 bg-blue-50 px-4 text-center"
-              >
-                <UploadCloud
-                  size={46}
-                  className="text-blue-700"
-                />
+                type="file"
+                accept="image/png,image/jpeg,image/webp,application/pdf,.png,.jpg,.jpeg,.webp,.pdf"
+                onChange={
+                  handleFileChange
+                }
+                className="hidden"
+              />
 
-                <p className="mt-3 text-[15px] font-extrabold">
-                  Upload receipt or
-                  screenshot
-                </p>
+              {/* Error */}
 
-                <p className="mt-1 text-[11px] font-semibold text-black/55">
-                  PNG, JPG, JPEG or
-                  PDF accepted
-                </p>
-
-                <p className="mt-1 text-[10px] font-semibold text-black/40">
-                  Maximum file size:
-                  10MB
-                </p>
-              </button>
-
-              <p className="mt-4 text-center text-[11px] font-semibold leading-[15px] text-black/55">
-                Your subscription
-                will be activated
-                after your payment
-                proof has been
-                reviewed.
-              </p>
-            </>
-          )}
-
-          {/* File selected */}
-
-          {proofFile &&
-            !submitted && (
-              <div className="text-center">
-                <CheckCircle
-                  size={54}
-                  className="mx-auto text-green-700"
-                />
-
-                <h2 className="mt-3 text-[19px] font-black text-green-700">
-                  Proof Ready to
-                  Submit
-                </h2>
-
-                <p className="mx-auto mt-2 max-w-[290px] text-[12px] font-bold leading-[16px] text-black/60">
-                  Your file has been
-                  selected. Click
-                  below to confirm
-                  your upload.
-                </p>
-
-                <div className="mx-auto mt-4 flex max-w-[290px] items-center gap-2 rounded-xl bg-white px-3 py-3 shadow-sm">
-                  <FileText
+              {error && (
+                <div className="mb-4 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-3 text-left">
+                  <XCircle
                     size={18}
-                    className="shrink-0 text-blue-700"
+                    className="mt-[1px] shrink-0 text-red-600"
                   />
 
-                  <div className="min-w-0 flex-1 text-left">
-                    <p className="truncate text-[12px] font-bold text-black">
-                      {
-                        proofFile.name
-                      }
-                    </p>
-
-                    <p className="mt-1 text-[10px] text-black/45">
-                      {(
-                        proofFile.size /
-                        1024 /
-                        1024
-                      ).toFixed(
-                        2,
-                      )}{" "}
-                      MB
-                    </p>
-                  </div>
+                  <p className="text-[11px] font-semibold leading-4 text-red-700 md:text-[12px]">
+                    {error}
+                  </p>
                 </div>
+              )}
 
-                <div className="mt-5 grid gap-3">
+              {/* No file */}
+
+              {!proofFile && (
+                <>
                   <button
                     type="button"
-                    disabled={
-                      submitting
+                    onClick={() =>
+                      fileInputRef.current?.click()
                     }
-                    onClick={
-                      handleSubmit
-                    }
-                    className="flex h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-[14px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex min-h-[190px] w-full flex-col items-center justify-center rounded-[18px] border-2 border-dashed border-blue-700 bg-blue-50 px-4 text-center transition hover:bg-blue-100/50 md:min-h-[220px]"
                   >
-                    {submitting ? (
-                      <>
-                        <Loader2
-                          size={17}
-                          className="animate-spin"
+                    <UploadCloud
+                      size={46}
+                      className="text-blue-700 md:w-12 md:h-12"
+                    />
+
+                    <p className="mt-3 text-[15px] font-extrabold md:text-[16px]">
+                      Upload receipt or
+                      screenshot
+                    </p>
+
+                    <p className="mt-1 text-[11px] font-semibold text-black/55 md:text-[12px]">
+                      PNG, JPG, JPEG or
+                      PDF accepted
+                    </p>
+
+                    <p className="mt-1 text-[10px] font-semibold text-black/40 md:text-[11px]">
+                      Maximum file size:
+                      10MB
+                    </p>
+                  </button>
+
+                  <p className="mt-4 text-center text-[11px] font-semibold leading-[15px] text-black/55 md:text-[12px] md:leading-5">
+                    Your subscription
+                    will be activated
+                    after your payment
+                    proof has been
+                    reviewed.
+                  </p>
+                </>
+              )}
+
+              {/* File selected */}
+
+              {proofFile &&
+                !submitted && (
+                  <div className="text-center">
+                    <CheckCircle
+                      size={54}
+                      className="mx-auto text-green-700"
+                    />
+
+                    <h2 className="mt-3 text-[19px] font-black text-green-700 md:text-[22px]">
+                      Proof Ready to
+                      Submit
+                    </h2>
+
+                    <p className="mx-auto mt-2 max-w-[290px] text-[12px] font-bold leading-[16px] text-black/60 md:max-w-none md:text-[13px]">
+                      Your file has been
+                      selected. Click
+                      below to confirm
+                      your upload.
+                    </p>
+
+                    <div className="mx-auto mt-4 flex max-w-[290px] items-center gap-2 rounded-xl bg-gray-50 px-3 py-3 shadow-sm md:max-w-none md:p-3.5">
+                      <FileText
+                        size={18}
+                        className="shrink-0 text-blue-700"
+                      />
+
+                      <div className="min-w-0 flex-1 text-left">
+                        <p className="truncate text-[12px] font-bold text-black md:text-[13px]">
+                          {
+                            proofFile.name
+                          }
+                        </p>
+
+                        <p className="mt-1 text-[10px] text-black/45 md:text-[11px]">
+                          {(
+                            proofFile.size /
+                            1024 /
+                            1024
+                          ).toFixed(
+                            2,
+                          )}{" "}
+                          MB
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid gap-3">
+                      <button
+                        type="button"
+                        disabled={
+                          submitting
+                        }
+                        onClick={
+                          handleSubmit
+                        }
+                        className="flex h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-[14px] font-bold text-white transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60 md:h-[48px] md:text-[16px]"
+                      >
+                        {submitting ? (
+                          <>
+                            <Loader2
+                              size={17}
+                              className="animate-spin"
+                            />
+
+                            Submitting...
+                          </>
+                        ) : (
+                          "Confirm and Submit Upload"
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={
+                          submitting
+                        }
+                        onClick={
+                          handleReplaceFile
+                        }
+                        className="flex h-[40px] w-full items-center justify-center rounded-xl bg-black/10 text-[13px] font-bold text-black transition hover:bg-black/15 disabled:opacity-50 md:h-[44px]"
+                      >
+                        Replace File
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              {/* Submitted */}
+
+              {proofFile &&
+                submitted && (
+                  <div className="text-center">
+                    <div className="mx-auto flex h-[64px] w-[64px] items-center justify-center rounded-full bg-green-100">
+                      <CheckCircle
+                        size={38}
+                        className="text-green-700"
+                      />
+                    </div>
+
+                    <h2 className="mt-4 text-[24px] font-black leading-7 text-blue-700 md:text-[28px]">
+                      Upload Confirmed
+                    </h2>
+
+                    <p className="mx-auto mt-3 max-w-[310px] text-[12px] font-bold leading-[17px] text-black/65 md:max-w-none md:text-[13px]">
+                      Your proof of
+                      payment has been
+                      received. Our admin
+                      team will review
+                      your receipt and
+                      confirm your
+                      subscription.
+                    </p>
+
+                    <div className="mt-5 rounded-[16px] bg-[#F4F6FA] px-4 py-4 text-left md:p-5">
+                      <div className="flex items-center gap-2">
+                        <Clock
+                          size={18}
+                          className="text-yellow-600"
                         />
 
-                        Submitting...
-                      </>
-                    ) : (
-                      "Confirm and Submit Upload"
-                    )}
-                  </button>
+                        <h3 className="text-[14px] font-black md:text-[15px]">
+                          Pending Review
+                        </h3>
+                      </div>
 
-                  <button
-                    type="button"
-                    disabled={
-                      submitting
-                    }
-                    onClick={
-                      handleReplaceFile
-                    }
-                    className="flex h-[40px] w-full items-center justify-center rounded-xl bg-black/10 text-[13px] font-bold text-black disabled:opacity-50"
-                  >
-                    Replace File
-                  </button>
-                </div>
-              </div>
-            )}
+                      <ul className="mt-3 list-disc space-y-2 pl-5 text-[12px] font-semibold leading-[16px] text-black/65 md:text-[13px] md:leading-6">
+                        <li>
+                          Your receipt
+                          will be reviewed
+                          for payment
+                          confirmation.
+                        </li>
 
-          {/* Submitted */}
+                        <li>
+                          Your
+                          subscription
+                          will be
+                          activated after
+                          approval.
+                        </li>
 
-          {proofFile &&
-            submitted && (
-              <div className="text-center">
-                <div className="mx-auto flex h-[64px] w-[64px] items-center justify-center rounded-full bg-green-100">
-                  <CheckCircle
-                    size={38}
-                    className="text-green-700"
-                  />
-                </div>
+                        <li>
+                          You may receive
+                          a notification
+                          after
+                          activation.
+                        </li>
 
-                <h2 className="mt-4 text-[24px] font-black leading-7 text-blue-700">
-                  Upload Confirmed
-                </h2>
+                        <li>
+                          Keep your
+                          payment receipt
+                          until your
+                          account is
+                          activated.
+                        </li>
+                      </ul>
+                    </div>
 
-                <p className="mx-auto mt-3 max-w-[310px] text-[12px] font-bold leading-[17px] text-black/65">
-                  Your proof of
-                  payment has been
-                  received. Our admin
-                  team will review
-                  your receipt and
-                  confirm your
-                  subscription.
-                </p>
+                    <div className="mt-5 grid gap-3">
+                      <Link
+                        href={`/subscribe/status?plan=${selectedPlan}`}
+                        className="flex h-[43px] w-full items-center justify-center rounded-xl bg-blue-700 text-[14px] font-bold !text-white transition hover:bg-blue-600 md:h-[48px] md:text-[16px]"
+                      >
+                        View Subscription
+                        Status
+                      </Link>
 
-                <div className="mt-5 rounded-[16px] bg-[#F4F6FA] px-4 py-4 text-left">
-                  <div className="flex items-center gap-2">
-                    <Clock
-                      size={18}
-                      className="text-yellow-600"
-                    />
+                      <Link
+                        href="/support"
+                        className="flex h-[42px] w-full items-center justify-center gap-2 rounded-xl border border-blue-700 bg-white text-[13px] font-bold !text-blue-700 transition hover:bg-blue-50 md:h-[46px]"
+                      >
+                        <MessageCircle
+                          size={17}
+                        />
 
-                    <h3 className="text-[14px] font-black">
-                      Pending Review
-                    </h3>
+                        Chat Help Line
+                      </Link>
+
+                      <Link
+                        href={`/subscribe/details?plan=${selectedPlan}`}
+                        className="flex h-[40px] w-full items-center justify-center rounded-xl bg-black/10 text-[13px] font-bold !text-black transition hover:bg-black/15 md:h-[44px]"
+                      >
+                        Back to
+                        Subscription
+                      </Link>
+                    </div>
+
+                    <p className="mt-4 text-[11px] font-semibold leading-[15px] text-black/55 md:text-[12px]">
+                      While waiting, you
+                      can chat the help
+                      line if you need
+                      support or feel
+                      unsure.
+                    </p>
                   </div>
-
-                  <ul className="mt-3 list-disc space-y-2 pl-5 text-[12px] font-semibold leading-[16px] text-black/65">
-                    <li>
-                      Your receipt
-                      will be reviewed
-                      for payment
-                      confirmation.
-                    </li>
-
-                    <li>
-                      Your
-                      subscription
-                      will be
-                      activated after
-                      approval.
-                    </li>
-
-                    <li>
-                      You may receive
-                      a notification
-                      after
-                      activation.
-                    </li>
-
-                    <li>
-                      Keep your
-                      payment receipt
-                      until your
-                      account is
-                      activated.
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="mt-5 grid gap-3">
-                  <Link
-                    href={`/subscribe/status?plan=${selectedPlan}`}
-                    className="flex h-[43px] w-full items-center justify-center rounded-xl bg-blue-700 text-[14px] font-bold !text-white"
-                  >
-                    View Subscription
-                    Status
-                  </Link>
-
-                  <Link
-                    href="/support"
-                    className="flex h-[42px] w-full items-center justify-center gap-2 rounded-xl border border-blue-700 bg-white text-[13px] font-bold !text-blue-700"
-                  >
-                    <MessageCircle
-                      size={17}
-                    />
-
-                    Chat Help Line
-                  </Link>
-
-                  <Link
-                    href={`/subscribe/details?plan=${selectedPlan}`}
-                    className="flex h-[40px] w-full items-center justify-center rounded-xl bg-black/10 text-[13px] font-bold !text-black"
-                  >
-                    Back to
-                    Subscription
-                  </Link>
-                </div>
-
-                <p className="mt-4 text-[11px] font-semibold leading-[15px] text-black/55">
-                  While waiting, you
-                  can chat the help
-                  line if you need
-                  support or feel
-                  unsure.
-                </p>
-              </div>
-            )}
-        </section>
+                )}
+            </section>
+          </div>
+        </div>
       </div>
     </main>
   );

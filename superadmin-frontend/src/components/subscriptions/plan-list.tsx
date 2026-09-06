@@ -5,6 +5,18 @@ import {
   useState,
 } from "react";
 
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  DollarSign,
+  Layers,
+  Loader2,
+  Package,
+  Shield,
+  Sliders,
+} from "lucide-react";
+
 import { ApiError } from "@/src/lib/api-error";
 
 import {
@@ -47,7 +59,6 @@ export function PlanList() {
   const [expandedPlanId, setExpandedPlanId] =
     useState<string | null>(null);
 
-    
   const [planDetails, setPlanDetails] =
     useState<
       Record<
@@ -191,9 +202,9 @@ export function PlanList() {
               ? {
                   ...feature,
                   featureValue:
-                featureValue === ""
-                  ? null
-                  : Number(featureValue),
+                    featureValue === ""
+                      ? null
+                      : Number(featureValue),
                 }
               : feature
         ) ?? [],
@@ -257,21 +268,33 @@ export function PlanList() {
 
   if (isLoading) {
     return (
-      <p className="text-sm text-neutral-500">
-        Loading plans…
-      </p>
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="flex items-center gap-3 text-sm text-neutral-500">
+          <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+          Loading subscription plans…
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {error ? (
-        <p className="text-sm text-red-300">
-          {error}
+    <div className="space-y-6 text-neutral-900">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-bold tracking-tight text-neutral-900">
+          Subscription Plans & Features
+        </h2>
+        <p className="text-sm text-neutral-500">
+          Configure tier pricing, statuses, and granular access rules.
         </p>
+      </div>
+
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">
+          {error}
+        </div>
       ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {plans.map((plan) => {
           const isExpanded =
             expandedPlanId === plan.id;
@@ -285,61 +308,77 @@ export function PlanList() {
           return (
             <article
               key={plan.id}
-              className="rounded-2xl border border-white/10 bg-white/5 p-5"
+              className="flex flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition hover:border-neutral-300 hover:shadow-md"
             >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-neutral-500">
-                    {plan.code}
-                  </p>
+              <div className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="inline-block rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-mono font-semibold uppercase tracking-wider text-neutral-600">
+                      {plan.code}
+                    </span>
 
-                  <h2 className="mt-2 text-xl font-semibold">
-                    {plan.name}
-                  </h2>
+                    <h3 className="mt-3 text-xl font-bold text-neutral-900">
+                      {plan.name}
+                    </h3>
+                  </div>
+
+                  <span
+                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                      plan.status === "active"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
+                    {plan.status}
+                  </span>
                 </div>
 
-                <span className="rounded-full border border-white/10 px-2.5 py-1 text-xs capitalize">
-                  {plan.status}
-                </span>
+                <div className="mt-5 flex items-baseline gap-1">
+                  <span className="text-3xl font-extrabold tracking-tight text-neutral-900">
+                    {money.format(
+                      Number(plan.price)
+                    )}
+                  </span>
+                  <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
+                    / {plan.billing_interval}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    void openPlan(plan.id)
+                  }
+                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-100"
+                >
+                  <Sliders size={16} className="text-neutral-500" />
+                  {isExpanded
+                    ? "Hide features"
+                    : "Configure features"}
+                  {isExpanded ? (
+                    <ChevronUp size={16} />
+                  ) : (
+                    <ChevronDown size={16} />
+                  )}
+                </button>
               </div>
 
-              <p className="mt-4 text-3xl font-semibold">
-                {money.format(
-                  Number(plan.price)
-                )}
-              </p>
-
-              <p className="mt-1 text-sm text-neutral-400">
-                {plan.billing_interval}
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  void openPlan(plan.id)
-                }
-                className="mt-5 inline-flex rounded-lg border border-white/10 px-3 py-2 text-sm font-medium hover:bg-white/5"
-              >
-                {isExpanded
-                  ? "Close features"
-                  : "Edit features"}
-              </button>
-
               {isExpanded ? (
-                <div className="mt-5 border-t border-white/10 pt-5">
+                <div className="border-t border-neutral-200 bg-neutral-50/50 p-6">
                   {loadingPlanId ===
                   plan.id ? (
-                    <p className="text-sm text-neutral-500">
+                    <div className="flex items-center justify-center py-6 text-sm text-neutral-500">
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin text-blue-600" />
                       Loading features…
-                    </p>
+                    </div>
                   ) : details ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h3 className="font-medium">
-                          Plan features
-                        </h3>
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                          Feature Controls
+                        </h4>
 
-                        <span className="text-xs text-neutral-500">
+                        <span className="text-xs font-medium text-neutral-500">
                           {
                             details.features
                               .length
@@ -383,12 +422,17 @@ export function PlanList() {
                             plan.id
                           )
                         }
-                        className="mt-4 inline-flex rounded-lg bg-white px-4 py-2 text-sm font-medium text-black disabled:cursor-not-allowed disabled:opacity-50"
+                        className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {savingPlanId ===
-                        plan.id
-                          ? "Saving…"
-                          : "Save features"}
+                        plan.id ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Saving changes…
+                          </>
+                        ) : (
+                          "Save features"
+                        )}
                       </button>
                     </div>
                   ) : null}
@@ -444,21 +488,21 @@ function FeatureEditor({
     );
 
   return (
-    <div className="rounded-xl border border-white/10 bg-black/10 p-4">
+    <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-xs">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-medium">
+          <p className="text-sm font-semibold text-neutral-900">
             {formatFeatureName(
               feature.featureKey
             )}
           </p>
 
-          <p className="mt-0.5 text-xs text-neutral-500">
+          <p className="mt-0.5 text-xs font-mono text-neutral-400">
             {feature.featureKey}
           </p>
         </div>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="relative inline-flex cursor-pointer items-center">
           <input
             type="checkbox"
             checked={feature.isEnabled}
@@ -469,19 +513,25 @@ function FeatureEditor({
                 event.target.checked
               )
             }
+            className="peer sr-only"
           />
-
-          {feature.isEnabled
-            ? "Enabled"
-            : "Disabled"}
+          <div className="peer h-6 w-11 rounded-full bg-neutral-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-neutral-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-blue-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-hidden"></div>
+          <span className="ml-2 text-xs font-medium text-neutral-700">
+            {feature.isEnabled ? "Enabled" : "Disabled"}
+          </span>
         </label>
       </div>
 
       {numeric ? (
-        <div className="mt-4">
-          <label className="text-xs text-neutral-400">
-            Limit
-          </label>
+        <div className="mt-3.5 border-t border-neutral-100 pt-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-neutral-600">
+              Limit Value
+            </label>
+            <span className="text-[10px] text-neutral-400">
+              Empty = Unlimited
+            </span>
+          </div>
 
           <input
             type="number"
@@ -504,12 +554,8 @@ function FeatureEditor({
               )
             }
             placeholder="Unlimited"
-            className="mt-1 w-full rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm outline-none focus:border-white/30"
+            className="mt-1.5 w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-950 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
           />
-
-          <p className="mt-1 text-xs text-neutral-500">
-            Leave empty for unlimited.
-          </p>
         </div>
       ) : null}
     </div>

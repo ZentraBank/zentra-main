@@ -15,17 +15,11 @@ const service =
 |
 | The onboarding token is treated as a temporary credential.
 |
-| We read it from:
+| It is read from:
 |
 |   X-Onboarding-Token: <token>
 |
-| instead of putting it in:
-|
-| - request body
-| - query string
-| - URL
-|
-| This keeps it out of URLs, browser history and most request logs.
+| rather than request bodies, query strings, or URLs.
 |
 */
 
@@ -53,25 +47,26 @@ const getOnboardingToken = (
 |--------------------------------------------------------------------------
 */
 
-const listPlans = asyncHandler(
-  async (
-    req,
-    res
-  ) =>
-    sendSuccess(
-      res,
-      {
-        message:
-          "Subscription plans retrieved successfully",
+const listPlans =
+  asyncHandler(
+    async (
+      req,
+      res
+    ) =>
+      sendSuccess(
+        res,
+        {
+          message:
+            "Subscription plans retrieved successfully",
 
-        data:
-          await service.listPlans({
-            tenantId:
-              req.tenant.id,
-          }),
-      }
-    )
-);
+          data:
+            await service.listPlans({
+              tenantId:
+                req.tenant.id,
+            }),
+        }
+      )
+  );
 
 /*
 |--------------------------------------------------------------------------
@@ -79,61 +74,71 @@ const listPlans = asyncHandler(
 |--------------------------------------------------------------------------
 */
 
-const getMine = asyncHandler(
-  async (
-    req,
-    res
-  ) =>
-    sendSuccess(
-      res,
-      {
-        message:
-          "Subscription retrieved successfully",
+const getMine =
+  asyncHandler(
+    async (
+      req,
+      res
+    ) =>
+      sendSuccess(
+        res,
+        {
+          message:
+            "Subscription retrieved successfully",
 
-        data:
-          await service.getMine({
-            tenantId:
-              req.auth.tenantId,
+          data:
+            await service.getMine({
+              tenantId:
+                req.auth.tenantId,
 
-            userId:
-              req.auth.userId,
-          }),
-      }
-    )
-);
+              userId:
+                req.auth.userId,
+            }),
+        }
+      )
+  );
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated subscription request
+| Authenticated plan-change request
 |--------------------------------------------------------------------------
+|
+| Despite the legacy service name "startUpgrade", this endpoint can be used
+| for any valid plan change.
+|
+| The tenant only creates a request here.
+|
+| Approval/rejection belongs to the platform/Superadmin flow.
+|
 */
 
-const startUpgrade = asyncHandler(
-  async (
-    req,
-    res
-  ) =>
-    sendSuccess(
-      res,
-      {
-        message:
-          "Subscription request created successfully",
+const startUpgrade =
+  asyncHandler(
+    async (
+      req,
+      res
+    ) =>
+      sendSuccess(
+        res,
+        {
+          message:
+            "Subscription request created successfully",
 
-        data:
-          await service.startUpgrade({
-            tenantId:
-              req.auth.tenantId,
+          data:
+            await service.startUpgrade({
+              tenantId:
+                req.auth.tenantId,
 
-            userId:
-              req.auth.userId,
+              userId:
+                req.auth.userId,
 
-            planCode:
-              req.body.planCode,
-          }),
-      },
-      201
-    )
-);
+              planCode:
+                req.body.planCode,
+            }),
+        },
+        201
+      )
+  );
 
 /*
 |--------------------------------------------------------------------------
@@ -141,44 +146,65 @@ const startUpgrade = asyncHandler(
 |--------------------------------------------------------------------------
 */
 
-const submitProof = asyncHandler(
-  async (
-    req,
-    res
-  ) =>
-    sendSuccess(
-      res,
-      {
-        message:
-          "Payment proof submitted successfully",
+const submitProof =
+  asyncHandler(
+    async (
+      req,
+      res
+    ) =>
+      sendSuccess(
+        res,
+        {
+          message:
+            "Payment proof submitted successfully",
 
-        data:
-          await service.submitProof({
-            auth:
-              req.auth,
+          data:
+            await service.submitProof({
+              auth:
+                req.auth,
 
-            requestId:
-              req.params
-                .requestId,
+              requestId:
+                req.params
+                  .requestId,
 
-            body:
-              req.body,
-          }),
-      }
-    )
-);
+              body:
+                req.body,
+            }),
+        }
+      )
+  );
 
 /*
 |--------------------------------------------------------------------------
-| Onboarding subscription request
+| Authenticated payment proof upload
 |--------------------------------------------------------------------------
-|
-| No normal JWT session exists yet.
-|
-| Access is restricted by the temporary onboarding token.
-|
 */
 
+const uploadPaymentProof =
+  asyncHandler(
+    async (
+      req,
+      res
+    ) =>
+      sendSuccess(
+        res,
+        {
+          message:
+            "Payment proof file uploaded successfully",
+
+          data:
+            await service
+              .uploadPaymentProof({
+                auth:
+                  req.auth,
+
+                file:
+                  req.file,
+              }),
+        },
+        201
+      )
+  ); 
 /*
 |--------------------------------------------------------------------------
 | Upload onboarding payment proof
@@ -224,6 +250,12 @@ const uploadOnboardingPaymentProof =
       )
   );
 
+/*
+|--------------------------------------------------------------------------
+| Start onboarding subscription request
+|--------------------------------------------------------------------------
+*/
+
 const startOnboardingSubscription =
   asyncHandler(
     async (
@@ -257,7 +289,7 @@ const startOnboardingSubscription =
 
 /*
 |--------------------------------------------------------------------------
-| Onboarding payment proof
+| Submit onboarding payment proof
 |--------------------------------------------------------------------------
 */
 
@@ -328,123 +360,6 @@ const getOnboardingStatus =
 
 /*
 |--------------------------------------------------------------------------
-| Pending subscription requests
-|--------------------------------------------------------------------------
-*/
-
-const listPending =
-  asyncHandler(
-    async (
-      req,
-      res
-    ) =>
-      sendSuccess(
-        res,
-        {
-          message:
-            "Pending requests retrieved successfully",
-
-          data:
-            await service.listPending(
-              {
-                tenantId:
-                  req.auth
-                    .tenantId,
-
-                page:
-                  Number(
-                    req.query.page
-                  ),
-
-                pageSize:
-                  Number(
-                    req.query
-                      .pageSize
-                  ),
-              }
-            ),
-        }
-      )
-  );
-
-/*
-|--------------------------------------------------------------------------
-| Approve subscription
-|--------------------------------------------------------------------------
-*/
-
-const approve =
-  asyncHandler(
-    async (
-      req,
-      res
-    ) =>
-      sendSuccess(
-        res,
-        {
-          message:
-            "Subscription approved successfully",
-
-          data:
-            await service.approve(
-              {
-                auth:
-                  req.auth,
-
-                requestId:
-                  req.params
-                    .requestId,
-
-                durationDays:
-                  Number(
-                    req.body
-                      .durationDays
-                  ),
-              }
-            ),
-        }
-      )
-  );
-
-/*
-|--------------------------------------------------------------------------
-| Reject subscription
-|--------------------------------------------------------------------------
-*/
-
-const reject =
-  asyncHandler(
-    async (
-      req,
-      res
-    ) =>
-      sendSuccess(
-        res,
-        {
-          message:
-            "Subscription rejected successfully",
-
-          data:
-            await service.reject(
-              {
-                auth:
-                  req.auth,
-
-                requestId:
-                  req.params
-                    .requestId,
-
-                reason:
-                  req.body
-                    .reason,
-              }
-            ),
-        }
-      )
-  );
-
-/*
-|--------------------------------------------------------------------------
 | Exports
 |--------------------------------------------------------------------------
 */
@@ -456,14 +371,11 @@ module.exports = {
 
   startUpgrade,
   submitProof,
+  uploadPaymentProof,
 
   uploadOnboardingPaymentProof,
 
   startOnboardingSubscription,
   submitOnboardingProof,
   getOnboardingStatus,
-
-  listPending,
-  approve,
-  reject,
 };

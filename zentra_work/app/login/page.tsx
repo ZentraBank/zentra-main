@@ -2,7 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import {
+  Suspense,
+  useEffect,
+  useState,
+} from "react";
+import {
+  setTenantSlug,
+} from "@/lib/tenant";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authService, type SocialProvider } from "@/services/auth.service";
 import { useAuthStore } from "@/store/auth.store";
@@ -22,32 +29,100 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const setUser = useAuthStore((state) => state.setUser);
+  useEffect(() => {
+  const registrationTenantSlug =
+    sessionStorage.getItem(
+      "zentra_registration_tenant_slug",
+    );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  if (registrationTenantSlug) {
+    setTenantSlug(
+      registrationTenantSlug,
+    );
+  }
+}, []);
 
-    if (method === "phone") {
-      setError("Phone login is not available yet. Please use your email address.");
-      return;
-    }
+ const handleSubmit = async (
+  e: React.FormEvent,
+) => {
+  e.preventDefault();
 
-    if (!email.trim() || password.length < 8) {
-      setError("Enter a valid email and a password of at least 8 characters.");
-      return;
-    }
+  setError("");
 
-    setIsSubmitting(true);
-    try {
-      const session = await authService.login(email.trim(), password);
-      setUser(session.user);
-      router.replace(searchParams.get("next") || "/dashboard");
-    } catch (loginError) {
-      setError(loginError instanceof ApiError ? loginError.message : "Unable to log in. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  if (method === "phone") {
+    setError(
+      "Phone login is not available yet. Please use your email address.",
+    );
+
+    return;
+  }
+
+  const normalizedEmail =
+    email.trim().toLowerCase();
+
+  if (
+    !normalizedEmail ||
+    password.length < 8
+  ) {
+    setError(
+      "Enter a valid email and a password of at least 8 characters.",
+    );
+
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const session =
+      await authService.login(
+        normalizedEmail,
+        password,
+      );
+
+    setUser(
+      session.user,
+    );
+
+    /*
+     * Registration is now complete and
+     * the authenticated session has been
+     * established under the correct tenant.
+     *
+     * The actual tenant remains stored in
+     * zentra_tenant_slug. We are only
+     * removing temporary registration data.
+     */
+    sessionStorage.removeItem(
+      "zentra_registration_email",
+    );
+
+    sessionStorage.removeItem(
+      "zentra_registration_development_code",
+    );
+
+    sessionStorage.removeItem(
+      "zentra_registration_tenant_id",
+    );
+
+    sessionStorage.removeItem(
+      "zentra_registration_tenant_slug",
+    );
+
+    router.replace(
+      searchParams.get("next") ||
+        "/dashboard",
+    );
+  } catch (loginError) {
+    setError(
+      loginError instanceof ApiError
+        ? loginError.message
+        : "Unable to log in. Please try again.",
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // const handleSocialLogin = (provider: SocialProvider) => {
   //   window.location.assign(authService.socialLoginUrl(provider, searchParams.get("next") || "/dashboard"));

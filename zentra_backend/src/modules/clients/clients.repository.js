@@ -384,6 +384,9 @@ const findInviteById = async ({
         ci.created_at,
         ci.updated_at,
 
+        t.slug AS tenant_slug,
+        t.name AS tenant_name,
+
         CASE
           WHEN ci.revoked_at IS NOT NULL
             THEN 'revoked'
@@ -399,6 +402,9 @@ const findInviteById = async ({
         END AS status
 
       FROM client_invites ci
+
+      INNER JOIN tenants t
+        ON t.id = ci.tenant_id
 
       WHERE ci.id = ?
         AND ci.tenant_id = ?
@@ -434,6 +440,9 @@ const findInviteByCodeHash = async ({
         ci.created_at,
         ci.updated_at,
 
+        t.slug AS tenant_slug,
+        t.name AS tenant_name,
+
         CASE
           WHEN ci.revoked_at IS NOT NULL
             THEN 'revoked'
@@ -449,6 +458,9 @@ const findInviteByCodeHash = async ({
         END AS status
 
       FROM client_invites ci
+
+      INNER JOIN tenants t
+        ON t.id = ci.tenant_id
 
       WHERE ci.code_hash = ?
 

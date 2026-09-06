@@ -262,6 +262,33 @@ const createTenantSystemRoles = async ({
   "accounts.manage_tenant",
   "accounts",
 ],
+[
+  "Accounts Manage Balance",
+  "accounts.manage_balance",
+  "accounts",
+],
+
+/*
+|--------------------------------------------------------------------------
+| Platform Chat
+|--------------------------------------------------------------------------
+*/
+
+[
+  "Platform Chat Read",
+  "platform_chat.read",
+  "platform_chat",
+],
+[
+  "Platform Chat Send",
+  "platform_chat.send",
+  "platform_chat",
+],
+[
+  "Platform Chat Manage",
+  "platform_chat.manage",
+  "platform_chat",
+],
 
 /*
 |--------------------------------------------------------------------------
@@ -815,12 +842,10 @@ const createTenantSystemRoles = async ({
       ],
     },
     {
-      name: "Tenant Admin",
-      code: "tenant_admin",
-      permissions: permissions.map(
-        ([, code]) => code
-      ),
-    },
+  name: "Tenant Admin",
+  code: "tenant_admin",
+  permissions: "__ALL_TENANT_PERMISSIONS__",
+},
   ];
 
   const permissionIds =
@@ -876,70 +901,127 @@ const createTenantSystemRoles = async ({
   }
 
   for (const role of roles) {
-    const roleId =
-      randomUUID();
+  const roleId = randomUUID();
 
+  await connection.query(
+    `
+      INSERT INTO roles (
+        id,
+        tenant_id,
+        name,
+        code,
+        is_system_role,
+        is_active
+      )
+      VALUES (
+        ?,
+        ?,
+        ?,
+        ?,
+        TRUE,
+        TRUE
+      )
+    `,
+    [
+      roleId,
+      tenantId,
+      role.name,
+      role.code,
+    ]
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Tenant admin
+  |--------------------------------------------------------------------------
+  |
+  | Tenant administrators receive every permission currently registered
+  | for the tenant-facing application.
+  |
+  | This avoids having to manually update this provisioning function every
+  | time a new tenant permission is introduced.
+  |
+  */
+
+if (
+  role.permissions ===
+  "__ALL_TENANT_PERMISSIONS__"
+) {
+  const [allPermissions] =
     await connection.query(
       `
-        INSERT INTO roles (
+        SELECT
           id,
-          tenant_id,
-          name,
           code,
-          is_system_role,
-          is_active
+          module
+        FROM permissions
+        ORDER BY code
+      `
+    );
+
+  for (
+    const permission
+    of allPermissions
+  ) {
+    await connection.query(
+      `
+        INSERT IGNORE INTO role_permissions (
+          role_id,
+          permission_id
         )
-        VALUES (
-          ?,
-          ?,
-          ?,
-          ?,
-          TRUE,
-          TRUE
-        )
+        VALUES (?, ?)
       `,
       [
         roleId,
-        tenantId,
-        role.name,
-        role.code,
+        permission.id,
       ]
     );
+  }
 
-    for (
-      const permissionCode
-      of role.permissions
-    ) {
-      const permissionId =
-        permissionIds.get(
-          permissionCode
+  continue;
+}
+
+  /*
+  |--------------------------------------------------------------------------
+  | Other system roles
+  |--------------------------------------------------------------------------
+  */
+
+  for (
+    const permissionCode
+    of role.permissions
+  ) {
+    const permissionId =
+      permissionIds.get(
+        permissionCode
+      );
+
+    if (!permissionId) {
+      const error =
+        new Error(
+          `Permission "${permissionCode}" was not found.`
         );
 
-      if (!permissionId) {
-        const error =
-          new Error(
-            `Permission "${permissionCode}" was not found.`
-          );
+      error.statusCode = 500;
 
-        error.statusCode = 500;
-        throw error;
-      }
-
-      await connection.query(
-        `
-          INSERT IGNORE INTO role_permissions (
-            role_id,
-            permission_id
-          )
-          VALUES (?, ?)
-        `,
-        [
-          roleId,
-          permissionId,
-        ]
-      );
+      throw error;
     }
+
+    await connection.query(
+      `
+        INSERT IGNORE INTO role_permissions (
+          role_id,
+          permission_id
+        )
+        VALUES (?, ?)
+      `,
+      [
+        roleId,
+        permissionId,
+      ]
+    );
   }
+}
 };
 
 const createTenantOwner = async ({

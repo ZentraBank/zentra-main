@@ -753,13 +753,19 @@ if (!approved) {
   );
 }
 
-await repo.consumeTenantOnboardingSessions({
-  connection,
-  tenantId:
-    request.tenant_id,
-  userId:
-    request.user_id,
-});
+/*
+|--------------------------------------------------------------------------
+| Do not consume onboarding session here
+|--------------------------------------------------------------------------
+|
+| The tenant frontend still needs the onboarding token after approval
+| so that /subscriptions/onboarding/status can return the newly activated
+| subscription and allow the owner to continue to login.
+|
+| We will consume the onboarding session later, after successful tenant
+| authentication/onboarding completion.
+|
+*/
 
 await connection.commit();
 

@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Loader2,
   Send,
+  BellRing,
 } from "lucide-react";
 
 import { ApiError } from "@/src/lib/api-error";
@@ -225,51 +226,78 @@ export function SendTenantNotification() {
   };
 
   return (
-    <section className="rounded-2xl border border-black/5 bg-white/30 p-5 shadow-sm backdrop-blur-sm">
-      <div>
-        <h2 className="text-lg font-semibold">
-          Send notification
-        </h2>
+    <section className="mx-auto max-w-3xl rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8 text-neutral-900">
+      <div className="flex items-center gap-3 border-b border-neutral-100 pb-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600 border border-blue-100">
+          <BellRing size={22} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-neutral-900">
+            Send notification
+          </h2>
 
-        <p className="mt-1 text-sm text-slate-500">
-          Send an announcement directly to tenant
-          administrators.
-        </p>
+          <p className="mt-0.5 text-sm text-neutral-500">
+            Send an announcement directly to tenant administrators across the platform.
+          </p>
+        </div>
       </div>
 
-      <div className="mt-6 space-y-5">
-        <label className="block space-y-2">
-          <span className="text-sm font-medium">
-            Audience
-          </span>
+      <div className="mt-6 space-y-6">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <label className="block space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+              Audience
+            </span>
 
-          <select
-            value={audienceType}
-            onChange={(event) =>
-              changeAudience(
-                event.target.value as AudienceType,
-              )
-            }
-            className="w-full rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-sm outline-none"
-          >
-            <option value="single_tenant">
-              One tenant
-            </option>
+            <select
+              value={audienceType}
+              onChange={(event) =>
+                changeAudience(
+                  event.target.value as AudienceType,
+                )
+              }
+              className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm text-neutral-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="single_tenant">
+                One tenant
+              </option>
 
-            <option value="selected_tenants">
-              Selected tenants
-            </option>
+              <option value="selected_tenants">
+                Selected tenants
+              </option>
 
-            <option value="all_tenants">
-              All tenants
-            </option>
-          </select>
-        </label>
+              <option value="all_tenants">
+                All tenants
+              </option>
+            </select>
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+              Priority
+            </span>
+
+            <select
+              value={priority}
+              onChange={(event) =>
+                setPriority(
+                  event.target.value as Priority,
+                )
+              }
+              className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm text-neutral-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="low">Low</option>
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </label>
+        </div>
 
         {audienceType === "single_tenant" && (
           <label className="block space-y-2">
-            <span className="text-sm font-medium">
-              Tenant
+            <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+              Target Tenant
             </span>
 
             <select
@@ -282,12 +310,12 @@ export function SendTenantNotification() {
                 )
               }
               disabled={isLoadingTenants}
-              className="w-full rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-sm outline-none disabled:opacity-50"
+              className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm text-neutral-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 disabled:opacity-50"
             >
               <option value="">
                 {isLoadingTenants
                   ? "Loading tenants..."
-                  : "Select tenant"}
+                  : "Select a tenant"}
               </option>
 
               {tenants.map((tenant) => (
@@ -306,29 +334,33 @@ export function SendTenantNotification() {
           "selected_tenants" && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">
-                Tenants
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+                Select Tenants
               </span>
 
-              <span className="text-xs text-slate-500">
+              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-600">
                 {selectedTenantIds.length} selected
               </span>
             </div>
 
-            <div className="max-h-52 overflow-y-auto rounded-xl border border-black/10 bg-white/40">
+            <div className="max-h-52 overflow-y-auto rounded-xl border border-neutral-200 bg-neutral-50/50 divide-y divide-neutral-100">
               {isLoadingTenants ? (
-                <div className="flex items-center gap-2 p-4 text-sm text-slate-500">
+                <div className="flex items-center justify-center gap-2 p-6 text-sm text-neutral-500">
                   <Loader2
                     size={16}
-                    className="animate-spin"
+                    className="animate-spin text-blue-600"
                   />
                   Loading tenants...
+                </div>
+              ) : tenants.length === 0 ? (
+                <div className="p-6 text-center text-sm text-neutral-500">
+                  No tenants available.
                 </div>
               ) : (
                 tenants.map((tenant) => (
                   <label
                     key={tenant.id}
-                    className="flex cursor-pointer items-center gap-3 border-b border-black/5 px-4 py-3 last:border-b-0"
+                    className="flex cursor-pointer items-center gap-3 px-4 py-3 transition hover:bg-neutral-100/60"
                   >
                     <input
                       type="checkbox"
@@ -340,9 +372,10 @@ export function SendTenantNotification() {
                           tenant.id,
                         )
                       }
+                      className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
                     />
 
-                    <span className="text-sm">
+                    <span className="text-sm font-medium text-neutral-800">
                       {getTenantName(tenant)}
                     </span>
                   </label>
@@ -353,37 +386,8 @@ export function SendTenantNotification() {
         )}
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium">
-            Priority
-          </span>
-
-          <select
-            value={priority}
-            onChange={(event) =>
-              setPriority(
-                event.target.value as Priority,
-              )
-            }
-            className="w-full rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-sm outline-none"
-          >
-            <option value="low">
-              Low
-            </option>
-            <option value="normal">
-              Normal
-            </option>
-            <option value="high">
-              High
-            </option>
-            <option value="urgent">
-              Urgent
-            </option>
-          </select>
-        </label>
-
-        <label className="block space-y-2">
-          <span className="text-sm font-medium">
-            Title
+          <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+            Notification Title
           </span>
 
           <input
@@ -391,14 +395,14 @@ export function SendTenantNotification() {
             onChange={(event) =>
               setTitle(event.target.value)
             }
-            placeholder="Notification title"
-            className="w-full rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-sm outline-none"
+            placeholder="e.g. Scheduled System Maintenance"
+            className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
           />
         </label>
 
         <label className="block space-y-2">
-          <span className="text-sm font-medium">
-            Message
+          <span className="text-xs font-bold uppercase tracking-wider text-neutral-600">
+            Message Content
           </span>
 
           <textarea
@@ -407,31 +411,31 @@ export function SendTenantNotification() {
               setMessage(event.target.value)
             }
             rows={5}
-            placeholder="Write your message..."
-            className="w-full resize-y rounded-xl border border-black/10 bg-white/60 px-4 py-3 text-sm outline-none"
+            placeholder="Write your announcement details here..."
+            className="w-full resize-y rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
           />
         </label>
 
         {error && (
-          <p className="text-sm text-red-600">
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">
             {error}
-          </p>
+          </div>
         )}
 
         {result && (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
             <div className="flex gap-3">
               <CheckCircle2
-                size={18}
-                className="mt-0.5 shrink-0"
+                size={20}
+                className="mt-0.5 shrink-0 text-emerald-600"
               />
 
-              <div>
-                <p className="text-sm font-semibold">
-                  Notification sent
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-emerald-900">
+                  Notification successfully dispatched
                 </p>
 
-                <p className="mt-1 text-xs text-slate-600">
+                <p className="text-xs font-medium text-emerald-700">
                   {result.tenantCount} tenant
                   {result.tenantCount === 1
                     ? ""
@@ -443,7 +447,7 @@ export function SendTenantNotification() {
                     : "s"}
                 </p>
 
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="text-xs text-emerald-600">
                   Push: {result.push.delivered}/
                   {result.push.attempted} delivered
                   {" · "}
@@ -462,19 +466,19 @@ export function SendTenantNotification() {
           disabled={
             !canSend || isSending
           }
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSending ? (
             <Loader2
-              size={17}
+              size={18}
               className="animate-spin"
             />
           ) : (
-            <Send size={17} />
+            <Send size={18} />
           )}
 
           {isSending
-            ? "Sending..."
+            ? "Sending notification..."
             : "Send notification"}
         </button>
       </div>

@@ -6,6 +6,13 @@ import {
   useState,
 } from "react";
 
+import {
+  Bell,
+  CheckCheck,
+  CheckCircle2,
+  Loader2,
+} from "lucide-react";
+
 import { ApiError } from "@/src/lib/api-error";
 import { platformNotificationsService } from "@/src/services/platform-notifications.service";
 import type {
@@ -38,25 +45,15 @@ export function NotificationList() {
           platformNotificationsService.unreadCount(),
         ]);
 
-      console.log(
-  "NOTIFICATIONS API RESPONSE:",
-  notifications
-);
+      setRows(
+        Array.isArray(notifications.data)
+          ? notifications.data
+          : []
+      );
 
-console.log(
-  "UNREAD COUNT API RESPONSE:",
-  count
-);
-
-setRows(
-  Array.isArray(notifications.data)
-    ? notifications.data
-    : []
-);
-
-setUnreadCount(
-  Number(count.data?.unreadCount ?? 0)
-);
+      setUnreadCount(
+        Number(count.data?.unreadCount ?? 0)
+      );
     } catch (caught) {
       setError(
         caught instanceof ApiError
@@ -68,9 +65,9 @@ setUnreadCount(
     }
   }, [unreadOnly]);
 
-useEffect(() => {
-  void load();
-}, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const markRead = async (
     notificationId: string
@@ -114,9 +111,10 @@ useEffect(() => {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 sm:flex-row sm:items-center">
-        <label className="flex items-center gap-3">
+    <div className="space-y-6 text-neutral-900">
+      {/* Header controls */}
+      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
+        <label className="flex cursor-pointer items-center gap-3">
           <input
             type="checkbox"
             checked={unreadOnly}
@@ -125,9 +123,13 @@ useEffect(() => {
                 event.target.checked
               )
             }
+            className="h-4 w-4 rounded border-neutral-300 text-blue-600 focus:ring-blue-500"
           />
-          <span className="text-sm">
-            Unread only ({unreadCount})
+          <span className="text-sm font-semibold text-neutral-800">
+            Unread only{" "}
+            <span className="ml-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-600 font-bold">
+              {unreadCount}
+            </span>
           </span>
         </label>
 
@@ -137,54 +139,79 @@ useEffect(() => {
             void markAllRead()
           }
           disabled={unreadCount === 0}
-          className="rounded-lg border border-white/10 px-4 py-2 text-sm disabled:opacity-40"
+          className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
         >
+          <CheckCheck size={16} className="text-blue-600" />
           Mark all read
         </button>
       </div>
 
       {error && (
-        <p className="text-sm text-red-300">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">
           {error}
-        </p>
+        </div>
       )}
 
+      {/* Notifications list */}
       <div className="space-y-3">
         {isLoading ? (
-          <p className="text-sm text-neutral-500">
-            Loading notifications…
-          </p>
-        )  : !Array.isArray(rows) || rows.length === 0 ? (
-          <p className="text-sm text-neutral-500">
-            No notifications found.
-          </p>
+          <div className="flex min-h-[300px] items-center justify-center">
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
+              <Loader2 size={18} className="animate-spin text-blue-600" />
+              Loading notifications…
+            </div>
+          </div>
+        ) : !Array.isArray(rows) || rows.length === 0 ? (
+          <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-neutral-200 bg-white p-8 text-center shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-100 text-neutral-400">
+              <Bell size={24} />
+            </div>
+            <p className="mt-3 text-sm font-semibold text-neutral-700">
+              No notifications found.
+            </p>
+            <p className="mt-1 text-xs text-neutral-500">
+              You are all caught up with your notifications.
+            </p>
+          </div>
         ) : (
           rows.map((notification) => (
             <article
               key={notification.id}
-              className={`rounded-2xl border p-5 ${
+              className={`relative overflow-hidden rounded-2xl border p-6 shadow-sm transition ${
                 notification.is_read
-                  ? "border-white/10 bg-white/5"
-                  : "border-white/20 bg-white/10"
+                  ? "border-neutral-200 bg-white"
+                  : "border-blue-200 bg-blue-50/40"
               }`}
             >
               <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-                <div>
+                <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="font-semibold">
+                    <h2 className="text-base font-bold text-neutral-900">
                       {notification.title}
                     </h2>
 
-                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-xs capitalize">
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
+                        notification.severity === "high" || notification.severity === "critical"
+                          ? "bg-red-100 text-red-700 border border-red-200"
+                          : notification.severity === "medium"
+                            ? "bg-amber-100 text-amber-800 border border-amber-200"
+                            : "bg-neutral-100 text-neutral-700 border border-neutral-200"
+                      }`}
+                    >
                       {notification.severity}
                     </span>
+
+                    {!notification.is_read && (
+                      <span className="flex h-2 w-2 rounded-full bg-blue-600" />
+                    )}
                   </div>
 
-                  <p className="mt-2 text-sm leading-6 text-neutral-300">
+                  <p className="text-sm leading-relaxed text-neutral-600">
                     {notification.message}
                   </p>
 
-                  <p className="mt-3 text-xs text-neutral-500">
+                  <p className="text-xs font-medium text-neutral-400">
                     {new Date(
                       notification.created_at
                     ).toLocaleString("en-GB")}
@@ -199,8 +226,9 @@ useEffect(() => {
                         notification.id
                       )
                     }
-                    className="text-sm font-medium hover:underline"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 shadow-xs transition hover:bg-neutral-50 hover:text-blue-600"
                   >
+                    <CheckCircle2 size={14} className="text-blue-600" />
                     Mark read
                   </button>
                 )}

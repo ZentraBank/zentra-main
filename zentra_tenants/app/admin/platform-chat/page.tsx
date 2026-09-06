@@ -9,12 +9,13 @@ import {
   useState,
 } from "react";
 import {
+  ArrowLeft,
+  Headphones,
   Loader2,
-  MessageCircle,
   RefreshCw,
   Send,
 } from "lucide-react";
-
+import Link from "next/link";
 import {
   platformChatService,
   type PlatformChatConversation,
@@ -24,7 +25,6 @@ import {
 import {
   getApiErrorMessage,
 } from "@/lib/api";
-
 
 export default function PlatformChatPage() {
   const [
@@ -78,13 +78,6 @@ export default function PlatformChatPage() {
       null,
     );
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | Derived state
-  |--------------------------------------------------------------------------
-  */
-
   const isClosed =
     conversation?.status ===
     "closed";
@@ -102,16 +95,9 @@ export default function PlatformChatPage() {
 
       return conversation.status ===
         "open"
-        ? "Open"
-        : "Closed";
+        ? "OPEN"
+        : "CLOSED";
     }, [conversation]);
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | Scroll
-  |--------------------------------------------------------------------------
-  */
 
   const scrollToBottom =
     useCallback(() => {
@@ -124,13 +110,6 @@ export default function PlatformChatPage() {
         },
       );
     }, []);
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | Load conversation + messages
-  |--------------------------------------------------------------------------
-  */
 
   const loadChat =
     useCallback(
@@ -152,11 +131,6 @@ export default function PlatformChatPage() {
         setError("");
 
         try {
-          /*
-           * Calling this endpoint also creates the
-           * tenant's platform conversation if one
-           * does not exist yet.
-           */
           const [
             conversationData,
             messageData,
@@ -203,27 +177,9 @@ export default function PlatformChatPage() {
       [scrollToBottom],
     );
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | Initial load
-  |--------------------------------------------------------------------------
-  */
-
   useEffect(() => {
     void loadChat();
   }, [loadChat]);
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | Temporary polling
-  |--------------------------------------------------------------------------
-  |
-  | We will replace this with Socket.IO once the
-  | basic HTTP flow has been proven end-to-end.
-  |
-  */
 
   useEffect(() => {
     const interval =
@@ -253,10 +209,7 @@ export default function PlatformChatPage() {
                 .markAsRead();
             }
           } catch {
-            /*
-             * Silent polling failure.
-             * Manual refresh still exposes errors.
-             */
+            /* Silent polling failure */
           }
         },
         5000,
@@ -268,13 +221,6 @@ export default function PlatformChatPage() {
       );
     };
   }, []);
-
-
-  /*
-  |--------------------------------------------------------------------------
-  | Send message
-  |--------------------------------------------------------------------------
-  */
 
   const handleSubmit =
     async (
@@ -330,350 +276,267 @@ export default function PlatformChatPage() {
       }
     };
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | Loading
-  |--------------------------------------------------------------------------
-  */
-
   if (loading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="flex items-center gap-3 text-sm text-gray-500">
+      <div className="flex min-h-[60vh] items-center justify-center bg-[#F4F6F8]">
+        <div className="flex items-center gap-3 text-sm text-neutral-500 font-medium">
           <Loader2
             size={20}
-            className="animate-spin"
+            className="animate-spin text-neutral-800"
           />
-
-          Loading Zentra Support...
+          Loading ZentraBank Support...
         </div>
       </div>
     );
   }
 
-
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-6xl flex-col">
-      {/*
-      |--------------------------------------------------------------------------
-      | Header
-      |--------------------------------------------------------------------------
-      */}
-
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-tenant text-white">
-              <MessageCircle
-                size={21}
-              />
-            </div>
-
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Zentra Support
-              </h1>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Communicate directly with the ZentraBank platform team.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {conversation && (
-            <span
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                conversation.status ===
-                "open"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {statusLabel}
-            </span>
-          )}
-
-          <button
-            type="button"
-            onClick={() =>
-              void loadChat({
-                silent:
-                  true,
-              })
-            }
-            disabled={
-              refreshing
-            }
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+    <main className="min-h-screen bg-[#F4F6F8] px-4 py-8 text-neutral-900 md:px-12 md:py-10">
+      <div className="mx-auto max-w-5xl space-y-6">
+        {/* Top Navigation & Header */}
+        <div className="space-y-4">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-600 transition hover:text-neutral-900"
           >
-            <RefreshCw
-              size={16}
-              className={
-                refreshing
-                  ? "animate-spin"
-                  : ""
-              }
-            />
+            <ArrowLeft className="h-4 w-4" />
+            Communications
+          </Link>
 
-            Refresh
-          </button>
-        </div>
-      </div>
-
-
-      {/*
-      |--------------------------------------------------------------------------
-      | Error
-      |--------------------------------------------------------------------------
-      */}
-
-      {error && (
-        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-
-      {/*
-      |--------------------------------------------------------------------------
-      | Chat
-      |--------------------------------------------------------------------------
-      */}
-
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
-        {/*
-        |--------------------------------------------------------------------------
-        | Conversation info
-        |--------------------------------------------------------------------------
-        */}
-
-        <div className="border-b border-gray-100 px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-900 text-sm font-bold text-white">
-              Z
-            </div>
-
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <p className="text-sm font-semibold text-gray-900">
-                ZentraBank Platform Team
-              </p>
-
-              <p className="text-xs text-gray-500">
-                Platform support and account assistance
+              <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 md:text-4xl">
+                ZentraBank Support
+              </h1>
+              <p className="mt-1 text-sm text-neutral-500">
+                Chat directly with the ZentraBank platform team.
               </p>
             </div>
-          </div>
-        </div>
 
-
-        {/*
-        |--------------------------------------------------------------------------
-        | Messages
-        |--------------------------------------------------------------------------
-        */}
-
-        <div className="min-h-0 flex-1 overflow-y-auto bg-gray-50/60 px-4 py-6 sm:px-6">
-          {messages.length ===
-          0 ? (
-            <div className="flex h-full min-h-[300px] items-center justify-center">
-              <div className="max-w-md text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-                  <MessageCircle
-                    size={24}
-                    className="text-gray-400"
-                  />
-                </div>
-
-                <h2 className="text-base font-semibold text-gray-900">
-                  Start a conversation
-                </h2>
-
-                <p className="mt-2 text-sm leading-6 text-gray-500">
-                  Send a message to the ZentraBank platform team about your subscription, account, platform features, or technical support.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {messages.map(
-                (
-                  chatMessage,
-                ) => {
-                  const isTenant =
-                    chatMessage.sender_type ===
-                    "tenant_user";
-
-                  return (
-                    <div
-                      key={
-                        chatMessage.id
-                      }
-                      className={`flex ${
-                        isTenant
-                          ? "justify-end"
-                          : "justify-start"
-                      }`}
-                    >
-                      <div
-                        className={`max-w-[85%] sm:max-w-[70%] ${
-                          isTenant
-                            ? "items-end"
-                            : "items-start"
-                        }`}
-                      >
-                        {!isTenant && (
-                          <p className="mb-1 px-1 text-xs font-medium text-gray-500">
-                            {chatMessage.sender_name ||
-                              "ZentraBank Support"}
-                          </p>
-                        )}
-
-                        <div
-                          className={`rounded-2xl px-4 py-3 text-sm leading-6 shadow-sm ${
-                            isTenant
-                              ? "rounded-br-md bg-tenant text-white"
-                              : "rounded-bl-md border border-gray-200 bg-white text-gray-800"
-                          }`}
-                        >
-                          <p className="whitespace-pre-wrap break-words">
-                            {
-                              chatMessage.message
-                            }
-                          </p>
-                        </div>
-
-                        <p className="mt-1 px-1 text-[11px] text-gray-400">
-                          {formatMessageTime(
-                            chatMessage.created_at,
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                },
-              )}
-
-              <div
-                ref={
-                  bottomRef
+            <button
+              type="button"
+              onClick={() =>
+                void loadChat({
+                  silent: true,
+                })
+              }
+              disabled={refreshing}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw
+                size={16}
+                className={
+                  refreshing
+                    ? "animate-spin text-neutral-800"
+                    : "text-neutral-800"
                 }
               />
-            </div>
-          )}
+              Refresh
+            </button>
+          </div>
         </div>
 
-
-        {/*
-        |--------------------------------------------------------------------------
-        | Closed conversation
-        |--------------------------------------------------------------------------
-        */}
-
-        {isClosed && (
-          <div className="border-t border-amber-200 bg-amber-50 px-5 py-3 text-center text-sm text-amber-800">
-            This conversation has been closed by the ZentraBank platform team.
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700 shadow-sm">
+            {error}
           </div>
         )}
 
+        {/* Main Card Container */}
+        <div className="flex min-h-[650px] flex-col overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-xs">
+          {/* Platform Support Info Card */}
+          <div className="border-b border-neutral-100 p-6 md:p-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#0F172A] text-white shadow-sm">
+                  <Headphones size={26} />
+                </div>
 
-        {/*
-        |--------------------------------------------------------------------------
-        | Composer
-        |--------------------------------------------------------------------------
-        */}
+                <div>
+                  <h2 className="text-lg font-bold text-neutral-900">
+                    Platform Support
+                  </h2>
+                  <p className="text-xs font-semibold tracking-wider text-neutral-400 uppercase mt-0.5">
+                    ZENTRABANK
+                  </p>
+                </div>
+              </div>
 
-        <form
-          onSubmit={
-            handleSubmit
-          }
-          className="border-t border-gray-100 bg-white p-4"
-        >
-          <div className="flex items-end gap-3">
-            <textarea
-              value={
-                message
-              }
-              onChange={(
-                event,
-              ) =>
-                setMessage(
-                  event.target
-                    .value,
-                )
-              }
-              onKeyDown={(
-                event,
-              ) => {
-                if (
-                  event.key ===
-                    "Enter" &&
-                  !event.shiftKey
-                ) {
-                  event.preventDefault();
-
-                  if (
-                    canSend
-                  ) {
-                    event.currentTarget
-                      .form
-                      ?.requestSubmit();
-                  }
-                }
-              }}
-              disabled={
-                isClosed ||
-                sending
-              }
-              rows={1}
-              placeholder={
-                isClosed
-                  ? "This conversation is closed."
-                  : "Write a message..."
-              }
-              className="max-h-36 min-h-[46px] flex-1 resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-gray-300 focus:bg-white focus:ring-2 focus:ring-gray-100 disabled:cursor-not-allowed disabled:bg-gray-100"
-            />
-
-            <button
-              type="submit"
-              disabled={
-                !canSend
-              }
-              className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-tenant text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Send message"
-            >
-              {sending ? (
-                <Loader2
-                  size={18}
-                  className="animate-spin"
-                />
-              ) : (
-                <Send
-                  size={18}
-                />
+              {conversation && (
+                <span
+                  className={`rounded-full px-4 py-1 text-xs font-bold tracking-wide ${
+                    conversation.status === "open"
+                      ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                      : "bg-neutral-100 text-neutral-600 border border-neutral-200"
+                  }`}
+                >
+                  {statusLabel}
+                </span>
               )}
-            </button>
+            </div>
           </div>
 
-          {!isClosed && (
-            <p className="mt-2 px-1 text-xs text-gray-400">
-              Press Enter to send. Shift + Enter for a new line.
-            </p>
+          {/* Messages Viewport */}
+          <div className="flex-1 overflow-y-auto bg-white p-6 md:p-8">
+            {messages.length === 0 ? (
+              <div className="flex h-full min-h-[320px] items-center justify-center">
+                <div className="max-w-md text-center">
+                  <h3 className="text-base font-bold text-neutral-900">
+                    Start a conversation
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-neutral-500">
+                    Send a message to the ZentraBank platform team about your subscription, account, platform features, or technical support.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {messages.map(
+                  (
+                    chatMessage,
+                  ) => {
+                    const isTenant =
+                      chatMessage.sender_type ===
+                      "tenant_user";
+
+                    return (
+                      <div
+                        key={
+                          chatMessage.id
+                        }
+                        className={`flex ${
+                          isTenant
+                            ? "justify-end"
+                            : "justify-start"
+                        }`}
+                      >
+                        <div
+                          className={`max-w-[85%] sm:max-w-[65%] ${
+                            isTenant
+                              ? "items-end"
+                              : "items-start"
+                          }`}
+                        >
+                          {!isTenant && (
+                            <p className="mb-1.5 px-1 text-[11px] font-bold tracking-wide uppercase text-blue-600">
+                              {chatMessage.sender_name ||
+                                "ZENTRABANK SUPPORT"}
+                            </p>
+                          )}
+
+                          <div
+                            className={`rounded-2xl border p-4 text-sm leading-relaxed shadow-xs ${
+                              isTenant
+                                ? "border-blue-600 bg-blue-600 text-white rounded-br-xs"
+                                : "border-neutral-200/80 bg-white text-neutral-800 rounded-bl-xs"
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">
+                              {
+                                chatMessage.message
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+
+                <div
+                  ref={
+                    bottomRef
+                  }
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Closed status banner */}
+          {isClosed && (
+            <div className="border-t border-amber-200 bg-amber-50 px-6 py-4 text-center text-sm font-medium text-amber-800">
+              This conversation has been closed by the ZentraBank platform team.
+            </div>
           )}
-        </form>
+
+          {/* Composer */}
+          <form
+            onSubmit={
+              handleSubmit
+            }
+            className="border-t border-neutral-100 bg-white p-6 md:p-8"
+          >
+            <div className="relative flex items-center">
+              <textarea
+                value={
+                  message
+                }
+                onChange={(
+                  event,
+                ) =>
+                  setMessage(
+                    event.target
+                      .value,
+                  )
+                }
+                onKeyDown={(
+                  event,
+                ) => {
+                  if (
+                    event.key ===
+                      "Enter" &&
+                    !event.shiftKey
+                  ) {
+                    event.preventDefault();
+
+                    if (
+                      canSend
+                    ) {
+                      event.currentTarget
+                        .form
+                        ?.requestSubmit();
+                    }
+                  }
+                }}
+                disabled={
+                  isClosed ||
+                  sending
+                }
+                rows={2}
+                placeholder={
+                  isClosed
+                    ? "This conversation is closed."
+                    : "Write a message to ZentraBank support..."
+                }
+                className="w-full resize-none rounded-2xl border border-neutral-200 bg-white px-5 py-4 pr-16 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-100 disabled:cursor-not-allowed disabled:bg-neutral-50 shadow-xs"
+              />
+
+              <button
+                type="submit"
+                disabled={
+                  !canSend
+                }
+                className="absolute right-3 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-neutral-400 text-white transition hover:bg-neutral-500 disabled:cursor-not-allowed disabled:opacity-40 shadow-xs"
+                aria-label="Send message"
+              >
+                {sending ? (
+                  <Loader2
+                    size={18}
+                    className="animate-spin text-white"
+                  />
+                ) : (
+                  <Send
+                    size={18}
+                  />
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
-
-
-/*
-|--------------------------------------------------------------------------
-| Helpers
-|--------------------------------------------------------------------------
-*/
 
 function formatMessageTime(
   value: string,

@@ -1,5 +1,6 @@
 import { authToken } from "@/lib/auth-token";
 import { getTenantSlug } from "@/lib/tenant";
+
 import type {
   ApiFailure,
   ApiSuccess,

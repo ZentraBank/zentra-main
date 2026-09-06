@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import {
+  ArrowLeft,
   CheckCheck,
   Loader2,
   MessageSquare,
@@ -17,6 +18,7 @@ import {
   Search,
   Send,
 } from "lucide-react";
+import Link from "next/link";
 
 import { ApiError } from "@/src/lib/api-error";
 
@@ -26,7 +28,6 @@ import {
   type PlatformChatMessage,
   type PlatformChatStatus,
 } from "@/src/services/platform-chat.service";
-
 
 const formatDate = (
   value?: string | null
@@ -48,7 +49,6 @@ const formatDate = (
   );
 };
 
-
 const getTenantLabel = (
   conversation: PlatformChatConversation
 ) => {
@@ -59,7 +59,6 @@ const getTenantLabel = (
     "Tenant"
   );
 };
-
 
 export default function PlatformChatPage() {
   const [
@@ -139,6 +138,65 @@ export default function PlatformChatPage() {
       null
     );
 
+  const [
+    chatPopup,
+    setChatPopup,
+  ] = useState<PlatformChatConversation | null>(
+    null
+  );
+
+  const previousUnreadRef =
+    useRef<Record<string, number>>({});
+
+  const checkForNewChats =
+    useCallback(
+      (
+        rows: PlatformChatConversation[]
+      ) => {
+        const previous =
+          previousUnreadRef.current;
+
+        let newest:
+          | PlatformChatConversation
+          | null = null;
+
+        for (const conversation of rows) {
+          const currentUnread =
+            Number(
+              conversation.unread_count ??
+                0
+            );
+
+          const previousUnread =
+            Number(
+              previous[
+                conversation.id
+              ] ?? 0
+            );
+
+          if (
+            currentUnread >
+              previousUnread &&
+            currentUnread > 0
+          ) {
+            newest = conversation;
+          }
+
+          previous[
+            conversation.id
+          ] = currentUnread;
+        }
+
+        previousUnreadRef.current = {
+          ...previous,
+        };
+
+        if (newest) {
+          setChatPopup(newest);
+        }
+      },
+      []
+    );
 
   /*
   |--------------------------------------------------------------------------
@@ -149,9 +207,13 @@ export default function PlatformChatPage() {
   const loadConversations =
     useCallback(
       async (
-        preserveSelection = true
+        preserveSelection = true,
+        silent = false
       ) => {
         try {
+          if (!silent) {
+            setIsLoadingConversations(true);
+          }
           setError(null);
 
           const result =
@@ -178,6 +240,9 @@ export default function PlatformChatPage() {
             rows
           );
 
+          checkForNewChats(
+            rows
+          );
           setSelectedId(
             (current) => {
               if (
@@ -192,10 +257,7 @@ export default function PlatformChatPage() {
                 return current;
               }
 
-              return (
-                rows[0]?.id ??
-                null
-              );
+              return null;
             }
           );
         } catch (
@@ -213,9 +275,8 @@ export default function PlatformChatPage() {
           );
         }
       },
-      [statusFilter]
+      [statusFilter, checkForNewChats]
     );
-
 
   /*
   |--------------------------------------------------------------------------
@@ -294,7 +355,6 @@ export default function PlatformChatPage() {
       []
     );
 
-
   /*
   |--------------------------------------------------------------------------
   | Initial / filter load
@@ -302,17 +362,27 @@ export default function PlatformChatPage() {
   */
 
   useEffect(() => {
-    setIsLoadingConversations(
-      true
-    );
+    void loadConversations(false, false);
 
-    void loadConversations(
-      false
-    );
+    const interval =
+      window.setInterval(
+        () => {
+          void loadConversations(
+            true,
+            true
+          );
+        },
+        5000
+      );
+
+    return () => {
+      window.clearInterval(
+        interval
+      );
+    };
   }, [
     loadConversations,
   ]);
-
 
   /*
   |--------------------------------------------------------------------------
@@ -338,46 +408,6 @@ export default function PlatformChatPage() {
     loadMessages,
   ]);
 
-
-  /*
-  |--------------------------------------------------------------------------
-  | Temporary polling
-  |--------------------------------------------------------------------------
-  |
-  | This keeps the page live while we finish the
-  | Socket.IO client connection in the next file.
-  |
-  */
-
-//   useEffect(() => {
-//     const interval =
-//       window.setInterval(
-//         () => {
-//           void loadConversations();
-
-//           if (
-//             selectedId
-//           ) {
-//             void loadMessages(
-//               selectedId
-//             );
-//           }
-//         },
-//         5000
-//       );
-
-//     return () => {
-//       window.clearInterval(
-//         interval
-//       );
-//     };
-//   }, [
-//     loadConversations,
-//     loadMessages,
-//     selectedId,
-//   ]);
-
-
   /*
   |--------------------------------------------------------------------------
   | Scroll latest message into view
@@ -392,7 +422,6 @@ export default function PlatformChatPage() {
   }, [
     messages,
   ]);
-
 
   /*
   |--------------------------------------------------------------------------
@@ -449,7 +478,6 @@ export default function PlatformChatPage() {
         search,
       ]
     );
-
 
   /*
   |--------------------------------------------------------------------------
@@ -549,7 +577,6 @@ export default function PlatformChatPage() {
       }
     };
 
-
   /*
   |--------------------------------------------------------------------------
   | Open / close conversation
@@ -627,57 +654,142 @@ export default function PlatformChatPage() {
       }
     };
 
+  const openConversation =
+    useCallback(
+      async (
+        conversationId: string
+      ) => {
+        setSelectedId(
+          conversationId
+        );
+
+        if (
+          selectedId ===
+          conversationId
+        ) {
+          await loadMessages(
+            conversationId
+          );
+        }
+      },
+      [
+        selectedId,
+        loadMessages,
+      ]
+    );
 
   return (
-    <div className="space-y-5">
-      {/* Header */}
-
+    <div className="mx-auto max-w-7xl px-4 py-8 md:px-8 space-y-6">
+      {/* Header with Back Arrow */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-2xl font-bold">
+        <div className="space-y-1">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-600 transition hover:text-neutral-900"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight text-neutral-900">
             Platform Chat
           </h1>
-
-          <p className="mt-1 text-sm text-neutral-400">
-            Communicate directly with
-            tenant administrators.
+          <p className="text-sm text-neutral-500">
+            Communicate directly with tenant administrators.
           </p>
         </div>
 
         <button
           type="button"
           onClick={() =>
-            void loadConversations()
+            void loadConversations(true, false)
           }
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-medium hover:bg-white/5"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50"
         >
           <RefreshCw
             size={16}
           />
-
           Refresh
         </button>
       </div>
 
-
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
           {error}
         </div>
       )}
 
+      {chatPopup && (
+        <div className="fixed right-6 top-6 z-[100] w-[340px] rounded-2xl border border-blue-500/30 bg-neutral-950 p-4 shadow-2xl">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white">
+              <MessageSquare
+                size={19}
+              />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-white">
+                New chat message
+              </p>
+
+              <p className="mt-1 truncate text-xs text-neutral-400">
+                {getTenantLabel(
+                  chatPopup
+                )}
+              </p>
+
+              <p className="mt-2 line-clamp-2 text-sm text-neutral-300">
+                {chatPopup.last_message ||
+                  "You have a new message."}
+              </p>
+
+              <div className="mt-3 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedId(
+                      chatPopup.id
+                    );
+
+                    void loadMessages(
+                      chatPopup.id
+                    );
+
+                    setChatPopup(
+                      null
+                    );
+                  }}
+                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 transition"
+                >
+                  Open chat
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setChatPopup(
+                      null
+                    )
+                  }
+                  className="rounded-lg border border-white/10 px-3 py-1.5 text-xs text-neutral-400 hover:bg-white/5 transition"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main chat shell */}
-
-      <div className="grid min-h-[680px] overflow-hidden rounded-2xl border border-white/10 bg-white/5 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="flex h-[calc(100vh-12rem)] min-h-[680px] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xl lg:grid lg:grid-cols-[360px_minmax(0,1fr)]">
         {/* Conversation list */}
-
-        <aside className="border-b border-white/10 lg:border-b-0 lg:border-r">
-          <div className="space-y-3 border-b border-white/10 p-4">
+        <aside className={`flex-col border-b border-neutral-200 bg-neutral-50/50 lg:flex lg:border-b-0 lg:border-r ${selectedId ? 'hidden lg:flex' : 'flex'}`}>
+          <div className="space-y-3 border-b border-neutral-200 p-4 bg-white">
             <div className="relative">
               <Search
                 size={17}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400"
               />
 
               <input
@@ -691,7 +803,7 @@ export default function PlatformChatPage() {
                   )
                 }
                 placeholder="Search tenants..."
-                className="w-full rounded-xl border border-white/10 bg-black/10 py-2.5 pl-10 pr-3 text-sm outline-none placeholder:text-neutral-500 focus:border-white/20"
+                className="w-full rounded-xl border border-neutral-200 bg-neutral-50 py-2.5 pl-10 pr-3 text-sm outline-none placeholder:text-neutral-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
               />
             </div>
 
@@ -714,11 +826,11 @@ export default function PlatformChatPage() {
                         status
                       )
                     }
-                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize ${
+                    className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${
                       statusFilter ===
                       status
-                        ? "bg-white text-black"
-                        : "border border-white/10 text-neutral-400 hover:bg-white/5"
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : "border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50"
                     }`}
                   >
                     {status}
@@ -728,28 +840,24 @@ export default function PlatformChatPage() {
             </div>
           </div>
 
-
-          <div className="max-h-[580px] overflow-y-auto">
+          <div className="flex-1 overflow-y-auto divide-y divide-neutral-100">
             {isLoadingConversations ? (
-              <div className="flex items-center gap-2 p-5 text-sm text-neutral-500">
+              <div className="flex items-center justify-center gap-2 p-8 text-sm text-neutral-500">
                 <Loader2
                   size={16}
-                  className="animate-spin"
+                  className="animate-spin text-blue-600"
                 />
-
                 Loading conversations…
               </div>
             ) : filteredConversations.length ===
               0 ? (
               <div className="p-8 text-center">
                 <MessageSquare
-                  size={28}
-                  className="mx-auto text-neutral-600"
+                  size={32}
+                  className="mx-auto text-neutral-300"
                 />
-
-                <p className="mt-3 text-sm text-neutral-500">
-                  No conversations
-                  found.
+                <p className="mt-3 text-sm font-medium text-neutral-600">
+                  No conversations found.
                 </p>
               </div>
             ) : (
@@ -774,19 +882,19 @@ export default function PlatformChatPage() {
                         conversation.id
                       }
                       onClick={() =>
-                        setSelectedId(
+                        void openConversation(
                           conversation.id
                         )
                       }
-                      className={`w-full border-b border-white/5 p-4 text-left transition ${
+                      className={`w-full p-4 text-left transition ${
                         active
-                          ? "bg-white/10"
-                          : "hover:bg-white/5"
+                          ? "bg-blue-50/80 border-l-4 border-blue-600"
+                          : "bg-white hover:bg-neutral-50/80"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">
+                          <p className="truncate text-sm font-semibold text-neutral-900">
                             {getTenantLabel(
                               conversation
                             )}
@@ -803,7 +911,7 @@ export default function PlatformChatPage() {
 
                         {unread >
                           0 && (
-                          <span className="flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-[11px] font-bold text-white">
+                          <span className="flex min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
                             {unread >
                             99
                               ? "99+"
@@ -812,7 +920,7 @@ export default function PlatformChatPage() {
                         )}
                       </div>
 
-                      <p className="mt-3 truncate text-xs text-neutral-400">
+                      <p className="mt-2 truncate text-xs text-neutral-600">
                         {conversation.last_message ||
                           "No messages yet"}
                       </p>
@@ -822,16 +930,14 @@ export default function PlatformChatPage() {
                           className={`text-[11px] font-medium capitalize ${
                             conversation.status ===
                             "open"
-                              ? "text-emerald-400"
-                              : "text-neutral-500"
+                              ? "text-emerald-600"
+                              : "text-neutral-400"
                           }`}
                         >
-                          {
-                            conversation.status
-                          }
+                          {conversation.status}
                         </span>
 
-                        <span className="text-[11px] text-neutral-600">
+                        <span className="text-[11px] text-neutral-400">
                           {formatDate(
                             conversation.last_message_at
                           )}
@@ -845,21 +951,19 @@ export default function PlatformChatPage() {
           </div>
         </aside>
 
-
         {/* Conversation */}
-
-        <section className="flex min-h-[600px] min-w-0 flex-col">
+        <section className={`flex-1 flex-col bg-white min-h-0 ${selectedId ? 'flex' : 'hidden lg:flex'}`}>
           {!selectedId ||
           !selectedConversation ? (
-            <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="flex flex-1 flex-col items-center justify-center p-8 text-center bg-neutral-50/30">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
                 <MessageSquare
-                  size={30}
+                  size={32}
                   className="text-neutral-400"
                 />
               </div>
 
-              <h2 className="mt-4 font-semibold">
+              <h2 className="mt-4 font-semibold text-neutral-900">
                 Select a conversation
               </h2>
 
@@ -870,39 +974,46 @@ export default function PlatformChatPage() {
               </p>
             </div>
           ) : (
-            <>
+            <div className="flex flex-1 flex-col min-h-0">
               {/* Chat header */}
+              <header className="flex items-center justify-between gap-4 border-b border-neutral-200 bg-white px-6 py-4 shadow-sm z-10">
+                <div className="flex items-center gap-3 min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    className="inline-flex lg:hidden items-center justify-center rounded-lg border border-neutral-200 p-2 text-neutral-600 hover:bg-neutral-50 transition"
+                    aria-label="Back to conversations"
+                  >
+                    <ArrowLeft size={16} />
+                  </button>
+                  <div className="min-w-0">
+                    <h2 className="truncate font-semibold text-neutral-900">
+                      {getTenantLabel(
+                        selectedConversation
+                      )}
+                    </h2>
 
-              <header className="flex items-center justify-between gap-4 border-b border-white/10 p-4 sm:p-5">
-                <div className="min-w-0">
-                  <h2 className="truncate font-semibold">
-                    {getTenantLabel(
-                      selectedConversation
-                    )}
-                  </h2>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-neutral-500">
+                      <span>
+                        {selectedConversation.tenant_slug ||
+                          selectedConversation.tenant_id}
+                      </span>
 
-                  <div className="mt-1 flex items-center gap-2 text-xs text-neutral-500">
-                    <span>
-                      {selectedConversation.tenant_slug ||
-                        selectedConversation.tenant_id}
-                    </span>
+                      <span>•</span>
 
-                    <span>
-                      •
-                    </span>
-
-                    <span
-                      className={
-                        selectedConversation.status ===
-                        "open"
-                          ? "text-emerald-400"
-                          : ""
-                      }
-                    >
-                      {
-                        selectedConversation.status
-                      }
-                    </span>
+                      <span
+                        className={
+                          selectedConversation.status ===
+                          "open"
+                            ? "text-emerald-600 font-medium"
+                            : "text-neutral-400 font-medium"
+                        }
+                      >
+                        {
+                          selectedConversation.status
+                        }
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -914,7 +1025,7 @@ export default function PlatformChatPage() {
                   onClick={() =>
                     void toggleStatus()
                   }
-                  className="rounded-lg border border-white/10 px-3 py-2 text-xs font-semibold hover:bg-white/5 disabled:opacity-50"
+                  className="rounded-xl border border-neutral-200 bg-white px-3.5 py-2 text-xs font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 disabled:opacity-50 shrink-0"
                 >
                   {isUpdatingStatus
                     ? "Updating…"
@@ -925,19 +1036,16 @@ export default function PlatformChatPage() {
                 </button>
               </header>
 
-
               {/* Messages */}
-
-              <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="flex-1 overflow-y-auto p-6 bg-neutral-50/50 space-y-4">
                 {isLoadingMessages &&
                 messages.length ===
                   0 ? (
                   <div className="flex h-full items-center justify-center gap-2 text-sm text-neutral-500">
                     <Loader2
                       size={17}
-                      className="animate-spin"
+                      className="animate-spin text-blue-600"
                     />
-
                     Loading messages…
                   </div>
                 ) : messages.length ===
@@ -968,14 +1076,14 @@ export default function PlatformChatPage() {
                             }`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-2xl px-4 py-3 sm:max-w-[70%] ${
+                              className={`max-w-[80%] rounded-2xl px-4 py-3 sm:max-w-[70%] shadow-sm ${
                                 mine
-                                  ? "bg-[#2458e8] text-white"
-                                  : "border border-white/10 bg-white/5"
+                                  ? "bg-blue-600 text-white rounded-br-sm"
+                                  : "border border-neutral-200 bg-white text-neutral-900 rounded-bl-sm"
                               }`}
                             >
                               {!mine && (
-                                <p className="mb-1 text-xs font-semibold text-blue-300">
+                                <p className="mb-1 text-xs font-semibold text-blue-600">
                                   {message.sender_name ||
                                     getTenantLabel(
                                       selectedConversation
@@ -983,7 +1091,7 @@ export default function PlatformChatPage() {
                                 </p>
                               )}
 
-                              <p className="whitespace-pre-wrap break-words text-sm leading-6">
+                              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
                                 {
                                   message.message
                                 }
@@ -993,7 +1101,7 @@ export default function PlatformChatPage() {
                                 className={`mt-1.5 flex items-center gap-1 text-[10px] ${
                                   mine
                                     ? "justify-end text-blue-100"
-                                    : "text-neutral-500"
+                                    : "text-neutral-400"
                                 }`}
                               >
                                 {formatDate(
@@ -1023,13 +1131,11 @@ export default function PlatformChatPage() {
                 )}
               </div>
 
-
               {/* Composer */}
-
-              <div className="border-t border-white/10 p-4">
+              <div className="border-t border-neutral-200 bg-white p-4">
                 {selectedConversation.status ===
                 "closed" ? (
-                  <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center text-sm text-neutral-400">
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-center text-sm text-neutral-500">
                     This conversation is
                     closed. Reopen it to
                     send another message.
@@ -1069,7 +1175,7 @@ export default function PlatformChatPage() {
                       }}
                       rows={1}
                       placeholder="Write a reply..."
-                      className="max-h-36 min-h-11 flex-1 resize-none rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none placeholder:text-neutral-500 focus:border-white/20"
+                      className="max-h-36 min-h-[46px] flex-1 resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 transition"
                     />
 
                     <button
@@ -1078,7 +1184,7 @@ export default function PlatformChatPage() {
                         !draft.trim() ||
                         isSending
                       }
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#2458e8] text-white transition hover:bg-[#1f4fd4] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40 shadow-sm"
                       aria-label="Send message"
                     >
                       {isSending ? (
@@ -1099,7 +1205,7 @@ export default function PlatformChatPage() {
                   </form>
                 )}
               </div>
-            </>
+            </div>
           )}
         </section>
       </div>

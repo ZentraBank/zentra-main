@@ -2,7 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, LogIn,X } from "lucide-react";
+import {
+  ArrowLeft,
+  LogIn,
+  X,
+} from "lucide-react";
 
 export default function RegisterSuccessPage() {
   return (
@@ -50,9 +54,10 @@ export default function RegisterSuccessPage() {
         </div>
 
         <div className="font-body mt-6 text-center text-[14px] font-bold leading-[17px] text-white">
-          <p>
-            Setup you personal information to make your use of ZentraBank Online banking features very simple and automated.
-          </p>
+         <p>
+          Set up your personal information to make your use of
+          ZentraBank online banking features simple and automated.
+        </p>
 
         
         </div>

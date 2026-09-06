@@ -19,6 +19,7 @@ import {
 
 import { authService } from "@/services/auth.service";
 import { getApiErrorMessage } from "@/lib/api-client";
+import { setTenantSlug } from "@/lib/tenant";
 
 type RegisterForm = {
   inviteCode: string;
@@ -245,29 +246,73 @@ if (!passwordHasSpecial) {
             form.password,
         });
 
+        /*
+    |--------------------------------------------------------------------------
+    | Persist resolved registration tenant
+    |--------------------------------------------------------------------------
+    |
+    | The invitation determines which tenant/bank owns this registration.
+    | Keep that tenant context throughout the OTP flow.
+    |
+    */
+
+    if (result.tenantSlug) {
+      setTenantSlug(
+        result.tenantSlug,
+      );
+
       sessionStorage.setItem(
-        "zentra_registration_email",
+        "zentra_registration_tenant_slug",
+        result.tenantSlug,
+      );
+    }
+
+    if (result.tenantId) {
+      sessionStorage.setItem(
+        "zentra_registration_tenant_id",
+        result.tenantId,
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Persist registration email
+    |--------------------------------------------------------------------------
+    */
+
+    sessionStorage.setItem(
+      "zentra_registration_email",
+      result.email,
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Development OTP
+    |--------------------------------------------------------------------------
+    */
+
+    if (result.developmentCode) {
+      sessionStorage.setItem(
+        "zentra_registration_development_code",
+        result.developmentCode,
+      );
+    } else {
+      sessionStorage.removeItem(
+        "zentra_registration_development_code",
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Continue to OTP verification
+    |--------------------------------------------------------------------------
+    */
+
+    router.push(
+      `/register/otp?email=${encodeURIComponent(
         result.email,
-      );
-
-      if (
-        result.developmentCode
-      ) {
-        sessionStorage.setItem(
-          "zentra_registration_development_code",
-          result.developmentCode,
-        );
-      } else {
-        sessionStorage.removeItem(
-          "zentra_registration_development_code",
-        );
-      }
-
-      router.push(
-        `/register/otp?email=${encodeURIComponent(
-          result.email,
-        )}`,
-      );
+      )}`,
+    );
     } catch (requestError) {
       setError(
         getApiErrorMessage(

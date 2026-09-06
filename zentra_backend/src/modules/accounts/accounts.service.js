@@ -670,6 +670,68 @@ const lookupTransferDestination = async ({
   };
 };
 
+const listTenantActivity = async ({
+  auth,
+  page = 1,
+  pageSize = 20,
+}) => {
+  const safePage =
+    Number(page) > 0
+      ? Number(page)
+      : 1;
+
+  const safePageSize =
+    Number(pageSize) > 0
+      ? Math.min(
+          Number(pageSize),
+          100,
+        )
+      : 20;
+
+  const offset =
+    (safePage - 1) *
+    safePageSize;
+
+  const [
+    activity,
+    total,
+  ] =
+    await Promise.all([
+      repo.findActivityByTenant({
+        tenantId:
+          auth.tenantId,
+        limit:
+          safePageSize,
+        offset,
+      }),
+
+      repo.countActivityByTenant({
+        tenantId:
+          auth.tenantId,
+      }),
+    ]);
+
+  return {
+    activity,
+
+    pagination: {
+      page:
+        safePage,
+
+      pageSize:
+        safePageSize,
+
+      total,
+
+      totalPages:
+        Math.ceil(
+          total /
+            safePageSize,
+        ),
+    },
+  };
+};
+
 module.exports = {
   listOwn,
   
@@ -682,4 +744,5 @@ module.exports = {
   adjustTenantBalance,
   listOwnActivity,
   lookupTransferDestination,
+  listTenantActivity,
 };

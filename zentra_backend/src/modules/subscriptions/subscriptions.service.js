@@ -319,6 +319,7 @@ const LIMIT_FEATURES =
     "transfer_limit",
     "daily_transfer_limit",
     "number_of_accounts",
+    "push_notification_limit",
   ]);
 
 const parseFeatureValue = (
@@ -492,6 +493,100 @@ const submitProof = async ({
     body
   });
 
+/*
+|--------------------------------------------------------------------------
+| Authenticated payment proof upload
+|--------------------------------------------------------------------------
+|
+| Used by already-authenticated tenants when changing an existing
+| subscription plan.
+|
+| Unlike onboarding, identity comes from req.auth rather than an
+| X-Onboarding-Token.
+|
+*/
+
+const uploadPaymentProof =
+  async ({
+    auth,
+    file,
+  }) => {
+    if (!file) {
+      throw httpError(
+        422,
+        "Payment proof file is required"
+      );
+    }
+
+    const stored =
+      await storePrivateFile({
+        tenantId:
+          auth.tenantId,
+
+        userId:
+          auth.userId,
+
+        module:
+          "subscriptions",
+
+        documentType:
+          "payment_proof",
+
+        file,
+      });
+
+    const record =
+      await repo.createPrivateFileRecord({
+        id:
+          stored.id,
+
+        tenantId:
+          auth.tenantId,
+
+        userId:
+          auth.userId,
+
+        module:
+          "subscriptions",
+
+        documentType:
+          "payment_proof",
+
+        originalName:
+          stored.originalName,
+
+        storedName:
+          stored.storedName,
+
+        mimeType:
+          stored.mimeType,
+
+        sizeBytes:
+          stored.sizeBytes,
+
+        storagePath:
+          stored.storagePath,
+      });
+
+    return {
+      fileId:
+        record.id,
+
+      documentType:
+        record.document_type,
+
+      originalName:
+        record.original_name,
+
+      mimeType:
+        record.mime_type,
+
+      sizeBytes:
+        Number(
+          record.size_bytes
+        ),
+    };
+  };
 /*
 |--------------------------------------------------------------------------
 | Onboarding token resolver
@@ -991,13 +1086,10 @@ module.exports = {
 
   startUpgrade,
   submitProof,
+  uploadPaymentProof,
 
   uploadOnboardingPaymentProof,
   startOnboardingSubscription,
   submitOnboardingProof,
   getOnboardingStatus,
-
-  listPending,
-  approve,
-  reject,
 };
